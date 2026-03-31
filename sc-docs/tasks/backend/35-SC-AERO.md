@@ -16,4 +16,4 @@ Create the core `FlightOperation` Couchbase document with all fields specified i
 - [ ] `flight_operations` table is created on application startup with all columns including `kml_points`
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/domain/FlightOperation.java
+- backend/src/main/java/pl/pse/aero/domain/FlightOperation.java

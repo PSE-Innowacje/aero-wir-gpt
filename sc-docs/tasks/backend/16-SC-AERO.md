@@ -18,7 +18,7 @@ Implement the full CRUD API layer for helicopters. Create request and response D
 - [ ] Validation errors return 400 with error details
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/dto/HelicopterRequest.java
-- backend/src/main/java/com/nullterrier/aero/dto/HelicopterResponse.java
-- backend/src/main/java/com/nullterrier/aero/service/HelicopterService.java
-- backend/src/main/java/com/nullterrier/aero/controller/HelicopterController.java
+- backend/src/main/java/pl/pse/aero/dto/HelicopterRequest.java
+- backend/src/main/java/pl/pse/aero/dto/HelicopterResponse.java
+- backend/src/main/java/pl/pse/aero/service/HelicopterService.java
+- backend/src/main/java/pl/pse/aero/controller/HelicopterController.java

@@ -21,6 +21,6 @@ Configure Spring Security for session-based authentication suitable for a React 
 - [ ] Unauthenticated GET to `/api/auth/me` returns 401 JSON
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/config/SecurityConfig.java
-- backend/src/main/java/com/nullterrier/aero/security/CustomUserDetailsService.java
-- backend/src/main/java/com/nullterrier/aero/security/CustomAuthenticationEntryPoint.java
+- backend/src/main/java/pl/pse/aero/config/SecurityConfig.java
+- backend/src/main/java/pl/pse/aero/security/CustomUserDetailsService.java
+- backend/src/main/java/pl/pse/aero/security/CustomAuthenticationEntryPoint.java

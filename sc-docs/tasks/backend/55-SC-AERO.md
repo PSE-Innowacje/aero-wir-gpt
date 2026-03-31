@@ -21,4 +21,4 @@ Add the status transition state machine to OrderService. The `changeStatus` meth
 - [ ] Invalid transition for current status throws IllegalStateException
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/service/OrderService.java (modify — add changeStatus method)
+- backend/src/main/java/pl/pse/aero/service/OrderService.java (modify — add changeStatus method)

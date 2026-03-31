@@ -17,4 +17,4 @@ Add bidirectional status cascading between flight orders and their linked operat
 - [ ] Adding an operation that is not CONFIRMED is rejected before scheduling
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/service/OrderService.java (modify — add cascading logic)
+- backend/src/main/java/pl/pse/aero/service/OrderService.java (modify — add cascading logic)

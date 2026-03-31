@@ -21,4 +21,4 @@ Add the status transition state machine to OperationService. The `changeStatus` 
 - [ ] `confirm` without planned dates returns 400
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/service/OperationService.java (modify — add changeStatus method)
+- backend/src/main/java/pl/pse/aero/service/OperationService.java (modify — add changeStatus method)

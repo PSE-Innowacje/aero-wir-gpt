@@ -14,5 +14,5 @@ Create the landing site domain model. Build a Couchbase document representing a 
 - [ ] `landing_sites` table is created on application startup
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/domain/LandingSite.java
-- backend/src/main/java/com/nullterrier/aero/repository/LandingSiteRepository.java
+- backend/src/main/java/pl/pse/aero/domain/LandingSite.java
+- backend/src/main/java/pl/pse/aero/repository/LandingSiteRepository.java

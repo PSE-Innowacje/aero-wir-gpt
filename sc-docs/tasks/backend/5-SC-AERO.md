@@ -15,6 +15,6 @@ Create the core user domain model. Define a `UserRole` enum with the four applic
 - [ ] Couchbase auto-creates indexes for `users` collection on application startup
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/domain/UserRole.java
-- backend/src/main/java/com/nullterrier/aero/domain/User.java
-- backend/src/main/java/com/nullterrier/aero/repository/UserRepository.java
+- backend/src/main/java/pl/pse/aero/domain/UserRole.java
+- backend/src/main/java/pl/pse/aero/domain/User.java
+- backend/src/main/java/pl/pse/aero/repository/UserRepository.java

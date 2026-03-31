@@ -9,7 +9,7 @@ Restructure the project from a flat layout into a Gradle multi-project monorepo.
 
 ## Acceptance Criteria
 - [ ] Root `src/` directory no longer exists
-- [ ] `backend/src/main/java/com/nullterrier/aero/` directory structure exists
+- [ ] `backend/src/main/java/pl/pse/aero/` directory structure exists
 - [ ] `backend/src/main/resources/` directory exists
 - [ ] `backend/src/test/java/` directory exists
 - [ ] `backend/src/test/resources/` directory exists
@@ -20,7 +20,7 @@ Restructure the project from a flat layout into a Gradle multi-project monorepo.
 ## Files to Create/Modify
 - settings.gradle.kts
 - build.gradle.kts
-- backend/src/main/java/com/nullterrier/aero/.gitkeep
+- backend/src/main/java/pl/pse/aero/.gitkeep
 - backend/src/main/resources/.gitkeep
 - backend/src/test/java/.gitkeep
 - backend/src/test/resources/.gitkeep

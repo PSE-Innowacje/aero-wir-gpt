@@ -15,6 +15,6 @@ Create the helicopter domain model. Define a status enum to track whether a heli
 - [ ] `helicopters` table is created on application startup
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/domain/HelicopterStatus.java
-- backend/src/main/java/com/nullterrier/aero/domain/Helicopter.java
-- backend/src/main/java/com/nullterrier/aero/repository/HelicopterRepository.java
+- backend/src/main/java/pl/pse/aero/domain/HelicopterStatus.java
+- backend/src/main/java/pl/pse/aero/domain/Helicopter.java
+- backend/src/main/java/pl/pse/aero/repository/HelicopterRepository.java

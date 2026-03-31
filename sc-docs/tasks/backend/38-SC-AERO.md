@@ -19,4 +19,4 @@ Create the main service layer for flight operations. Implement list retrieval wi
 - [ ] Create sets correct default values (status SUBMITTED, timestamps)
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/service/OperationService.java
+- backend/src/main/java/pl/pse/aero/service/OperationService.java

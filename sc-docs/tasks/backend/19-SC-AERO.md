@@ -15,6 +15,6 @@ Create the crew member domain model. Define a role enum distinguishing pilots fr
 - [ ] `crew_members` table is created on application startup
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/domain/CrewRole.java
-- backend/src/main/java/com/nullterrier/aero/domain/CrewMember.java
-- backend/src/main/java/com/nullterrier/aero/repository/CrewMemberRepository.java
+- backend/src/main/java/pl/pse/aero/domain/CrewRole.java
+- backend/src/main/java/pl/pse/aero/domain/CrewMember.java
+- backend/src/main/java/pl/pse/aero/repository/CrewMemberRepository.java

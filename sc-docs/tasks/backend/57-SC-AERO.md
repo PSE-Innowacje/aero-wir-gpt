@@ -21,7 +21,7 @@ Create the REST API layer for flight orders. Define request and response DTOs wi
 - [ ] List has correct default filter (SENT_FOR_APPROVAL) and sort (plannedDeparture ASC)
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/dto/OrderRequest.java
-- backend/src/main/java/com/nullterrier/aero/dto/OrderResponse.java
-- backend/src/main/java/com/nullterrier/aero/dto/OrderListResponse.java
-- backend/src/main/java/com/nullterrier/aero/controller/OrderController.java
+- backend/src/main/java/pl/pse/aero/dto/OrderRequest.java
+- backend/src/main/java/pl/pse/aero/dto/OrderResponse.java
+- backend/src/main/java/pl/pse/aero/dto/OrderListResponse.java
+- backend/src/main/java/pl/pse/aero/controller/OrderController.java
