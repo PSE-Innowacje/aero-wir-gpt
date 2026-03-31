@@ -16,10 +16,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import pl.pse.aero.security.CustomAccessDeniedHandler;
 import pl.pse.aero.security.CustomAuthenticationEntryPoint;
 
+import org.springframework.context.annotation.Profile;
+
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@Profile("!noauth")
 public class SecurityConfig {
 
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
