@@ -4,17 +4,24 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import pl.pse.aero.domain.FlightOperation;
 import pl.pse.aero.domain.OperationStatus;
 import pl.pse.aero.domain.UserRole;
 import pl.pse.aero.dto.*;
 import pl.pse.aero.repository.UserRepository;
+import pl.pse.aero.service.KmlService;
 import pl.pse.aero.service.OperationService;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,10 +31,13 @@ import java.util.List;
 public class OperationController {
 
     private final OperationService operationService;
+    private final KmlService kmlService;
     private final UserRepository userRepository;
 
-    public OperationController(OperationService operationService, UserRepository userRepository) {
+    public OperationController(OperationService operationService, KmlService kmlService,
+                               UserRepository userRepository) {
         this.operationService = operationService;
+        this.kmlService = kmlService;
         this.userRepository = userRepository;
     }
 
@@ -94,6 +104,35 @@ public class OperationController {
         String email = authentication != null ? authentication.getName() : "anonymous";
         operationService.addComment(id, request.getContent(), email);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Upload KML file", description = "Parse and validate KML, returns points and route length")
+    @ApiResponse(responseCode = "200", description = "KML processed successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid KML file")
+    @PostMapping("/upload-kml")
+    public ResponseEntity<KmlProcessingResult> uploadKml(@RequestParam("file") MultipartFile file) {
+        KmlProcessingResult result = kmlService.saveAndParse(file);
+        return ResponseEntity.ok(result);
+    }
+
+    @Operation(summary = "Download KML file", description = "Serves the stored KML file for an operation")
+    @ApiResponse(responseCode = "200", description = "KML file")
+    @ApiResponse(responseCode = "404", description = "Operation or KML file not found")
+    @GetMapping("/{id}/kml")
+    public ResponseEntity<Resource> downloadKml(@PathVariable String id) {
+        FlightOperation op = operationService.findById(id);
+        if (op.getKmlFilePath() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        Path path = Path.of(op.getKmlFilePath());
+        if (!path.toFile().exists()) {
+            return ResponseEntity.notFound().build();
+        }
+        Resource resource = new FileSystemResource(path);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.google-earth.kml+xml"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + path.getFileName() + "\"")
+                .body(resource);
     }
 
     private FlightOperation mapRequestToEntity(OperationRequest request) {
