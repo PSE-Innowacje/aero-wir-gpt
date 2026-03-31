@@ -110,6 +110,80 @@ public class OperationService {
         }
     }
 
+    // --- Status state machine (39-SC-AERO) ---
+
+    public FlightOperation changeStatus(String operationId, String action, UserRole role) {
+        FlightOperation op = findById(operationId);
+
+        switch (action) {
+            case "reject" -> {
+                requireRole(role, UserRole.SUPERVISOR, action);
+                requireStatus(op, OperationStatus.SUBMITTED, action);
+                op.setStatus(OperationStatus.REJECTED);
+            }
+            case "confirm" -> {
+                requireRole(role, UserRole.SUPERVISOR, action);
+                requireStatus(op, OperationStatus.SUBMITTED, action);
+                if (op.getPlannedDateEarliest() == null || op.getPlannedDateLatest() == null) {
+                    throw new IllegalArgumentException(
+                            "Cannot confirm: planned dates (earliest and latest) must be set");
+                }
+                op.setStatus(OperationStatus.CONFIRMED);
+            }
+            case "cancel" -> {
+                requireRole(role, UserRole.PLANNER, action);
+                requireStatusOneOf(op, List.of(
+                        OperationStatus.SUBMITTED,
+                        OperationStatus.CONFIRMED,
+                        OperationStatus.SCHEDULED
+                ), action);
+                op.setStatus(OperationStatus.CANCELLED);
+            }
+            // Internal transitions — called from OrderService in Phase 4
+            case "schedule" -> {
+                requireStatus(op, OperationStatus.CONFIRMED, action);
+                op.setStatus(OperationStatus.SCHEDULED);
+            }
+            case "partialComplete" -> {
+                requireStatus(op, OperationStatus.SCHEDULED, action);
+                op.setStatus(OperationStatus.PARTIALLY_COMPLETED);
+            }
+            case "complete" -> {
+                requireStatus(op, OperationStatus.SCHEDULED, action);
+                op.setStatus(OperationStatus.COMPLETED);
+            }
+            case "unschedule" -> {
+                requireStatus(op, OperationStatus.SCHEDULED, action);
+                op.setStatus(OperationStatus.CONFIRMED);
+            }
+            default -> throw new IllegalArgumentException("Unknown action: " + action);
+        }
+
+        op.prePersist();
+        return operationRepository.save(op);
+    }
+
+    private void requireRole(UserRole actual, UserRole required, String action) {
+        if (actual != required) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Action '" + action + "' requires role " + required + ", but current role is " + actual);
+        }
+    }
+
+    private void requireStatus(FlightOperation op, OperationStatus required, String action) {
+        if (op.getStatus() != required) {
+            throw new IllegalStateException(
+                    "Action '" + action + "' requires status " + required + ", but current status is " + op.getStatus());
+        }
+    }
+
+    private void requireStatusOneOf(FlightOperation op, List<OperationStatus> allowed, String action) {
+        if (!allowed.contains(op.getStatus())) {
+            throw new IllegalStateException(
+                    "Action '" + action + "' not allowed in status " + op.getStatus());
+        }
+    }
+
     private void applyPlannerFields(FlightOperation existing, FlightOperation updates) {
         // Planner can edit these fields
         existing.setOrderNumber(updates.getOrderNumber());
