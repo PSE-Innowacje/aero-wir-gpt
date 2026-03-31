@@ -403,9 +403,40 @@ Swagger UI is available at `http://localhost:8080/swagger-ui.html` when the back
 
 ---
 
+---
+
+## E2E Testing Policy
+
+E2E tests live in `e2e/` and use Playwright. They cover UI flows and API integration.
+
+**When to write E2E tests:**
+
+- When adding a **backend controller method** that is consumed by an existing frontend view — add an API-level E2E test covering the new endpoint (CRUD, validation, role access).
+- When adding a **frontend view/page** that calls existing controller endpoints — add a UI E2E test covering the page load, key interactions, and data display.
+- When adding **end-to-end features** (new controller + new UI) — add both API and UI E2E tests.
+- When modifying **status workflows** or **role-based access** — update or add E2E tests for the affected transitions and role checks.
+
+**Running tests:**
+
+```bash
+cd e2e && npm test          # all tests
+cd e2e && npm run test:ui   # Playwright UI mode
+```
+
+**Test conventions:**
+
+- Test files: `e2e/tests/<entity>.spec.ts`
+- Use helpers from `e2e/helpers/` (auth, API, constants)
+- API tests use `ApiHelper` class for authenticated requests
+- UI tests use `loginViaUI()` for browser-based authentication
+- Performance tests measure page load and API response times
+
+---
+
 ### Do Not
 
 - Do not use past tense — use `add` not `added`, `fix` not `fixed`
 - Do not mix multiple concerns in one commit
 - Do not commit directly to `main` — always use a feature branch and PR
 - Do not leave a scope empty when a ticket exists
+- Do not add a backend controller method to an existing frontend view (or vice versa) without adding E2E tests

@@ -605,7 +605,7 @@
 					}
 				},
 				{
-					"name": "Login (Admin)",
+					"name": "Login",
 					"event": [
 						{
 							"listen": "test",
@@ -646,119 +646,94 @@
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "auth", "login"]
 						},
-						"description": "Authenticate as ADMIN. Saves JSESSIONID for all subsequent requests."
-					}
-				},
-				{
-					"name": "Login (Planner)",
-					"event": [
+						"description": "Authenticate and obtain a session cookie. Saves JSESSIONID for all subsequent requests.\n\nSwitch between roles using the saved examples below:\n- Admin: admin@aero.pl / admin\n- Planner: planista@aero.pl / planista\n- Supervisor: nadzor@aero.pl / nadzor\n- Pilot: pilot@aero.pl / pilot"
+					},
+					"response": [
 						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"const cookie = pm.response.headers.filter(h => h.key === 'Set-Cookie')",
-									"    .map(h => h.value)",
-									"    .find(v => v.startsWith('JSESSIONID='));",
-									"if (cookie) {",
-									"    pm.collectionVariables.set('jsessionid', cookie.split(';')[0].split('=')[1]);",
-									"}"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"email\": \"planista@aero.pl\",\n    \"password\": \"planista\"\n}"
+							"name": "Admin",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"admin@aero.pl\",\n    \"password\": \"admin\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/login",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "auth", "login"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"id\": \"...\",\n    \"email\": \"admin@aero.pl\",\n    \"firstName\": \"Admin\",\n    \"lastName\": \"Admin\",\n    \"role\": \"ADMIN\"\n}"
 						},
-						"url": {
-							"raw": "{{baseUrl}}/api/auth/login",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "auth", "login"]
-						}
-					}
-				},
-				{
-					"name": "Login (Supervisor)",
-					"event": [
 						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"const cookie = pm.response.headers.filter(h => h.key === 'Set-Cookie')",
-									"    .map(h => h.value)",
-									"    .find(v => v.startsWith('JSESSIONID='));",
-									"if (cookie) {",
-									"    pm.collectionVariables.set('jsessionid', cookie.split(';')[0].split('=')[1]);",
-									"}"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"email\": \"nadzor@aero.pl\",\n    \"password\": \"nadzor\"\n}"
+							"name": "Planner",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"planista@aero.pl\",\n    \"password\": \"planista\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/login",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "auth", "login"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"id\": \"...\",\n    \"email\": \"planista@aero.pl\",\n    \"firstName\": \"Planista\",\n    \"lastName\": \"Planista\",\n    \"role\": \"PLANNER\"\n}"
 						},
-						"url": {
-							"raw": "{{baseUrl}}/api/auth/login",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "auth", "login"]
-						}
-					}
-				},
-				{
-					"name": "Login (Pilot)",
-					"event": [
 						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"const cookie = pm.response.headers.filter(h => h.key === 'Set-Cookie')",
-									"    .map(h => h.value)",
-									"    .find(v => v.startsWith('JSESSIONID='));",
-									"if (cookie) {",
-									"    pm.collectionVariables.set('jsessionid', cookie.split(';')[0].split('=')[1]);",
-									"}"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"email\": \"pilot@aero.pl\",\n    \"password\": \"pilot\"\n}"
+							"name": "Supervisor",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"nadzor@aero.pl\",\n    \"password\": \"nadzor\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/login",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "auth", "login"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"id\": \"...\",\n    \"email\": \"nadzor@aero.pl\",\n    \"firstName\": \"Nadzor\",\n    \"lastName\": \"Nadzor\",\n    \"role\": \"SUPERVISOR\"\n}"
 						},
-						"url": {
-							"raw": "{{baseUrl}}/api/auth/login",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "auth", "login"]
+						{
+							"name": "Pilot",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"pilot@aero.pl\",\n    \"password\": \"pilot\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/auth/login",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "auth", "login"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"id\": \"...\",\n    \"email\": \"pilot@aero.pl\",\n    \"firstName\": \"Pilot\",\n    \"lastName\": \"Pilot\",\n    \"role\": \"PILOT\"\n}"
 						}
-					}
+					]
 				},
 				{
 					"name": "Get Current User",
@@ -872,8 +847,73 @@
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "helicopters"]
 						},
-						"description": "Creates a new helicopter. ACTIVE status requires inspectionExpiryDate. Saves returned ID to {{helicopterId}}."
-					}
+						"description": "Creates a new helicopter. Saves returned ID to {{helicopterId}}.\n\nExamples:\n- Active: ACTIVE status with inspectionExpiryDate (required)\n- Inactive: INACTIVE status, inspectionExpiryDate can be null\n- Validation error: blank/invalid fields → 400"
+					},
+					"response": [
+						{
+							"name": "Active helicopter",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"registrationNumber\": \"SP-HEL\",\n    \"type\": \"EC135\",\n    \"description\": \"Primary operations helicopter\",\n    \"maxCrewCount\": 4,\n    \"maxCrewWeightKg\": 400,\n    \"status\": \"ACTIVE\",\n    \"inspectionExpiryDate\": \"2026-12-31\",\n    \"rangeKm\": 600\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/helicopters",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "helicopters"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"id\": \"...\",\n    \"registrationNumber\": \"SP-HEL\",\n    \"type\": \"EC135\",\n    \"description\": \"Primary operations helicopter\",\n    \"maxCrewCount\": 4,\n    \"maxCrewWeightKg\": 400,\n    \"status\": \"ACTIVE\",\n    \"inspectionExpiryDate\": \"2026-12-31\",\n    \"rangeKm\": 600\n}"
+						},
+						{
+							"name": "Inactive (no inspection date)",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"registrationNumber\": \"SP-OFF\",\n    \"type\": \"Bell 407\",\n    \"description\": null,\n    \"maxCrewCount\": 2,\n    \"maxCrewWeightKg\": 200,\n    \"status\": \"INACTIVE\",\n    \"inspectionExpiryDate\": null,\n    \"rangeKm\": 300\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/helicopters",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "helicopters"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"id\": \"...\",\n    \"registrationNumber\": \"SP-OFF\",\n    \"type\": \"Bell 407\",\n    \"description\": null,\n    \"maxCrewCount\": 2,\n    \"maxCrewWeightKg\": 200,\n    \"status\": \"INACTIVE\",\n    \"inspectionExpiryDate\": null,\n    \"rangeKm\": 300\n}"
+						},
+						{
+							"name": "Validation error (400)",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"registrationNumber\": \"\",\n    \"type\": \"\",\n    \"maxCrewCount\": 0,\n    \"maxCrewWeightKg\": -1,\n    \"status\": \"ACTIVE\",\n    \"rangeKm\": 0\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/helicopters",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "helicopters"]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Validation failed\"\n}"
+						}
+					]
 				},
 				{
 					"name": "Update Helicopter",
@@ -894,50 +934,6 @@
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "helicopters", "{{helicopterId}}"]
 						}
-					}
-				},
-				{
-					"name": "Create Helicopter (INACTIVE, no inspection)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"registrationNumber\": \"SP-OFF\",\n    \"type\": \"Bell 407\",\n    \"description\": null,\n    \"maxCrewCount\": 2,\n    \"maxCrewWeightKg\": 200,\n    \"status\": \"INACTIVE\",\n    \"inspectionExpiryDate\": null,\n    \"rangeKm\": 300\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/helicopters",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "helicopters"]
-						},
-						"description": "INACTIVE helicopter — inspectionExpiryDate can be null."
-					}
-				},
-				{
-					"name": "Create Helicopter (validation error)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"registrationNumber\": \"\",\n    \"type\": \"\",\n    \"maxCrewCount\": 0,\n    \"maxCrewWeightKg\": -1,\n    \"status\": \"ACTIVE\",\n    \"rangeKm\": 0\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/helicopters",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "helicopters"]
-						},
-						"description": "Should return 400 — blank fields, out-of-range values, ACTIVE without inspection date."
 					}
 				}
 			]
@@ -971,7 +967,7 @@
 					}
 				},
 				{
-					"name": "Create Landing Site (Babice EPBC)",
+					"name": "Create Landing Site",
 					"event": [
 						{
 							"listen": "test",
@@ -1003,50 +999,94 @@
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "landing-sites"]
 						},
-						"description": "Creates a landing site. Saves returned ID to {{landingSiteId}}."
-					}
-				},
-				{
-					"name": "Create Landing Site (Modlin EPMO)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Modlin EPMO\",\n    \"latitude\": 52.4511,\n    \"longitude\": 20.6517\n}"
+						"description": "Creates a landing site. Saves returned ID to {{landingSiteId}}.\n\nExamples include real Polish airfields and a validation error case."
+					},
+					"response": [
+						{
+							"name": "Babice EPBC",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Babice EPBC\",\n    \"latitude\": 52.1847,\n    \"longitude\": 20.9111\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/landing-sites",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "landing-sites"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"id\": \"...\",\n    \"name\": \"Babice EPBC\",\n    \"latitude\": 52.1847,\n    \"longitude\": 20.9111\n}"
 						},
-						"url": {
-							"raw": "{{baseUrl}}/api/landing-sites",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "landing-sites"]
-						}
-					}
-				},
-				{
-					"name": "Create Landing Site (Radom EPRA)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Radom EPRA\",\n    \"latitude\": 51.3892,\n    \"longitude\": 21.2133\n}"
+						{
+							"name": "Modlin EPMO",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Modlin EPMO\",\n    \"latitude\": 52.4511,\n    \"longitude\": 20.6517\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/landing-sites",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "landing-sites"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"id\": \"...\",\n    \"name\": \"Modlin EPMO\",\n    \"latitude\": 52.4511,\n    \"longitude\": 20.6517\n}"
 						},
-						"url": {
-							"raw": "{{baseUrl}}/api/landing-sites",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "landing-sites"]
+						{
+							"name": "Radom EPRA",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Radom EPRA\",\n    \"latitude\": 51.3892,\n    \"longitude\": 21.2133\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/landing-sites",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "landing-sites"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"id\": \"...\",\n    \"name\": \"Radom EPRA\",\n    \"latitude\": 51.3892,\n    \"longitude\": 21.2133\n}"
+						},
+						{
+							"name": "Validation error (400)",
+							"originalRequest": {
+								"method": "POST",
+								"header": [{ "key": "Content-Type", "value": "application/json" }],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"\",\n    \"latitude\": null,\n    \"longitude\": null\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/landing-sites",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "landing-sites"]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [{ "key": "Content-Type", "value": "application/json" }],
+							"body": "{\n    \"message\": \"Validation failed\"\n}"
 						}
-					}
+					]
 				},
 				{
 					"name": "Update Landing Site",
@@ -1067,28 +1107,6 @@
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "landing-sites", "{{landingSiteId}}"]
 						}
-					}
-				},
-				{
-					"name": "Create Landing Site (validation error)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"\",\n    \"latitude\": null,\n    \"longitude\": null\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/landing-sites",
-							"host": ["{{baseUrl}}"],
-							"path": ["api", "landing-sites"]
-						},
-						"description": "Should return 400 — blank name, null coordinates."
 					}
 				}
 			]

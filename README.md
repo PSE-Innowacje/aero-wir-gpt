@@ -1,444 +1,598 @@
-# 🚁 AERO — Product Requirements Document v2.0
+# AERO — System ewidencji operacji lotniczych
 
 ---
 
-## 1. 📋 Opis ogólny
+## 1. Opis ogolny
 
-Zbudować aplikację webową do **ewidencji planowanych operacji lotniczych** oraz **przygotowania zlecenia na lot helikopterem**.
+Aplikacja webowa do **ewidencji planowanych operacji lotniczych** oraz **przygotowania zlecenia na lot helikopterem**.
 
----
-
-## 2. 🔍 Problem
-
-- Potrzeba aplikacji www do ewidencji i planowania.
-- Potrzeba logiki pokazującej na mapie miejsce wykonania lotu.
-- Potrzeba logiki sprawdzającej procedury podczas tworzenia / potwierdzenia zlecenia na lot.
+System wspiera pelny cykl zycia operacji lotniczej — od zgłoszenia przez osobę planująca, przez zatwierdzenie przez osobę nadzorujaca, az po realizację i raportowanie przez pilota.
 
 ---
 
-## 3. 🎯 Cel
+## 2. Problem
+
+- Potrzeba aplikacji www do ewidencji i planowania operacji lotniczych.
+- Potrzeba logiki pokazujacej na mapie miejsce wykonania lotu.
+- Potrzeba logiki sprawdzajacej procedury podczas tworzenia / potwierdzenia zlecenia na lot.
+
+---
+
+## 3. Cel
 
 Wsparcie procesu zbierania planowanych operacji oraz bezpośredniego przygotowania zlecenia na lot.
 
 ---
 
-## 4. 👥 Użytkownicy docelowi
+## 4. Uzytkownicy docelowi
 
 | Rola | Opis |
 |------|------|
-| 🧑‍💼 **Osoba planująca** (DE / CJI) | Wprowadza i monitoruje status planowanych operacji lotniczych |
-| 🧑‍✈️ **Osoba nadzorująca** (DB) | Nadzoruje i zmienia status planowanych operacji lotniczych oraz akceptuje / odrzuca zlecenie na lot |
-| ✈️ **Pilot** | Planuje zlecenie na lot i raportuje stopień realizacji operacji |
-| ⚙️ **Administrator systemu** | Wprowadza konfiguracje |
+| **Osoba planujaca** (DE / CJI) | Wprowadza i monitoruje status planowanych operacji lotniczych |
+| **Osoba nadzorujaca** (DB) | Nadzoruje i zmienia status planowanych operacji lotniczych oraz akceptuje / odrzuca zlecenie na lot |
+| **Pilot** | Planuje zlecenie na lot i raportuje stopien realizacji operacji |
+| **Administrator systemu** | Wprowadza konfiguracje (helikoptery, załoga, ladowiska, uzytkownicy) |
 
 ---
 
-## 5. 📖 User Stories
+## 5. User Stories
 
-- **a)** Jako **osoba planująca**, chcę wprowadzić planowaną operację lotniczą, aby lot wskazanego odcinka linii został zaplanowany.
-- **b)** Jako **osoba planująca**, chcę odczytywać aktualny stan planowanych operacji lotniczych, które wprowadziłem, aby śledzić kiedy jest planowana operacja lotnicza i jakie są szanse na ten lot.
-- **c)** Jako **osoba planująca**, chcę zrezygnować z planowanej operacji lotniczej, które wprowadziłem, aby nie wykonywać lotu jeśli jest już zbędny.
-- **d)** Jako **osoba nadzorująca**, chcę ustawiać status i daty planowanych operacji lotniczych, aby potwierdzać / odrzucać planowane operacje i wstępne planować loty w kontekście posiadanych środków.
-- **e)** Jako **pilot**, chcę wprowadzić zlecenie na lot do realizacji jednego lub więcej planowanych operacji lotniczych z wybranym lotniskiem startu i lądowania z wyliczeniem długości planowanego lotu i uproszczonym pokazaniem na mapie trasy przelotu, aby dobrać odpowiednie operacje lotnicze do zlecenia.
-- **f)** Jako **pilot**, chcę uzupełnić zlecenie na lot o wybór helikoptera i członków załogi ze sprawdzeniem niezbędnych warunków, aby zlecenie na lot spełniało procedury.
-- **g)** Jako **osoba nadzorująca**, chcę ustawiać status zlecenia na lot, aby potwierdzać / odrzucać zlecenie na lot.
-- **h)** Jako **pilot**, chcę wprowadzić co z planowanej operacji lotniczej zostało zrealizowane, ile czasu i km trwał lot, aby zaraportować stan wykonania zadania.
-- **i)** Jako **administrator systemu**, chcę edytować aktualne informacje dotyczące floty helikopterów, członków załogi oraz lotnisk, aby system działał w sposób planowany i aktualny.
+- **a)** Jako **osoba planujaca**, chce wprowadzic planowana operacje lotnicza, aby lot wskazanego odcinka linii zostal zaplanowany.
+- **b)** Jako **osoba planujaca**, chce odczytywac aktualny stan planowanych operacji lotniczych, ktore wprowadziłem, aby sledzic kiedy jest planowana operacja lotnicza i jakie sa szanse na ten lot.
+- **c)** Jako **osoba planujaca**, chce zrezygnowac z planowanej operacji lotniczej, ktore wprowadziłem, aby nie wykonywac lotu jesli jest juz zbedny.
+- **d)** Jako **osoba nadzorujaca**, chce ustawiac status i daty planowanych operacji lotniczych, aby potwierdzac / odrzucac planowane operacje i wstepne planowac loty w kontekscie posiadanych srodkow.
+- **e)** Jako **pilot**, chce wprowadzic zlecenie na lot do realizacji jednego lub wiecej planowanych operacji lotniczych z wybranym lotniskiem startu i ladowania z wyliczeniem dlugosci planowanego lotu i uproszczonym pokazaniem na mapie trasy przelotu, aby dobrac odpowiednie operacje lotnicze do zlecenia.
+- **f)** Jako **pilot**, chce uzupelnic zlecenie na lot o wybor helikoptera i czlonkow załogi ze sprawdzeniem niezbednych warunkow, aby zlecenie na lot spelniało procedury.
+- **g)** Jako **osoba nadzorujaca**, chce ustawiac status zlecenia na lot, aby potwierdzac / odrzucac zlecenie na lot.
+- **h)** Jako **pilot**, chce wprowadzic co z planowanej operacji lotniczej zostalo zrealizowane, ile czasu i km trwał lot, aby zaraportowac stan wykonania zadania.
+- **i)** Jako **administrator systemu**, chce edytowac aktualne informacje dotyczace floty helikopterow, czlonkow załogi oraz lotnisk, aby system działal w sposob planowany i aktualny.
 
 ---
 
-## 6. ✅ Funkcje obowiązkowe
+## 6. Stos technologiczny
 
-### 6.1. 🚁 Helikopter
+### 6.1. Architektura
 
-#### a) Wprowadzanie i edycja danych helikopterów
+```
+Przegladarka (SPA)             Spring Boot              Couchbase
+React + TypeScript + MUI  <--HTTPS-->  REST API :8080  <--SDK-->  :8091-8096
+```
 
-| Pole | Typ | Wymagalność | Ograniczenia |
+Aplikacja to **samodzielny system** — brak integracji z zewnetrznymi API, kolejkami komunikatow ani usługami trzecich stron. Jeden backend Spring Boot serwuje REST API, a frontend to SPA (Single Page Application) serwowana z osobnego serwera deweloperskiego (Vite).
+
+### 6.2. Warstwa backendowa
+
+| Technologia | Wersja | Uzasadnienie |
+|-------------|--------|--------------|
+| **Java** | 21 (LTS) | Najnowsza wersja LTS z virtual threads i pattern matching; wymagana przez Spring Boot 3.x |
+| **Spring Boot** | 3.x | Standard przemysłowy dla aplikacji Java — automatyczna konfiguracja, wbudowany serwer, bogaty ekosystem |
+| **Spring Security** | (w Spring Boot) | Uwierzytelnianie sesyjne (JSESSIONID cookie), kontrola dostepu na poziomie URL i pol |
+| **Spring Data Couchbase** | (w Spring Boot) | Mapowanie dokumentow Couchbase na obiekty Java, repozytoria z automatycznymi zapytaniami |
+| **Couchbase Server** | 7.6 | Dokumentowa baza NoSQL — elastyczny schemat pozwala na osadzanie komentarzy, historii zmian i punktow KML bezposrednio w dokumencie operacji. Brak potrzeby migracji schematu |
+| **Testcontainers** | (via Gradle) | Automatyczne uruchamianie kontenera Couchbase na potrzeby testow integracyjnych — zero konfiguracji recznej |
+| **Spock Framework** | (via Gradle) | Framework testowy (Groovy) — czytelna składnia BDD (`given`/`when`/`then`), wbudowane mockowanie |
+| **SpringDoc OpenAPI** | (via Gradle) | Automatyczna generacja dokumentacji API (Swagger UI) na podstawie adnotacji kontrolerow |
+| **Gradle** | Kotlin DSL | System budowania — szybszy niz Maven, deklaratywna konfiguracja w Kotlin |
+
+### 6.3. Warstwa frontendowa
+
+| Technologia | Wersja | Uzasadnienie |
+|-------------|--------|--------------|
+| **React** | 18 | Biblioteka UI — komponentowy model, wirtualny DOM, ogromny ekosystem |
+| **TypeScript** | 5.6 | Typowanie statyczne — eliminuje cala klase bledow w czasie kompilacji, lepsza nawigacja po kodzie |
+| **Vite** | 5.x | Serwer deweloperski z HMR (Hot Module Replacement) — natychmiastowe przeładowanie po zmianie kodu. Proxy `/api/**` do backendu |
+| **MUI (Material UI)** | 7.x | Biblioteka komponentow — gotowe DataGrid, Dialog, TextField, Select z dostepnoscia i ciemnym motywem |
+| **react-router-dom** | 7.x | Routing SPA — deklaratywne trasy, chronione sciezki, przekierowania |
+| **Axios** | 1.x | Klient HTTP — interceptory, automatyczne `withCredentials` dla ciasteczek sesji |
+| **react-leaflet** + **Leaflet** | 4.x / 1.9 | Mapa interaktywna — wyswietlanie tras (polylines) z plikow KML i markerow ladowisk. Kafelki OpenStreetMap |
+| **Zod** | 4.x | Walidacja schematow danych — bezpieczne parsowanie odpowiedzi API |
+
+### 6.4. Warstwa testow E2E
+
+| Technologia | Wersja | Uzasadnienie |
+|-------------|--------|--------------|
+| **Playwright** | 1.x | Framework E2E — szybki, niezawodny, wbudowane API do testowania zarowno UI jak i endpointow REST |
+
+### 6.5. Struktura repozytorium (monorepo)
+
+```
+aero-wir-gpt/
+├── backend/                          # Spring Boot (Java 21)
+│   ├── build.gradle.kts
+│   └── src/main/java/pl/pse/aero/
+│       ├── AeroApplication.java
+│       ├── config/                   # SecurityConfig, CORS, DataInitializer
+│       ├── controller/               # Kontrolery REST (cienkie)
+│       ├── dto/                      # Obiekty Request / Response
+│       ├── domain/                   # Dokumenty Couchbase (@Document) + enumy
+│       ├── repository/               # Interfejsy Spring Data Couchbase
+│       └── service/                  # Logika biznesowa, maszyny stanow, parsowanie KML
+├── frontend/                         # Vite + React 18 + TypeScript
+│   ├── package.json
+│   └── src/
+│       ├── api/                      # Instancja Axios + typowane funkcje API
+│       ├── components/               # DataTable, MapView, StatusBadge, Layout
+│       ├── contexts/                 # AuthContext
+│       ├── pages/                    # Strony (lista + formularz na encje)
+│       ├── types/                    # Interfejsy TypeScript (lustro DTO)
+│       └── App.tsx                   # Router + sidebar + chronione trasy
+├── e2e/                              # Testy E2E (Playwright)
+│   ├── playwright.config.ts
+│   ├── helpers/                      # Helpery (auth, API, stale)
+│   └── tests/                        # Pliki testowe (*.spec.ts)
+├── sc-docs/                          # Architektura, PRD, plan, zadania
+├── build.gradle.kts                  # Glowny Gradle (allprojects)
+├── settings.gradle.kts
+├── CLAUDE.md                         # Kontekst dla agentow AI
+└── README.md                         # <-- jestes tutaj
+```
+
+> **Decyzja projektowa**: Frontend **nie jest** zarzadzany przez Gradle. Działa niezaleznie przez `npm run dev` z proxy Vite: `/api/**` → `http://localhost:8080`. Upraszcza to pipeline budowania.
+
+---
+
+## 7. Funkcje obowiazkowe
+
+### 7.1. Helikopter
+
+#### a) Wprowadzanie i edycja danych helikopterow
+
+| Pole | Typ | Wymagalnosc | Ograniczenia |
 |------|-----|-------------|--------------|
-| Numer rejestracyjny | tekst | obowiązkowe | do 30 znaków |
-| Typ helikoptera | tekst | obowiązkowe | do 100 znaków |
-| Opis | tekst | opcjonalne | do 100 znaków |
-| Maks. liczba członków załogi | liczba całkowita | obowiązkowe | 1–10 |
-| Maks. udźwig członków załogi | liczba całkowita | obowiązkowe | 1–1000 kg |
-| Status | wybór | obowiązkowe | aktywny / nieaktywny |
-| Data ważności przeglądu | data | obowiązkowe dla statusu *aktywny* | — |
-| Zasięg bez lądowania | liczba całkowita | obowiązkowe | 1–1000 km |
+| Numer rejestracyjny | tekst | obowiazkowe | do 30 znakow |
+| Typ helikoptera | tekst | obowiazkowe | do 100 znakow |
+| Opis | tekst | opcjonalne | do 100 znakow |
+| Maks. liczba czlonkow załogi | liczba calkowita | obowiazkowe | 1–10 |
+| Maks. udzwig czlonkow załogi | liczba calkowita | obowiazkowe | 1–1000 kg |
+| Status | wybor | obowiazkowe | aktywny / nieaktywny |
+| Data waznosci przegladu | data | obowiazkowe dla statusu *aktywny* | — |
+| Zasieg bez ladowania | liczba calkowita | obowiazkowe | 1–1000 km |
 
 #### b) Widok listy
 
-> 📌 **Menu → Helikoptery**
-> W menu helikoptery dostępna lista rekordów z numerem rejestracyjnym, typem helikoptera i statusem, sortowanie domyślne po statusie i nr rejestracyjnym
+> **Menu → Helikoptery**
+> Lista rekordow z numerem rejestracyjnym, typem helikoptera i statusem, sortowanie domyslne po statusie i nr rejestracyjnym.
 
 ---
 
-### 6.2. 👤 Członkowie załogi
+### 7.2. Czlonkowie załogi
 
-#### a) Wprowadzanie i edycja danych członków załogi
+#### a) Wprowadzanie i edycja danych czlonkow załogi
 
-| Pole                    | Typ               | Wymagalność                  | Ograniczenia                            |
-| ----------------------- | ----------------- | ---------------------------- | --------------------------------------- |
-| Imię                    | tekst             | obowiązkowe                  | do 100 znaków                           |
-| Nazwisko                | tekst             | obowiązkowe                  | do 100 znaków                           |
-| Email / login           | tekst             | obowiązkowe                  | do 100 znaków, walidacja email ¹        |
-| Waga                    | liczba całkowita  | obowiązkowe                  | 30–200 kg                               |
-| Rola                    | wybór jednokrotny | obowiązkowe                  | ze słownika (np. *Pilot*, *Obserwator*) |
-| Nr licencji pilota      | tekst             | obowiązkowe dla roli *Pilot* | do 30 znaków                            |
-| Data ważności licencji  | data              | obowiązkowe dla roli *Pilot* | —                                       |
-| Data ważności szkolenia | data              | obowiązkowe                  | —                                       |
-
-> ¹ **Walidacja email** — litery, znaki `.-@`, dokładnie jeden `@`, po nim co najmniej dwa ciągi liter przedzielone kropką.
+| Pole | Typ | Wymagalnosc | Ograniczenia |
+|------|-----|-------------|--------------|
+| Imie | tekst | obowiazkowe | do 100 znakow |
+| Nazwisko | tekst | obowiazkowe | do 100 znakow |
+| Email / login | tekst | obowiazkowe | do 100 znakow, walidacja email |
+| Waga | liczba calkowita | obowiazkowe | 30–200 kg |
+| Rola | wybor jednokrotny | obowiazkowe | ze słownika (*Pilot*, *Obserwator*) |
+| Nr licencji pilota | tekst | obowiazkowe dla roli *Pilot* | do 30 znakow |
+| Data waznosci licencji | data | obowiazkowe dla roli *Pilot* | — |
+| Data waznosci szkolenia | data | obowiazkowe | — |
 
 #### b) Widok listy
 
-> 📌 **Menu → Członkowie załogi**
-> W menu członkowie załogi dostępna lista rekordów z Email, rola, data ważności licencji i data ważności szkolenia, sortowanie domyślne po email 
+> **Menu → Czlonkowie załogi**
+> Lista rekordow z Email, rola, data waznosci licencji i data waznosci szkolenia, sortowanie domyslne po email.
 
 ---
 
-### 6.3. 🛬 Lądowiska planowe
+### 7.3. Ladowiska planowe
 
-#### a) Wprowadzanie i edycja danych lądowiska
+#### a) Wprowadzanie i edycja danych ladowiska
 
-| Pole | Typ | Wymagalność |
+| Pole | Typ | Wymagalnosc |
 |------|-----|-------------|
-| Nazwa | tekst | obowiązkowe |
-| Współrzędne | współrzędne | obowiązkowe |
+| Nazwa | tekst | obowiazkowe |
+| Wspolrzedne | wspolrzedne | obowiazkowe |
 
 #### b) Widok listy
 
-> 📌 **Menu → Lądowiska planowe**
-> W menu lądowiska planowe dostępna lista rekordów z Nazwa, domyślne sortowanie po Nazwa
+> **Menu → Ladowiska planowe**
+> Lista rekordow z Nazwa, domyslne sortowanie po Nazwa.
 
 ---
 
-### 6.4. 🔐 Użytkownicy
+### 7.4. Uzytkownicy
 
-#### a) Wprowadzanie i edycja danych użytkowników
+#### a) Wprowadzanie i edycja danych uzytkownikow
 
-| Pole | Typ | Wymagalność | Ograniczenia |
+| Pole | Typ | Wymagalnosc | Ograniczenia |
 |------|-----|-------------|--------------|
-| Imię | tekst | obowiązkowe | do 100 znaków |
-| Nazwisko | tekst | obowiązkowe | do 100 znaków |
-| Email / login | tekst | obowiązkowe | do 100 znaków, walidacja email |
-| Rola | wybór jednokrotny | obowiązkowe | ze słownika (np. *Administrator*, *Osoba planująca*, *Osoba nadzorująca*, *Pilot*) |
+| Imie | tekst | obowiazkowe | do 100 znakow |
+| Nazwisko | tekst | obowiazkowe | do 100 znakow |
+| Email / login | tekst | obowiazkowe | do 100 znakow, walidacja email |
+| Rola | wybor jednokrotny | obowiazkowe | ze słownika (*Administrator*, *Osoba planujaca*, *Osoba nadzorujaca*, *Pilot*) |
 
 #### b) Widok listy
 
-> 📌 **Menu → Użytkownicy**
-> W menu użytkownicy dostępna lista rekordów z Email, rola, sortowanie domyślne po email
+> **Menu → Uzytkownicy**
+> Lista rekordow z Email, rola, sortowanie domyslne po email.
 
 ---
 
-### 6.5. 📋 Planowana operacja lotnicza
+### 7.5. Planowana operacja lotnicza
 
 #### a) Wprowadzanie i edycja danych operacji lotniczej
 
-| Pole | Typ | Wymagalność | Ograniczenia / Uwagi |
+| Pole | Typ | Wymagalnosc | Ograniczenia / Uwagi |
 |------|-----|-------------|----------------------|
 | Nr planowanej operacji | autonumer | automatyczne | kolejny numer |
-| Nr zlecenia / projektu | tekst | obowiązkowe | do 30 znaków, np. `DE-25-12020`, `CJI-3203` |
-| Opis skrócony | tekst | obowiązkowe | do 100 znaków |
-| Zbiór punktów / ślad trasy | plik KML | obowiązkowe | 1 plik, do 5000 punktów, teren Polski |
-| Proponowane daty — najwcześniej | data | opcjonalne | np. `01-05-2026` |
-| Proponowane daty — najpóźniej | data | opcjonalne | np. `30-09-2026` |
-| Rodzaj czynności | wielokrotny wybór | obowiązkowe | min. 1 wartość ze słownika (np. *oględziny wizualne*, *skan 3D*, *lokalizacja awarii*, *zdjęcia*, *patrolowanie*) |
-| Dodatkowe informacje (termin/priorytet) | tekst | opcjonalne | do 500 znaków |
-| Liczba km trasy | liczba całkowita | obowiązkowe | obliczana — patrz 6.5.b |
-| Planowane daty — najwcześniej | data | opcjonalne | — |
-| Planowane daty — najpóźniej | data | opcjonalne | — |
-| Komentarz | tekst | opcjonalne | do 500 znaków, lista kolejnych wpisów |
-| Historia zmian | automatyczne | — | stara/nowa wartość, data zmiany, osoba |
-| Status | wybór jednokrotny | obowiązkowe | patrz tabela statusów poniżej |
-| Osoba wprowadzająca | email | automatyczne | bieżący użytkownik |
-| Osoby kontaktowe | zbiór email | opcjonalne | — |
-| Uwagi po realizacji | tekst | opcjonalne | do 500 znaków |
-| Lista powiązanych zleceń | automatyczne | — | przez powiązanie w zleceniu |
+| Nr zlecenia / projektu | tekst | obowiazkowe | do 30 znakow, np. `DE-25-12020`, `CJI-3203` |
+| Opis skrocony | tekst | obowiazkowe | do 100 znakow |
+| Zbior punktow / slad trasy | plik KML | obowiazkowe | 1 plik, do 5000 punktow, teren Polski |
+| Proponowane daty — najwczesniej | data | opcjonalne | np. `01-05-2026` |
+| Proponowane daty — najpozniej | data | opcjonalne | np. `30-09-2026` |
+| Rodzaj czynnosci | wielokrotny wybor | obowiazkowe | min. 1 wartosc ze słownika (*ogledziny wizualne*, *skan 3D*, *lokalizacja awarii*, *zdjecia*, *patrolowanie*) |
+| Dodatkowe informacje (termin/priorytet) | tekst | opcjonalne | do 500 znakow |
+| Liczba km trasy | liczba calkowita | obowiazkowe | obliczana — patrz 7.5.b |
+| Planowane daty — najwczesniej | data | opcjonalne | — |
+| Planowane daty — najpozniej | data | opcjonalne | — |
+| Komentarz | tekst | opcjonalne | do 500 znakow, lista kolejnych wpisow |
+| Historia zmian | automatyczne | — | stara/nowa wartosc, data zmiany, osoba |
+| Status | wybor jednokrotny | obowiazkowe | patrz tabela statusow ponizej |
+| Osoba wprowadzajaca | email | automatyczne | biezacy uzytkownik |
+| Osoby kontaktowe | zbior email | opcjonalne | — |
+| Uwagi po realizacji | tekst | opcjonalne | do 500 znakow |
+| Lista powiazanych zlecen | automatyczne | — | przez powiazanie w zleceniu |
 
-**Tabela statusów operacji:**
+**Tabela statusow operacji:**
 
 | Kod | Status |
 |-----|--------|
-| 1 | 🆕 Wprowadzone |
-| 2 | ❌ Odrzucone |
-| 3 | ✅ Potwierdzone do planu |
-| 4 | 📅 Zaplanowane do zlecenia |
-| 5 | 🔄 Częściowo zrealizowane |
-| 6 | ✔️ Zrealizowane |
-| 7 | 🚫 Rezygnacja |
+| 1 | Wprowadzone |
+| 2 | Odrzucone |
+| 3 | Potwierdzone do planu |
+| 4 | Zaplanowane do zlecenia |
+| 5 | Czesciowo zrealizowane |
+| 6 | Zrealizowane |
+| 7 | Rezygnacja |
 
 #### b) Obliczanie km trasy
 
-Liczba km jest obliczana w przybliżony sposób na podstawie sumy odcinków między kolejnymi punktami ze zbioru punktów.
+Liczba km jest obliczana w przyblizony sposob na podstawie sumy odcinkow miedzy kolejnymi punktami ze zbioru punktow (wzor Haversine).
 
 #### c) Uprawnienia do edycji
 
-Wprowadzanie i edycja możliwe przez **osobę planującą** i **osobę nadzorującą**.
+Wprowadzanie i edycja mozliwe przez **osobe planujaca** i **osobe nadzorujaca**.
 
 #### d) Zakresy edycji wg roli
 
-- **Osoba planująca** — edycja w statusach: `1`, `2`, `3`, `4`, `5`
-- **Osoba nadzorująca** — edycja we wszystkich statusach
+- **Osoba planujaca** — edycja w statusach: `1`, `2`, `3`, `4`, `5`
+- **Osoba nadzorujaca** — edycja we wszystkich statusach
 
-#### e) Pola zablokowane dla osoby planującej
+#### e) Pola zablokowane dla osoby planujacej
 
-> ⚠️ Osoba planująca **nie może edytować:**
-> - pól wyliczanych automatycznie
-> - planowanych dat (najwcześniej / najpóźniej)
-> - statusu (domyślnie `1 — Wprowadzone`)
+> Osoba planujaca **nie moze edytowac:**
+> - pol wyliczanych automatycznie
+> - planowanych dat (najwczesniej / najpozniej)
+> - statusu (domyslnie `1 — Wprowadzone`)
 > - uwag po realizacji
 
-#### f) Przyciski dla osoby nadzorującej (status = 1)
+#### f) Przyciski dla osoby nadzorujcej (status = 1)
 
 | Przycisk | Zmiana statusu | Warunek |
 |----------|---------------|---------|
-| 🟥 **Odrzuć** | 1 → 2 | — |
-| 🟩 **Potwierdź do planu** | 1 → 3 | wymagane wypełnienie planowanych dat |
+| **Odrzuc** | 1 → 2 | — |
+| **Potwierdz do planu** | 1 → 3 | wymagane wypelnienie planowanych dat |
 
-#### g) Przyciski dla osoby planującej (statusy 1, 3, 4)
+#### g) Przyciski dla osoby planujacej (statusy 1, 3, 4)
 
 | Przycisk | Zmiana statusu |
 |----------|---------------|
-| 🚫 **Rezygnuj** | 1, 3, 4 → 7 |
+| **Rezygnuj** | 1, 3, 4 → 7 |
 
-#### h) Automatyczne zmiany statusów
+#### h) Automatyczne zmiany statusow
 
 | Zmiana | Kiedy? |
 |--------|--------|
 | 3 → 4 | Po wybraniu rekordu przez pilota do otwartego zlecenia na lot |
-| 4 → 5 | Po wybraniu przez pilota *„Zrealizowane w części"* |
-| 4 → 6 | Po wybraniu przez pilota *„Zrealizowane w całości"* |
+| 4 → 5 | Po wybraniu przez pilota *„Zrealizowane w czesci"* |
+| 4 → 6 | Po wybraniu przez pilota *„Zrealizowane w calosci"* |
 | 4 → 3 | Po wybraniu przez pilota *„Nie zrealizowane"* |
 
 #### i) Mapa
 
-> 🗺️ Wyświetlanie na mapie załączonego zbioru punktów.
+> Wyswietlanie na mapie zalaaczonego zbioru punktow.
 
 #### j) Widok listy
 
-> 📌 **Menu → Lista operacji**
-> W menu lista operacji dostępna lista rekordów z Nr planowanej operacji, Nr zlecenia, rodzaj czynności, proponowane daty - najwcześniej i najpóźniej, planowane daty - najwcześniej i najpóźniej, status. 
-> Z możliwością własnego filtrowania, domyślne filtrowanie - status 3.
-> Sortowanie domyślne po planowane daty - najwcześniej rosnąco.
+> **Menu → Lista operacji**
+> Lista rekordow z Nr planowanej operacji, Nr zlecenia, rodzaj czynnosci, proponowane daty - najwczesniej i najpozniej, planowane daty - najwczesniej i najpozniej, status.
+> Mozliwosc własnego filtrowania, domyslne filtrowanie — status 3.
+> Sortowanie domyslne po planowane daty - najwczesniej rosnaco.
 
 ---
 
-### 6.6. 📝 Zlecenia na lot
+### 7.6. Zlecenia na lot
 
-#### a) Wprowadzanie i edycja danych zleceń na lot
+#### a) Wprowadzanie i edycja danych zlecen na lot
 
-| Pole | Typ | Wymagalność | Ograniczenia / Uwagi |
+| Pole | Typ | Wymagalnosc | Ograniczenia / Uwagi |
 |------|-----|-------------|----------------------|
 | Nr zlecenia na lot | autonumer | automatyczne | kolejny numer |
-| Data i godzina planowanego startu | data + czas | obowiązkowe | — |
-| Data i godzina planowanego lądowania | data + czas | obowiązkowe | — |
-| Pilot | wybór jednokrotny | obowiązkowe | ze słownika członków załogi z rolą *Pilot*, wyświetlane: *Imię Nazwisko*, sort. alfabet. |
-| Status | wybór jednokrotny | obowiązkowe | patrz tabela statusów poniżej |
-| Helikopter | wybór jednokrotny | obowiązkowe | tylko helikoptery ze statusem *aktywny* |
-| Członkowie załogi | wielokrotny wybór | opcjonalne | ze słownika członków załogi (dowolna rola), wyświetlane: *Imię Nazwisko*, sort. alfabet. |
-| Waga załogi | liczba całkowita (kg) | automatyczne | suma: pilot + wszyscy wybrani członkowie |
-| Lądowisko startowe | wybór jednokrotny | obowiązkowe | ze słownika lądowisk |
-| Lądowisko końcowe | wybór jednokrotny | obowiązkowe | ze słownika lądowisk |
-| Wybrane planowane operacje | wielokrotny wybór | obowiązkowe | operacje ze statusem `3`, sort. po najwcześniejszej planowanej dacie |
-| Szacowana długość trasy | liczba całkowita | obowiązkowe | — |
-| Data i godzina rzeczywistego startu | data + czas | obowiązkowe przed statusem 5 / 6 | — |
-| Data i godzina rzeczywistego lądowania | data + czas | obowiązkowe przed statusem 5 / 6 | — |
+| Data i godzina planowanego startu | data + czas | obowiazkowe | — |
+| Data i godzina planowanego ladowania | data + czas | obowiazkowe | — |
+| Pilot | wybor jednokrotny | obowiazkowe | ze słownika czlonkow załogi z rola *Pilot* |
+| Status | wybor jednokrotny | obowiazkowe | patrz tabela statusow ponizej |
+| Helikopter | wybor jednokrotny | obowiazkowe | tylko helikoptery ze statusem *aktywny* |
+| Czlonkowie załogi | wielokrotny wybor | opcjonalne | ze słownika czlonkow załogi (dowolna rola) |
+| Waga załogi | liczba calkowita (kg) | automatyczne | suma: pilot + wszyscy wybrani czlonkowie |
+| Ladowisko startowe | wybor jednokrotny | obowiazkowe | ze słownika ladowisk |
+| Ladowisko koncowe | wybor jednokrotny | obowiazkowe | ze słownika ladowisk |
+| Wybrane planowane operacje | wielokrotny wybor | obowiazkowe | operacje ze statusem `3`, sort. po najwczesniejszej planowanej dacie |
+| Szacowana dlugosc trasy | liczba calkowita | obowiazkowe | — |
+| Data i godzina rzeczywistego startu | data + czas | obowiazkowe przed statusem 5 / 6 | — |
+| Data i godzina rzeczywistego ladowania | data + czas | obowiazkowe przed statusem 5 / 6 | — |
 
-**Tabela statusów zlecenia:**
+**Tabela statusow zlecenia:**
 
 | Kod | Status |
 |-----|--------|
-| 1 | 🆕 Wprowadzone |
-| 2 | 📤 Przekazane do akceptacji |
-| 3 | ❌ Odrzucone |
-| 4 | ✅ Zaakceptowane |
-| 5 | 🔄 Zrealizowane w części |
-| 6 | ✔️ Zrealizowane w całości |
-| 7 | 🚫 Nie zrealizowane |
+| 1 | Wprowadzone |
+| 2 | Przekazane do akceptacji |
+| 3 | Odrzucone |
+| 4 | Zaakceptowane |
+| 5 | Zrealizowane w czesci |
+| 6 | Zrealizowane w calosci |
+| 7 | Nie zrealizowane |
 
-#### b) Autouzupełnianie pilota
+#### b) Autouzupelnianie pilota
 
-> ℹ️ Pole **pilot** jest wypełniane automatycznie danymi aktualnie zalogowanej osoby.
+> Pole **pilot** jest wypelniane automatycznie danymi aktualnie zalogowanej osoby.
 
 #### c) Walidacje przy zapisie
 
-> ⛔ **Blokada zapisu** następuje w przypadku:
+> **Blokada zapisu** nastepuje w przypadku:
 >
-> - Helikopter bez ważnego przeglądu na dzień lotu
-> - Pilot bez ważnej licencji na dzień lotu
-> - Członek załogi bez ważnego szkolenia na dzień lotu
-> - Waga załogi przekraczająca maksymalny udźwig helikoptera
-> - Szacowana długość trasy większa niż zasięg helikoptera
+> - Helikopter bez waznego przegladu na dzien lotu
+> - Pilot bez waznej licencji na dzien lotu
+> - Czlonek załogi bez waznego szkolenia na dzien lotu
+> - Waga załogi przekraczajaca maksymalny udzwig helikoptera
+> - Szacowana dlugosc trasy wieksza niz zasieg helikoptera
 >
-> W każdym przypadku wyświetlane jest stosowne **ostrzeżenie**.
+> W kazdym przypadku wyswietlane jest stosowne **ostrzezenie**.
 
 #### d) Mapa
 
-> 🗺️ Wyświetlane na mapie:
-> - Lądowisko startowe
-> - Zbiór punktów ze wszystkich wybranych operacji
-> - Lądowisko końcowe
+> Wyswietlane na mapie:
+> - Ladowisko startowe
+> - Zbior punktow ze wszystkich wybranych operacji
+> - Ladowisko koncowe
 
-#### e) Przyciski dla osoby nadzorującej (status = 2)
-Dla osoby nadzorującej pojawiają się dodatkowe przyciski dla statusu 2:
+#### e) Przyciski dla osoby nadzorujacej (status = 2)
 
 | Przycisk | Zmiana statusu | Warunek |
 |----------|---------------|---------|
-| 🟥 **Odrzuć** | 2 → 3 | — |
-| 🟩 **Zaakceptuj** | 2 → 4 | wymagane wypełnienie planowanych dat |
+| **Odrzuc** | 2 → 3 | — |
+| **Zaakceptuj** | 2 → 4 | wymagane wypelnienie planowanych dat |
 
 #### f) Przyciski dla pilota — rozliczanie (status = 4)
-Dla pilota podczas rozliczania pojawią się dodatkowe przyciski dla statusu 4
 
-| Przycisk | Zmiana statusu zlecenia | Zmiana statusu powiązanych operacji |
+| Przycisk | Zmiana statusu zlecenia | Zmiana statusu powiazanych operacji |
 |----------|------------------------|-------------------------------------|
-| 🔄 **Zrealizowane w części** | 4 → 5 | wszystkie → 5 |
-| ✔️ **Zrealizowane w całości** | 4 → 6 | wszystkie → 6 |
-| 🚫 **Nie zrealizowane** | 4 → 7 | wszystkie → 3 |
+| **Zrealizowane w czesci** | 4 → 5 | wszystkie → 5 |
+| **Zrealizowane w calosci** | 4 → 6 | wszystkie → 6 |
+| **Nie zrealizowane** | 4 → 7 | wszystkie → 3 |
 
 #### g) Widok listy
 
-> 📌 **Menu → Lista zleceń**
-> W menu lista zleceń dostępna lista rekordów z Nr zlecenia na lot, Data i godzina planowanego startu, helikopter, pilot, status. 
-> Z możliwością własnego filtrowania, domyślne filtrowanie - status 2.
-> Sortowanie domyślne po dacie i godzinie - rosnąco.
+> **Menu → Lista zlecen**
+> Lista rekordow z Nr zlecenia na lot, data i godzina planowanego startu, helikopter, pilot, status.
+> Mozliwosc własnego filtrowania, domyslne filtrowanie — status 2.
+> Sortowanie domyslne po dacie i godzinie — rosnaco.
 
 ---
 
-## 7. ⚙️ Wymagania niefunkcjonalne
+## 8. Wymagania niefunkcjonalne
 
-### 7.1. 🧭 Menu aplikacji
+### 8.1. Menu aplikacji
 
 ```
-📂 Administracja
-├── 🚁 Helikoptery
-├── 👤 Członkowie załogi
-├── 🛬 Lądowiska planowe
-└── 🔐 Użytkownicy
+Administracja
+├── Helikoptery
+├── Czlonkowie załogi
+├── Ladowiska planowe
+└── Uzytkownicy
 
-📂 Planowanie operacji
-└── 📋 Lista operacji
+Planowanie operacji
+└── Lista operacji
 
-📂 Zlecenia na lot
-└── 📝 Lista zleceń
+Zlecenia na lot
+└── Lista zlecen
 ```
 
-### 7.2. 🔑 Uprawnienia do menu
+### 8.2. Uprawnienia do menu
 
 | Rola | Administracja | Planowanie operacji | Zlecenia na lot |
 |------|:-------------:|:-------------------:|:---------------:|
-| Administrator systemu | ✏️ tworzenie / edycja / podgląd | 👁️ podgląd | 👁️ podgląd |
-| Osoba planująca | 🚫 brak | ✏️ tworzenie / edycja / podgląd | 🚫 brak |
-| Osoba nadzorująca | 👁️ podgląd | ✏️ tworzenie / edycja / podgląd | ✏️ edycja / podgląd |
-| Pilot | 👁️ podgląd | 👁️ podgląd | ✏️ tworzenie / edycja / podgląd |
+| Administrator systemu | tworzenie / edycja / podglad | podglad | podglad |
+| Osoba planujaca | brak | tworzenie / edycja / podglad | brak |
+| Osoba nadzorujaca | podglad | tworzenie / edycja / podglad | edycja / podglad |
+| Pilot | podglad | podglad | tworzenie / edycja / podglad |
 
-### 7.3. 🔒 Uprawnienia do danych
+### 8.3. Uprawnienia do danych
 
-Jak w uprawnieniach do menu (pkt 7.2).
+Jak w uprawnieniach do menu (pkt 8.2).
 
-### 7.4. 🛡️ Bezpieczeństwo
+### 8.4. Bezpieczenstwo
 
-- **Uwierzytelnianie** — login + hasło
-- **Kontrola dostępu** — zgodnie z uprawnieniami do menu (pkt 7.2)
+- **Uwierzytelnianie** — login + hasło (sesja JSESSIONID)
+- **Kontrola dostepu** — zgodnie z uprawnieniami do menu (pkt 8.2)
 
-### 7.5. 🚀 Wydajność
+### 8.5. Wydajnosc
 
-> ℹ️ Brak wymagań.
-
----
-
-## 8. 🔗 Ograniczenia / Zależności
-
-> ℹ️ Brak wymagań dotyczących czasu, narzędzi, systemów, API ani dostępności danych.
+> Brak formalnych wymagan. Testy wydajnosciowe E2E monitoruja czasy odpowiedzi API i ładowania stron.
 
 ---
 
-## 9. 🚧 Poza zakresem
+## 9. Ograniczenia / Zaleznosci
 
-- Automatyczne wyliczanie szacowanej długości przelotu
+> Brak wymagan dotyczacych czasu, narzedzi, systemow, API ani dostepnosci danych.
+
+---
+
+## 10. Poza zakresem
+
+- Automatyczne wyliczanie szacowanej dlugosci przelotu
 - Automatyczne pokazywanie optymalnej trasy
 - Inne walidacje
 
 ---
 
-## 10. 🏆 Demo i kryteria sukcesu
+## 11. Demo i kryteria sukcesu
 
 ### Poziom I — Minimum Viable Demo
 
-Pokazanie działającej aplikacji www z:
+Pokazanie działajacej aplikacji www z:
 
-- ✅ co najmniej **2 rodzajami użytkowników** — osobą planującą i nadzorującą
-- ✅ co najmniej **lista zleceń** z możliwością edycji przez osobę planującą i zmiany statusu przez osobę nadzorującą
+- Co najmniej **2 rodzajami uzytkownikow** — osoba planujaca i nadzorujaca
+- Co najmniej **lista zlecen** z mozliwoscia edycji przez osobe planujaca i zmiany statusu przez osobe nadzorujaca
 
 ---
 
-## 11. Development Setup (Windows / macOS)
+## 12. Uruchamianie lokalne (Windows / macOS)
 
-### Prerequisites
+### Wymagania wstepne
 
 - **Java 21** (JDK)
-- **Docker Desktop** (running)
-- **Node.js 18+** (for frontend)
+- **Docker Desktop** (uruchomiony)
+- **Node.js 18+** (dla frontendu)
 
-### 1. Start Couchbase (one-time setup)
+### 12.1. Uruchomienie Couchbase (jednorazowo)
 
-Run the setup script to create a pre-configured Couchbase container:
+Skrypt tworzy skonfigurowany kontener Couchbase:
 
 ```bash
 bash backend/setup-couchbase.sh
 ```
 
-This creates a Docker container `aero-couchbase` with:
-- **Couchbase Server 7.6.1** on `localhost:8091`
-- Cluster admin: `admin` / `admin1`
-- Application user: `aero` / `aeropass`
+Tworzy kontener `aero-couchbase` z:
+- **Couchbase Server 7.6.1** na `localhost:8091`
+- Administrator klastra: `admin` / `admin1`
+- Uzytkownik aplikacji: `aero` / `aeropass`
 - Bucket: `aero`
 
-After the initial setup, manage the container with:
+Zarzadzanie kontenerem:
 
 ```bash
-docker start aero-couchbase   # start
-docker stop aero-couchbase    # stop
-docker rm aero-couchbase      # remove (re-run setup script to recreate)
+docker start aero-couchbase   # uruchomienie
+docker stop aero-couchbase    # zatrzymanie
+docker rm aero-couchbase      # usuniecie (uruchom skrypt ponownie)
 ```
 
-Couchbase Web Console: http://localhost:8091
+Konsola webowa Couchbase: http://localhost:8091
 
-### 2. Start the backend
+### 12.2. Uruchomienie backendu
 
 ```bash
 ./gradlew :backend:bootRun
 ```
 
-Backend runs at http://localhost:8080. On first start it seeds 4 default users,
-3 helicopters and 4 crew members.
+Backend działa na http://localhost:8080. Przy pierwszym uruchomieniu tworzy 4 domyslnych uzytkownikow, 3 helikoptery i 4 czlonkow załogi.
 
-### 3. Start the frontend
+### 12.3. Uruchomienie frontendu
 
 ```bash
 cd frontend && npm install && npm run dev
 ```
 
-Frontend runs at http://localhost:5173 and proxies `/api/**` to the backend.
+Frontend działa na http://localhost:5173 i przekierowuje `/api/**` do backendu.
 
-### Default login accounts
+### 12.4. Domyslne konta logowania
 
-| Email | Password | Role |
-|-------|----------|------|
+| Email | Haslo | Rola |
+|-------|-------|------|
 | `admin@aero.pl` | `admin` | Administrator |
-| `planista@aero.pl` | `planista` | Planner |
-| `nadzor@aero.pl` | `nadzor` | Supervisor |
+| `planista@aero.pl` | `planista` | Osoba planujaca |
+| `nadzor@aero.pl` | `nadzor` | Osoba nadzorujaca |
 | `pilot@aero.pl` | `pilot` | Pilot |
 
-### Running tests
+### 12.5. Testy backendowe
 
-Integration tests use **Testcontainers** (start a temporary Couchbase container automatically):
+Testy integracyjne uzywaja **Testcontainers** (automatycznie uruchamiaja tymczasowy kontener Couchbase):
 
 ```bash
 ./gradlew :backend:test
 ```
 
-> **Note for Windows users**: If Testcontainers fails with "Could not find a valid
-> Docker environment", this is a known incompatibility between `docker-java` and
-> Docker Desktop 4.67+. Unit tests (Spock specs with mocks) will still pass.
-> For full integration testing, use `bootRun` against the manual Couchbase container
-> set up above.
+> **Uwaga dla uzytkownikow Windows**: Jesli Testcontainers zgłasza "Could not find a valid Docker environment", jest to znana niekompatybilnosc miedzy `docker-java` a Docker Desktop 4.67+. Testy jednostkowe (Spock z mockami) nadal beda działac.
+
+---
+
+## 13. Testy E2E (Playwright)
+
+Testy end-to-end znajduja sie w katalogu `e2e/` i wykorzystuja [Playwright](https://playwright.dev/).
+
+### 13.1. Wymagania wstepne
+
+1. **Backend uruchomiony** na `http://localhost:8080` (z Couchbase)
+2. **Frontend uruchomiony** na `http://localhost:5173`
+
+```bash
+# Terminal 1 — Backend
+./gradlew :backend:bootRun
+
+# Terminal 2 — Frontend
+cd frontend && npm run dev
+```
+
+### 13.2. Instalacja (jednorazowo)
+
+```bash
+cd e2e
+npm install
+npx playwright install chromium
+```
+
+### 13.3. Uruchamianie testow
+
+```bashCan y
+cd e2e
+npm test                     # wszystkie testy
+npm run test:headed          # z widoczna przegladarka
+npm run test:ui              # Playwright UI
+```
+
+### 13.4. Poszczegolne zestawy testow
+
+```bash
+npm run test:auth            # Uwierzytelnianie
+npm run test:nav             # Nawigacja i layout
+npm run test:helicopters     # CRUD helikopterow
+npm run test:operations      # Workflow operacji
+npm run test:crew            # Czlonkowie załogi
+npm run test:landing-sites   # Ladowiska
+npm run test:users           # Zarzadzanie uzytkownikami
+npm run test:dictionaries    # Endpointy słownikowe
+npm run test:performance     # Testy wydajnosciowe
+npm run test:api             # Wszystkie testy API
+```
+
+### 13.5. Raport z testow
+
+```bash
+npm run report
+```
+
+### 13.6. Struktura testow
+
+```
+e2e/
+├── playwright.config.ts      # Konfiguracja Playwright
+├── helpers/
+│   ├── constants.ts          # Uzytkownicy seed, trasy, URL API
+│   ├── auth.ts               # Helpery logowania (UI i API)
+│   └── api.ts                # Klasa ApiHelper, narzedzia tworzenia encji
+├── tests/
+│   ├── auth.spec.ts          # Login/logout, sesja, wszystkie 4 role
+│   ├── navigation.spec.ts    # Nawigacja sidebar, routing stron, layout
+│   ├── helicopters.spec.ts   # CRUD helikopterow (UI + API), wyszukiwanie, modal
+│   ├── operations.spec.ts    # Cykl zycia operacji, przejscia statusow, komentarze
+│   ├── crew-members.spec.ts  # CRUD załogi, walidacja licencji pilota
+│   ├── landing-sites.spec.ts # CRUD ladowisk
+│   ├── users.spec.ts         # Zarzadzanie uzytkownikami, dostep wg rol
+│   ├── dictionaries.spec.ts  # Publiczne endpointy słownikowe
+│   └── performance.spec.ts   # Czasy ładowania stron, odpowiedzi API, wspolbieznosc
+└── package.json
+```
