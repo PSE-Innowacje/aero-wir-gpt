@@ -304,6 +304,11 @@ function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalP
     <Dialog
       open={open}
       onClose={onClose}
+      TransitionProps={{
+        onExited: () => {
+          // iframe gets unmounted automatically when open=false
+        },
+      }}
       maxWidth={false}
       PaperProps={{
         sx: {
@@ -321,6 +326,16 @@ function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalP
         },
       }}
     >
+      {/* ── Background music (hidden YouTube embed) ── */}
+      {open && (
+        <iframe
+          src="https://www.youtube.com/embed/a0DbzUe-r4Q?autoplay=1&loop=1&playlist=a0DbzUe-r4Q&controls=0"
+          allow="autoplay"
+          style={{ position: 'absolute', width: 0, height: 0, border: 'none', opacity: 0 }}
+          title="background-music"
+        />
+      )}
+
       {/* ── Hero image ── */}
       <Box
         sx={{
