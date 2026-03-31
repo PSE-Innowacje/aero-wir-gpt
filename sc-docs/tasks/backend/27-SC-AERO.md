@@ -16,6 +16,6 @@ Implement the user management API layer for admin use. Create request and respon
 - [ ] Validation errors return 400
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/dto/UserRequest.java
-- backend/src/main/java/com/nullterrier/aero/controller/UserController.java
-- backend/src/main/java/com/nullterrier/aero/service/UserService.java
+- backend/src/main/java/pl/pse/aero/dto/UserRequest.java
+- backend/src/main/java/pl/pse/aero/controller/UserController.java
+- backend/src/main/java/pl/pse/aero/service/UserService.java

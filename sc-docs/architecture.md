@@ -33,7 +33,7 @@ There are no external integrations, message queues, or third-party APIs. The sys
 auro/
 ├── backend/                    # Spring Boot (Java 21)
 │   ├── build.gradle.kts        # Spring Boot + Couchbase + Security
-│   └── src/main/java/com/nullterrier/aero/
+│   └── src/main/java/pl/pse/aero/
 │       ├── AeroApplication.java
 │       ├── config/             # Security, Web, CORS, DataInitializer
 │       ├── controller/         # REST controllers (thin — delegate to services)

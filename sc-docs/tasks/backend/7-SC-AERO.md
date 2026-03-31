@@ -18,6 +18,6 @@ Implement the authentication REST endpoints for the SPA. Create request and resp
 - [ ] `GET /api/auth/me` returns 401 when not authenticated
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/dto/LoginRequest.java
-- backend/src/main/java/com/nullterrier/aero/dto/UserResponse.java
-- backend/src/main/java/com/nullterrier/aero/controller/AuthController.java
+- backend/src/main/java/pl/pse/aero/dto/LoginRequest.java
+- backend/src/main/java/pl/pse/aero/dto/UserResponse.java
+- backend/src/main/java/pl/pse/aero/controller/AuthController.java

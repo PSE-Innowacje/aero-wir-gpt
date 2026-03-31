@@ -17,6 +17,6 @@ Create the flight order domain model. Define the `OrderStatus` enum with seven l
 - [ ] All documents and indexes are created on startup
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/domain/OrderStatus.java
-- backend/src/main/java/com/nullterrier/aero/domain/FlightOrder.java
-- backend/src/main/java/com/nullterrier/aero/repository/FlightOrderRepository.java
+- backend/src/main/java/pl/pse/aero/domain/OrderStatus.java
+- backend/src/main/java/pl/pse/aero/domain/FlightOrder.java
+- backend/src/main/java/pl/pse/aero/repository/FlightOrderRepository.java

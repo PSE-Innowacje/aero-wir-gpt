@@ -18,7 +18,7 @@ Implement the full CRUD API layer for crew members. Create request and response 
 - [ ] Invalid email format returns 400
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/dto/CrewMemberRequest.java
-- backend/src/main/java/com/nullterrier/aero/dto/CrewMemberResponse.java
-- backend/src/main/java/com/nullterrier/aero/service/CrewMemberService.java
-- backend/src/main/java/com/nullterrier/aero/controller/CrewMemberController.java
+- backend/src/main/java/pl/pse/aero/dto/CrewMemberRequest.java
+- backend/src/main/java/pl/pse/aero/dto/CrewMemberResponse.java
+- backend/src/main/java/pl/pse/aero/service/CrewMemberService.java
+- backend/src/main/java/pl/pse/aero/controller/CrewMemberController.java

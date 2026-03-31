@@ -16,4 +16,4 @@ Add automatic change history tracking to the `update()` method in OperationServi
 - [ ] Unchanged fields do not generate history entries
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/service/OperationService.java (modify — add change tracking to update method)
+- backend/src/main/java/pl/pse/aero/service/OperationService.java (modify — add change tracking to update method)

@@ -23,4 +23,4 @@ Create synthetic KML test files with realistic Polish geographic data and extend
 - backend/src/main/resources/test-data/route-warsaw-short.kml
 - backend/src/main/resources/test-data/route-south-medium.kml
 - backend/src/main/resources/test-data/route-cross-long.kml
-- backend/src/main/java/com/nullterrier/aero/config/DataInitializer.java (modify — extend with helicopters, crew, sites, operations)
+- backend/src/main/java/pl/pse/aero/config/DataInitializer.java (modify — extend with helicopters, crew, sites, operations)

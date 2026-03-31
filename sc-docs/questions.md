@@ -124,7 +124,7 @@ Is this meant to run:
 
 ## Q10: The `src/` Directory
 
-The project currently has a `src/main/java/com/nullterrier/Main.java` at the root level. The plan moves everything into `backend/`. Should I:
+The project currently has a `src/main/java/pl/pse/Main.java` at the root level. The plan moves everything into `backend/`. Should I:
 - (a) Delete the root `src/` and restructure into `backend/` + `frontend/`
 - (b) Keep root `src/` as the backend (no `backend/` subdirectory)
 

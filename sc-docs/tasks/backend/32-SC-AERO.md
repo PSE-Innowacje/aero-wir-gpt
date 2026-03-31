@@ -17,8 +17,8 @@ Apply role-based access control to the admin CRUD controllers. ADMIN users get f
 - [ ] `POST /api/helicopters` as ADMIN returns 201
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/config/SecurityConfig.java
-- backend/src/main/java/com/nullterrier/aero/controller/HelicopterController.java
-- backend/src/main/java/com/nullterrier/aero/controller/CrewMemberController.java
-- backend/src/main/java/com/nullterrier/aero/controller/LandingSiteController.java
-- backend/src/main/java/com/nullterrier/aero/controller/UserController.java
+- backend/src/main/java/pl/pse/aero/config/SecurityConfig.java
+- backend/src/main/java/pl/pse/aero/controller/HelicopterController.java
+- backend/src/main/java/pl/pse/aero/controller/CrewMemberController.java
+- backend/src/main/java/pl/pse/aero/controller/LandingSiteController.java
+- backend/src/main/java/pl/pse/aero/controller/UserController.java

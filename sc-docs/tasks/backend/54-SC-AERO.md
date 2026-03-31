@@ -18,4 +18,4 @@ Add five blocking validation rules to the create and update methods in OrderServ
 - [ ] Error messages are specific and in Polish
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/service/OrderService.java (modify — add validation rules to create/update)
+- backend/src/main/java/pl/pse/aero/service/OrderService.java (modify — add validation rules to create/update)

@@ -16,5 +16,5 @@ Create a single controller that exposes all enum-based lookup data as REST endpo
 - [ ] Each endpoint returns a JSON array of `{value, label}` objects
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/dto/DictionaryEntry.java
-- backend/src/main/java/com/nullterrier/aero/controller/DictionaryController.java
+- backend/src/main/java/pl/pse/aero/dto/DictionaryEntry.java
+- backend/src/main/java/pl/pse/aero/controller/DictionaryController.java

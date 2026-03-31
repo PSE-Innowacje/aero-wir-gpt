@@ -16,5 +16,5 @@ Configure role-based access control for all operation endpoints. Planners and su
 - [ ] Security configured via SecurityConfig or @PreAuthorize annotations on OperationController
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/config/SecurityConfig.java (modify — add operation endpoint rules)
-- backend/src/main/java/com/nullterrier/aero/controller/OperationController.java (modify — add @PreAuthorize if needed)
+- backend/src/main/java/pl/pse/aero/config/SecurityConfig.java (modify — add operation endpoint rules)
+- backend/src/main/java/pl/pse/aero/controller/OperationController.java (modify — add @PreAuthorize if needed)

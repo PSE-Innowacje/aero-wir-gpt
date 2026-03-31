@@ -24,9 +24,9 @@ Create the REST API layer for flight operations. Define request and response DTO
 - [ ] Detail endpoint includes all nested data (comments, history, activity types, contacts, kml points, linked orders)
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/dto/OperationRequest.java
-- backend/src/main/java/com/nullterrier/aero/dto/OperationResponse.java
-- backend/src/main/java/com/nullterrier/aero/dto/OperationListResponse.java
-- backend/src/main/java/com/nullterrier/aero/dto/StatusChangeRequest.java
-- backend/src/main/java/com/nullterrier/aero/dto/CommentRequest.java
-- backend/src/main/java/com/nullterrier/aero/controller/OperationController.java
+- backend/src/main/java/pl/pse/aero/dto/OperationRequest.java
+- backend/src/main/java/pl/pse/aero/dto/OperationResponse.java
+- backend/src/main/java/pl/pse/aero/dto/OperationListResponse.java
+- backend/src/main/java/pl/pse/aero/dto/StatusChangeRequest.java
+- backend/src/main/java/pl/pse/aero/dto/CommentRequest.java
+- backend/src/main/java/pl/pse/aero/controller/OperationController.java

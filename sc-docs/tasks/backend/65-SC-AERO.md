@@ -20,6 +20,6 @@ Create a centralized exception handler using `@ControllerAdvice` to produce cons
 - [ ] All error responses use consistent JSON structure
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/exception/GlobalExceptionHandler.java
-- backend/src/main/java/com/nullterrier/aero/exception/EntityNotFoundException.java
-- backend/src/main/java/com/nullterrier/aero/dto/ErrorResponse.java
+- backend/src/main/java/pl/pse/aero/exception/GlobalExceptionHandler.java
+- backend/src/main/java/pl/pse/aero/exception/EntityNotFoundException.java
+- backend/src/main/java/pl/pse/aero/dto/ErrorResponse.java

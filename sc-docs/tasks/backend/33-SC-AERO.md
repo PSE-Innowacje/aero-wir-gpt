@@ -18,5 +18,5 @@ Create the KML file processing service. The `saveAndParse(MultipartFile)` method
 - [ ] Malformed XML throws a clear, descriptive error message
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/service/KmlService.java
-- backend/src/main/java/com/nullterrier/aero/dto/KmlProcessingResult.java
+- backend/src/main/java/pl/pse/aero/service/KmlService.java
+- backend/src/main/java/pl/pse/aero/dto/KmlProcessingResult.java

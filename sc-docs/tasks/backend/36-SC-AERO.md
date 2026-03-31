@@ -15,5 +15,5 @@ Create the two supporting entities for flight operation audit and collaboration 
 - [ ] `operation_comments` and `operation_change_history` tables are created on startup
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/domain/OperationComment.java
-- backend/src/main/java/com/nullterrier/aero/domain/OperationChangeHistory.java
+- backend/src/main/java/pl/pse/aero/domain/OperationComment.java
+- backend/src/main/java/pl/pse/aero/domain/OperationChangeHistory.java

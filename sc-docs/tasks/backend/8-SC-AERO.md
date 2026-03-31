@@ -19,4 +19,4 @@ Create a startup data seeder that populates the database with default users for 
 - [ ] All 4 users are present in the database after first startup
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/config/DataInitializer.java
+- backend/src/main/java/pl/pse/aero/config/DataInitializer.java

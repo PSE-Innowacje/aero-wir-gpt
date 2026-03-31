@@ -28,7 +28,7 @@ Based on `docs/description.md` (PRD), `docs/plan.md` (technical plan), and resol
 ### 0.1 Restructure to Monorepo
 - Delete `src/` directory
 - Create `backend/` subdirectory with its own `build.gradle.kts`
-- Move Java source skeleton into `backend/src/main/java/com/nullterrier/aero/`
+- Move Java source skeleton into `backend/src/main/java/pl/pse/aero/`
 - Update root `settings.gradle.kts` to `include("backend")`
 - Root `build.gradle.kts` becomes allprojects config only
 
@@ -420,7 +420,7 @@ Walk through the complete workflow:
 ### backend/
 - `build.gradle.kts` (Spring Boot + deps)
 - `src/main/resources/application.yml`
-- `src/main/java/com/nullterrier/aero/`
+- `src/main/java/pl/pse/aero/`
   - `AeroApplication.java`
   - `config/` — SecurityConfig, WebConfig, DataInitializer
   - `document/` — User, Helicopter, CrewMember, LandingSite, FlightOperation, FlightOrder + embedded types (OperationComment, OperationChangeHistory) + enums

@@ -16,4 +16,4 @@ Add KML file upload and download endpoints. The upload endpoint is called before
 - [ ] Upload endpoint is called independently before the create operation endpoint
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/controller/OperationController.java (modify — add upload and download endpoints)
+- backend/src/main/java/pl/pse/aero/controller/OperationController.java (modify — add upload and download endpoints)

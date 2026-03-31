@@ -17,5 +17,5 @@ Create the backend Gradle build file with Spring Boot 3.4.x plugin, Java 21 tool
 
 ## Files to Create/Modify
 - backend/build.gradle.kts
-- backend/src/main/java/com/nullterrier/aero/AeroApplication.java
+- backend/src/main/java/pl/pse/aero/AeroApplication.java
 - backend/src/main/resources/application.yml

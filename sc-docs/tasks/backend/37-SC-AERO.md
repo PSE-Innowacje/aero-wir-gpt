@@ -17,7 +17,7 @@ Complete the FlightOperation document by adding the two embedded list fields for
 - [ ] Embedded list fields `activityTypes` and `contactEmails` are stored within the FlightOperation document
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/domain/FlightOperation.java (modify — add embedded list fields)
-- backend/src/main/java/com/nullterrier/aero/repository/FlightOperationRepository.java
-- backend/src/main/java/com/nullterrier/aero/repository/OperationCommentRepository.java
-- backend/src/main/java/com/nullterrier/aero/repository/OperationChangeHistoryRepository.java
+- backend/src/main/java/pl/pse/aero/domain/FlightOperation.java (modify — add embedded list fields)
+- backend/src/main/java/pl/pse/aero/repository/FlightOperationRepository.java
+- backend/src/main/java/pl/pse/aero/repository/OperationCommentRepository.java
+- backend/src/main/java/pl/pse/aero/repository/OperationChangeHistoryRepository.java

@@ -15,5 +15,5 @@ Create the two enums required by the flight operations domain. `OperationStatus`
 - [ ] Both enums compile successfully
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/domain/OperationStatus.java
-- backend/src/main/java/com/nullterrier/aero/domain/ActivityType.java
+- backend/src/main/java/pl/pse/aero/domain/OperationStatus.java
+- backend/src/main/java/pl/pse/aero/domain/ActivityType.java

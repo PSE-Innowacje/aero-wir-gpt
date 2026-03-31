@@ -18,4 +18,4 @@ Create the main service layer for flight orders. Implement list retrieval with s
 - [ ] Selecting a non-CONFIRMED operation is rejected with clear error
 
 ## Files to Create/Modify
-- backend/src/main/java/com/nullterrier/aero/service/OrderService.java
+- backend/src/main/java/pl/pse/aero/service/OrderService.java
