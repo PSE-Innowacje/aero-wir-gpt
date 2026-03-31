@@ -366,6 +366,20 @@ refactor(auth): extract session creation into AuthService
 
 ---
 
+## Task Lifecycle
+
+Tasks live in `sc-docs/tasks/backend/` and `sc-docs/tasks/frontend/`. When a task is
+**fully implemented** (code written, compiles, tests pass), move its `.md` file to the
+`finished/` subfolder (create it if it doesn't exist):
+
+```
+sc-docs/tasks/backend/15-SC-AERO.md  →  sc-docs/tasks/backend/finished/15-SC-AERO.md
+```
+
+**Do not** leave completed task files in the active task directory.
+
+---
+
 ## API Documentation (OpenAPI / Swagger)
 
 Every REST controller endpoint **must** have OpenAPI annotations:
