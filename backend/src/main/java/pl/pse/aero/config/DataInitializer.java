@@ -3,14 +3,20 @@ package pl.pse.aero.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.stereotype.Component;
 import pl.pse.aero.domain.*;
-import pl.pse.aero.repository.CrewMemberRepository;
-import pl.pse.aero.repository.HelicopterRepository;
-import pl.pse.aero.repository.UserRepository;
+import pl.pse.aero.dto.KmlProcessingResult;
+import pl.pse.aero.repository.*;
+import pl.pse.aero.service.KmlService;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -21,15 +27,24 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final HelicopterRepository helicopterRepository;
     private final CrewMemberRepository crewMemberRepository;
+    private final LandingSiteRepository landingSiteRepository;
+    private final FlightOperationRepository flightOperationRepository;
+    private final KmlService kmlService;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(UserRepository userRepository,
                            HelicopterRepository helicopterRepository,
                            CrewMemberRepository crewMemberRepository,
+                           LandingSiteRepository landingSiteRepository,
+                           FlightOperationRepository flightOperationRepository,
+                           KmlService kmlService,
                            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.helicopterRepository = helicopterRepository;
         this.crewMemberRepository = crewMemberRepository;
+        this.landingSiteRepository = landingSiteRepository;
+        this.flightOperationRepository = flightOperationRepository;
+        this.kmlService = kmlService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -37,7 +52,10 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         seedUsers();
         seedHelicopters();
-        seedCrewMembers();
+        List<CrewMember> pilots = seedCrewMembers();
+        seedLandingSites();
+        seedFlightOperations();
+        linkPilotUser(pilots);
     }
 
     private void seedUsers() {
@@ -99,10 +117,10 @@ public class DataInitializer implements CommandLineRunner {
         log.info("Seeded {} helicopters.", helicopters.size());
     }
 
-    private void seedCrewMembers() {
+    private List<CrewMember> seedCrewMembers() {
         if (crewMemberRepository.count() > 0) {
             log.info("Crew members already exist, skipping seed.");
-            return;
+            return crewMemberRepository.findByRole(CrewRole.PILOT);
         }
 
         List<CrewMember> members = List.of(
@@ -144,8 +162,141 @@ public class DataInitializer implements CommandLineRunner {
                         .build()
         );
 
-        crewMemberRepository.saveAll(members);
-        log.info("Seeded {} crew members.", members.size());
+        List<CrewMember> saved = (List<CrewMember>) crewMemberRepository.saveAll(members);
+        log.info("Seeded {} crew members.", saved.size());
+        return saved.stream().filter(m -> m.getRole() == CrewRole.PILOT).toList();
+    }
+
+    private void seedLandingSites() {
+        if (landingSiteRepository.count() > 0) {
+            log.info("Landing sites already exist, skipping seed.");
+            return;
+        }
+
+        List<LandingSite> sites = List.of(
+                LandingSite.builder()
+                        .name("Lotnisko Babice (EPBC)")
+                        .latitude(52.268)
+                        .longitude(20.911)
+                        .build(),
+                LandingSite.builder()
+                        .name("Lotnisko Modlin (EPMO)")
+                        .latitude(52.451)
+                        .longitude(20.651)
+                        .build(),
+                LandingSite.builder()
+                        .name("Lotnisko Radom (EPRA)")
+                        .latitude(51.389)
+                        .longitude(21.213)
+                        .build()
+        );
+
+        landingSiteRepository.saveAll(sites);
+        log.info("Seeded {} landing sites.", sites.size());
+    }
+
+    private void seedFlightOperations() {
+        if (flightOperationRepository.count() > 0) {
+            log.info("Flight operations already exist, skipping seed.");
+            return;
+        }
+
+        List<FlightOperation> operations = new ArrayList<>();
+
+        operations.add(createOperation(
+                "DE-25-12020", "Inspekcja linii 400kV Warszawa-Północ",
+                "test-data/route-warsaw-short.kml",
+                List.of(ActivityType.VISUAL_INSPECTION, ActivityType.PHOTOS),
+                OperationStatus.SUBMITTED,
+                LocalDate.of(2026, 5, 1), LocalDate.of(2026, 9, 30),
+                null, null
+        ));
+
+        operations.add(createOperation(
+                "CJI-3203", "Skan 3D linii 220kV Kraków-Wschód",
+                "test-data/route-south-medium.kml",
+                List.of(ActivityType.SCAN_3D, ActivityType.FAULT_LOCATION),
+                OperationStatus.CONFIRMED,
+                LocalDate.of(2026, 6, 1), LocalDate.of(2026, 8, 31),
+                LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31)
+        ));
+
+        operations.add(createOperation(
+                "DE-25-13001", "Patrolowanie trasy Łódź-Rzeszów",
+                "test-data/route-cross-long.kml",
+                List.of(ActivityType.PATROL),
+                OperationStatus.CONFIRMED,
+                LocalDate.of(2026, 4, 15), LocalDate.of(2026, 10, 15),
+                LocalDate.of(2026, 6, 15), LocalDate.of(2026, 9, 15)
+        ));
+
+        operations.add(FlightOperation.builder()
+                .orderNumber("CJI-3210")
+                .shortDescription("Oględziny linii 110kV — odrzucone")
+                .status(OperationStatus.REJECTED)
+                .activityTypes(List.of(ActivityType.VISUAL_INSPECTION))
+                .contacts(List.of("jan@pse.pl"))
+                .createdByEmail("planista@aero.pl")
+                .proposedDateEarliest(LocalDate.of(2026, 3, 1))
+                .proposedDateLatest(LocalDate.of(2026, 4, 30))
+                .comments(new ArrayList<>())
+                .changeHistory(new ArrayList<>())
+                .build());
+        operations.get(3).prePersist();
+
+        flightOperationRepository.saveAll(operations);
+        log.info("Seeded {} flight operations.", operations.size());
+    }
+
+    private FlightOperation createOperation(String orderNumber, String description,
+                                            String kmlResourcePath, List<ActivityType> activityTypes,
+                                            OperationStatus status,
+                                            LocalDate proposedEarliest, LocalDate proposedLatest,
+                                            LocalDate plannedEarliest, LocalDate plannedLatest) {
+        FlightOperation op = FlightOperation.builder()
+                .orderNumber(orderNumber)
+                .shortDescription(description)
+                .activityTypes(activityTypes)
+                .contacts(List.of("planista@aero.pl"))
+                .status(status)
+                .createdByEmail("planista@aero.pl")
+                .proposedDateEarliest(proposedEarliest)
+                .proposedDateLatest(proposedLatest)
+                .plannedDateEarliest(plannedEarliest)
+                .plannedDateLatest(plannedLatest)
+                .comments(new ArrayList<>())
+                .changeHistory(new ArrayList<>())
+                .build();
+
+        try {
+            ClassPathResource resource = new ClassPathResource(kmlResourcePath);
+            byte[] content = resource.getInputStream().readAllBytes();
+            MultipartFile mockFile = new InMemoryMultipartFile(resource.getFilename(), content);
+            KmlProcessingResult kmlResult = kmlService.saveAndParse(mockFile);
+            op.setKmlFilePath(kmlResult.filePath());
+            op.setKmlPoints(kmlResult.points());
+            op.setRouteLengthKm(kmlResult.routeLengthKm());
+        } catch (IOException e) {
+            log.warn("Could not load KML test data from {}: {}", kmlResourcePath, e.getMessage());
+        }
+
+        op.prePersist();
+        return op;
+    }
+
+    private void linkPilotUser(List<CrewMember> pilots) {
+        if (pilots.isEmpty()) return;
+        userRepository.findByEmail("pilot@aero.pl").ifPresent(user -> {
+            if (user.getCrewMemberId() == null) {
+                CrewMember pilotCrew = pilots.stream()
+                        .filter(p -> "pilot@aero.pl".equals(p.getEmail()))
+                        .findFirst()
+                        .orElse(pilots.get(0));
+                user.setCrewMemberId(pilotCrew.getId());
+                userRepository.save(user);
+                log.info("Linked pilot@aero.pl to crew member: {}", pilotCrew.getId());
+            }
+        });
     }
 
     private User createUser(String firstName, String lastName, String email,
@@ -157,5 +308,18 @@ public class DataInitializer implements CommandLineRunner {
                 .passwordHash(passwordEncoder.encode(rawPassword))
                 .role(role)
                 .build();
+    }
+
+    private record InMemoryMultipartFile(String filename, byte[] content) implements MultipartFile {
+        @Override public String getName() { return "file"; }
+        @Override public String getOriginalFilename() { return filename; }
+        @Override public String getContentType() { return "application/xml"; }
+        @Override public boolean isEmpty() { return content.length == 0; }
+        @Override public long getSize() { return content.length; }
+        @Override public byte[] getBytes() { return content; }
+        @Override public InputStream getInputStream() { return new java.io.ByteArrayInputStream(content); }
+        @Override public void transferTo(File dest) throws IOException {
+            java.nio.file.Files.write(dest.toPath(), content);
+        }
     }
 }
