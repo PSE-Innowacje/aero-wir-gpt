@@ -11,6 +11,16 @@
 			"type": "string"
 		},
 		{
+			"key": "jsessionid",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "testEmail",
+			"value": "",
+			"type": "string"
+		},
+		{
 			"key": "helicopterId",
 			"value": "",
 			"type": "string"
@@ -21,10 +31,579 @@
 			"type": "string"
 		}
 	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Attach JSESSIONID cookie to every request if we have one",
+					"const sid = pm.collectionVariables.get('jsessionid');",
+					"if (sid) {",
+					"    pm.request.headers.upsert({ key: 'Cookie', value: 'JSESSIONID=' + sid });",
+					"}"
+				]
+			}
+		}
+	],
 	"item": [
+		{
+			"name": "Test Flow (run with Collection Runner)",
+			"description": "Sequential test suite — run all requests top-to-bottom via Collection Runner.\nGenerates a unique email per run so it is repeatable without clearing the DB.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// Generate a unique test email once per run",
+							"if (!pm.collectionVariables.get('testEmail')) {",
+							"    const ts = Date.now();",
+							"    pm.collectionVariables.set('testEmail', 'flow-' + ts + '@aero.pl');",
+							"}"
+						]
+					}
+				}
+			],
+			"item": [
+				{
+					"name": "1. Signup test ADMIN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Signup returns 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"var json = pm.response.json();",
+									"pm.test('Response has id and ADMIN role', function () {",
+									"    pm.expect(json.id).to.be.a('string');",
+									"    pm.expect(json.role).to.eql('ADMIN');",
+									"    pm.expect(json.email).to.eql(pm.collectionVariables.get('testEmail'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"Flow\",\n    \"lastName\": \"Admin\",\n    \"email\": \"{{testEmail}}\",\n    \"password\": \"flow1234\",\n    \"role\": \"ADMIN\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/auth/signup", "host": ["{{baseUrl}}"], "path": ["api","auth","signup"] }
+					}
+				},
+				{
+					"name": "2. Signup duplicate email → 400",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Duplicate email returns 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"pm.test('Error message mentions email', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Email');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"Dup\",\n    \"lastName\": \"User\",\n    \"email\": \"{{testEmail}}\",\n    \"password\": \"flow1234\",\n    \"role\": \"PILOT\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/auth/signup", "host": ["{{baseUrl}}"], "path": ["api","auth","signup"] }
+					}
+				},
+				{
+					"name": "3. Login as test ADMIN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Login returns 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Role is ADMIN', function () {",
+									"    pm.expect(pm.response.json().role).to.eql('ADMIN');",
+									"});",
+									"// Save session",
+									"const cookie = pm.response.headers.filter(h => h.key === 'Set-Cookie')",
+									"    .map(h => h.value).find(v => v.startsWith('JSESSIONID='));",
+									"pm.test('Session cookie received', function () {",
+									"    pm.expect(cookie).to.not.be.undefined;",
+									"});",
+									"if (cookie) {",
+									"    pm.collectionVariables.set('jsessionid', cookie.split(';')[0].split('=')[1]);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{testEmail}}\",\n    \"password\": \"flow1234\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+					}
+				},
+				{
+					"name": "4. Get /me → authenticated user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Returns current user email', function () {",
+									"    pm.expect(pm.response.json().email).to.eql(pm.collectionVariables.get('testEmail'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api","auth","me"] }
+					}
+				},
+				{
+					"name": "5. Create helicopter (ADMIN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"var json = pm.response.json();",
+									"pm.test('Helicopter fields match', function () {",
+									"    pm.expect(json.registrationNumber).to.eql('SP-TST');",
+									"    pm.expect(json.status).to.eql('ACTIVE');",
+									"    pm.expect(json.rangeKm).to.eql(500);",
+									"});",
+									"pm.collectionVariables.set('helicopterId', json.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"registrationNumber\": \"SP-TST\",\n    \"type\": \"EC135\",\n    \"description\": \"Test helicopter\",\n    \"maxCrewCount\": 4,\n    \"maxCrewWeightKg\": 400,\n    \"status\": \"ACTIVE\",\n    \"inspectionExpiryDate\": \"2027-12-31\",\n    \"rangeKm\": 500\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/helicopters", "host": ["{{baseUrl}}"], "path": ["api","helicopters"] }
+					}
+				},
+				{
+					"name": "6. Get helicopter by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Returns correct helicopter', function () {",
+									"    pm.expect(pm.response.json().registrationNumber).to.eql('SP-TST');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/helicopters/{{helicopterId}}", "host": ["{{baseUrl}}"], "path": ["api","helicopters","{{helicopterId}}"] }
+					}
+				},
+				{
+					"name": "7. Update helicopter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Description updated', function () {",
+									"    pm.expect(pm.response.json().description).to.eql('Updated by flow');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"registrationNumber\": \"SP-TST\",\n    \"type\": \"EC135\",\n    \"description\": \"Updated by flow\",\n    \"maxCrewCount\": 4,\n    \"maxCrewWeightKg\": 400,\n    \"status\": \"ACTIVE\",\n    \"inspectionExpiryDate\": \"2027-12-31\",\n    \"rangeKm\": 500\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/helicopters/{{helicopterId}}", "host": ["{{baseUrl}}"], "path": ["api","helicopters","{{helicopterId}}"] }
+					}
+				},
+				{
+					"name": "8. List helicopters → includes SP-TST",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Response is non-empty array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.be.an('array').that.is.not.empty;",
+									"});",
+									"pm.test('SP-TST is in the list', function () {",
+									"    var regs = pm.response.json().map(h => h.registrationNumber);",
+									"    pm.expect(regs).to.include('SP-TST');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/helicopters", "host": ["{{baseUrl}}"], "path": ["api","helicopters"] }
+					}
+				},
+				{
+					"name": "9. Create landing site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"var json = pm.response.json();",
+									"pm.test('Landing site fields match', function () {",
+									"    pm.expect(json.name).to.eql('Flow Test Site');",
+									"    pm.expect(json.latitude).to.eql(52.23);",
+									"    pm.expect(json.longitude).to.eql(21.01);",
+									"});",
+									"pm.collectionVariables.set('landingSiteId', json.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Flow Test Site\",\n    \"latitude\": 52.23,\n    \"longitude\": 21.01\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/landing-sites", "host": ["{{baseUrl}}"], "path": ["api","landing-sites"] }
+					}
+				},
+				{
+					"name": "10. Update landing site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Name updated', function () {",
+									"    pm.expect(pm.response.json().name).to.eql('Flow Site Updated');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Flow Site Updated\",\n    \"latitude\": 52.24,\n    \"longitude\": 21.02\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/landing-sites/{{landingSiteId}}", "host": ["{{baseUrl}}"], "path": ["api","landing-sites","{{landingSiteId}}"] }
+					}
+				},
+				{
+					"name": "11. List landing sites → includes updated site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Updated site is in the list', function () {",
+									"    var names = pm.response.json().map(s => s.name);",
+									"    pm.expect(names).to.include('Flow Site Updated');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/landing-sites", "host": ["{{baseUrl}}"], "path": ["api","landing-sites"] }
+					}
+				},
+				{
+					"name": "12. Helicopter validation error → 400",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Validation returns 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"registrationNumber\": \"\",\n    \"type\": \"\",\n    \"maxCrewCount\": 0,\n    \"maxCrewWeightKg\": -1,\n    \"status\": \"ACTIVE\",\n    \"rangeKm\": 0\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/helicopters", "host": ["{{baseUrl}}"], "path": ["api","helicopters"] }
+					}
+				},
+				{
+					"name": "13. Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Logout returns 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.collectionVariables.set('jsessionid', '');"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api","auth","logout"] }
+					}
+				},
+				{
+					"name": "14. Helicopters after logout → 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Unauthenticated returns 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/helicopters", "host": ["{{baseUrl}}"], "path": ["api","helicopters"] }
+					}
+				},
+				{
+					"name": "15. Login as seeded Pilot",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Login returns 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Role is PILOT', function () {",
+									"    pm.expect(pm.response.json().role).to.eql('PILOT');",
+									"});",
+									"const cookie = pm.response.headers.filter(h => h.key === 'Set-Cookie')",
+									"    .map(h => h.value).find(v => v.startsWith('JSESSIONID='));",
+									"if (cookie) {",
+									"    pm.collectionVariables.set('jsessionid', cookie.split(';')[0].split('=')[1]);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"pilot@aero.pl\",\n    \"password\": \"pilot\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+					}
+				},
+				{
+					"name": "16. Pilot GET helicopters → 200",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Pilot can read helicopters (200)', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Response is array', function () {",
+									"    pm.expect(pm.response.json()).to.be.an('array');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/helicopters", "host": ["{{baseUrl}}"], "path": ["api","helicopters"] }
+					}
+				},
+				{
+					"name": "17. Pilot POST helicopter → 403",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Pilot cannot create helicopter (403)', function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"registrationNumber\": \"SP-NAH\",\n    \"type\": \"EC135\",\n    \"description\": \"Should be forbidden\",\n    \"maxCrewCount\": 2,\n    \"maxCrewWeightKg\": 200,\n    \"status\": \"INACTIVE\",\n    \"rangeKm\": 300\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/helicopters", "host": ["{{baseUrl}}"], "path": ["api","helicopters"] }
+					}
+				},
+				{
+					"name": "18. Cleanup — clear test variables",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.collectionVariables.set('jsessionid', '');",
+									"pm.collectionVariables.set('testEmail', '');",
+									"pm.collectionVariables.set('helicopterId', '');",
+									"pm.collectionVariables.set('landingSiteId', '');",
+									"pm.test('Variables cleaned up', function () {",
+									"    pm.expect(pm.collectionVariables.get('testEmail')).to.eql('');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api","auth","logout"] }
+					}
+				}
+			]
+		},
 		{
 			"name": "Auth",
 			"item": [
+				{
+					"name": "Signup",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test('Response has user fields', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.have.property('id');",
+									"    pm.expect(json).to.have.property('role');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\",\n    \"email\": \"test@aero.pl\",\n    \"password\": \"test123\",\n    \"role\": \"ADMIN\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/signup",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "signup"]
+						},
+						"description": "Create a new user. No auth required. Roles: ADMIN, PLANNER, SUPERVISOR, PILOT."
+					}
+				},
 				{
 					"name": "Login (Admin)",
 					"event": [
@@ -36,11 +615,16 @@
 									"pm.test('Status is 200', function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
-									"pm.test('Response has user fields', function () {",
-									"    var json = pm.response.json();",
-									"    pm.expect(json).to.have.property('id');",
-									"    pm.expect(json).to.have.property('role');",
-									"});"
+									"",
+									"// Capture JSESSIONID from Set-Cookie header",
+									"const cookie = pm.response.headers.filter(h => h.key === 'Set-Cookie')",
+									"    .map(h => h.value)",
+									"    .find(v => v.startsWith('JSESSIONID='));",
+									"if (cookie) {",
+									"    const sid = cookie.split(';')[0].split('=')[1];",
+									"    pm.collectionVariables.set('jsessionid', sid);",
+									"    console.log('Session saved: ' + sid.substring(0, 8) + '...');",
+									"}"
 								]
 							}
 						}
@@ -62,11 +646,27 @@
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "auth", "login"]
 						},
-						"description": "Authenticate as ADMIN. The JSESSIONID cookie is set automatically."
+						"description": "Authenticate as ADMIN. Saves JSESSIONID for all subsequent requests."
 					}
 				},
 				{
 					"name": "Login (Planner)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const cookie = pm.response.headers.filter(h => h.key === 'Set-Cookie')",
+									"    .map(h => h.value)",
+									"    .find(v => v.startsWith('JSESSIONID='));",
+									"if (cookie) {",
+									"    pm.collectionVariables.set('jsessionid', cookie.split(';')[0].split('=')[1]);",
+									"}"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -88,6 +688,22 @@
 				},
 				{
 					"name": "Login (Supervisor)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const cookie = pm.response.headers.filter(h => h.key === 'Set-Cookie')",
+									"    .map(h => h.value)",
+									"    .find(v => v.startsWith('JSESSIONID='));",
+									"if (cookie) {",
+									"    pm.collectionVariables.set('jsessionid', cookie.split(';')[0].split('=')[1]);",
+									"}"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -109,6 +725,22 @@
 				},
 				{
 					"name": "Login (Pilot)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const cookie = pm.response.headers.filter(h => h.key === 'Set-Cookie')",
+									"    .map(h => h.value)",
+									"    .find(v => v.startsWith('JSESSIONID='));",
+									"if (cookie) {",
+									"    pm.collectionVariables.set('jsessionid', cookie.split(';')[0].split('=')[1]);",
+									"}"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -155,6 +787,17 @@
 				},
 				{
 					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.collectionVariables.set('jsessionid', '');"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -163,7 +806,7 @@
 							"host": ["{{baseUrl}}"],
 							"path": ["api", "auth", "logout"]
 						},
-						"description": "Invalidates the session."
+						"description": "Invalidates the session and clears the saved cookie."
 					}
 				}
 			]
