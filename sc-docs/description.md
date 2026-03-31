@@ -4,7 +4,7 @@
 ## 0. Technologie
 Aplikacja powinna być w monorepo.
 Frontend powinien używać React oraz Typescript.
-Backend powinien używać Java, Spring Boot, Postgres
+Backend powinien używać Java, Spring Boot, Couchbase
 
 
 

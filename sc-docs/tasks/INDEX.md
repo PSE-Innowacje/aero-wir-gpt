@@ -26,7 +26,7 @@ Phase 5: [65-68] (independent)
 |------|-----|-------|---------|
 | 1-SC-AERO | backend | Monorepo restructure | — |
 | 2-SC-AERO | backend | Backend Spring Boot setup | 1 |
-| 3-SC-AERO | backend | Docker Compose for PostgreSQL | 1 |
+| 3-SC-AERO | backend | Docker Compose for Couchbase | 1 |
 | 4-SC-AERO | frontend | Frontend scaffold (Vite + React + TS) | 1 |
 
 ## Phase 1 — Authentication & App Shell

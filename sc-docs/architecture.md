@@ -18,8 +18,8 @@ AERO is a web application for managing helicopter flight operations — from pla
                     +--------+---------+
                              |
                     +--------+---------+
-                    |   PostgreSQL     |
-                    |   (5432)         |
+                    |    Couchbase     |
+                    |   (8091-8096)    |
                     +------------------+
 ```
 
@@ -32,14 +32,14 @@ There are no external integrations, message queues, or third-party APIs. The sys
 ```
 auro/
 ├── backend/                    # Spring Boot (Java 21)
-│   ├── build.gradle.kts        # Spring Boot + JPA + Security + Postgres
+│   ├── build.gradle.kts        # Spring Boot + Couchbase + Security
 │   └── src/main/java/com/nullterrier/aero/
 │       ├── AeroApplication.java
 │       ├── config/             # Security, Web, CORS, DataInitializer
 │       ├── controller/         # REST controllers (thin — delegate to services)
 │       ├── dto/                # Request/Response objects with validation
-│       ├── entity/             # JPA entities (DB model)
-│       ├── repository/         # Spring Data JPA interfaces
+│       ├── document/           # Couchbase documents (DB model)
+│       ├── repository/         # Spring Data Couchbase interfaces
 │       └── service/            # Business logic, status machines, KML parsing
 ├── frontend/                   # Vite + React 18 + TypeScript
 │   ├── package.json
@@ -66,12 +66,12 @@ auro/
 
 ```
 Controller  →  Service  →  Repository  →  Database
-   (DTO)       (Entity)    (JPA)         (Postgres)
+   (DTO)       (Document)  (Couchbase)   (Couchbase)
 ```
 
 - **Controllers** handle HTTP, validate request DTOs, call services, return response DTOs. No business logic here.
 - **Services** own business rules: status transitions, role-based field restrictions, validation checks (crew weight, helicopter range, license dates), KML processing.
-- **Repositories** are standard Spring Data JPA interfaces — no custom SQL unless needed for complex queries (e.g., filtered operation lists).
+- **Repositories** are Spring Data Couchbase interfaces — no custom N1QL unless needed for complex queries (e.g., filtered operation lists).
 
 ### 3.2 Authentication & Authorization
 
@@ -83,7 +83,7 @@ Controller  →  Service  →  Repository  →  Database
   2. **Field-level**: Services enforce which fields each role can edit (e.g., Planner cannot set planned dates on operations).
 - `DataInitializer` seeds 4 default users on first boot so the app is immediately usable.
 
-### 3.3 Entity Relationships
+### 3.3 Document Relationships
 
 ```
                     Users (login/auth)
@@ -107,7 +107,7 @@ Controller  →  Service  →  Repository  →  Database
 
 **Critical relationship**: `Flight Orders <-> Flight Operations` is many-to-many. An order contains multiple operations; an operation's status changes based on order outcomes.
 
-**User vs CrewMember**: These are separate entities. Users have login credentials and application roles. CrewMembers are people assigned to flights (with weight, training dates, etc.). Linked via an explicit FK: `users.crew_member_id → crew_members.id` (nullable — only populated for Pilot users). When a pilot creates a flight order, the pilot field auto-fills from `currentUser.crewMemberId`.
+**User vs CrewMember**: These are separate documents. Users have login credentials and application roles. CrewMembers are people assigned to flights (with weight, training dates, etc.). Linked via an explicit reference: `users.crewMemberId → crew_members.id` (nullable — only populated for Pilot users). When a pilot creates a flight order, the pilot field auto-fills from `currentUser.crewMemberId`.
 
 ### 3.4 KML Processing Pipeline
 
@@ -121,7 +121,7 @@ Upload KML file
     → Return: { filePath, points[], routeLengthKm }
 ```
 
-**Coordinate storage**: Parsed lat/lng points are stored as a JSON column (`kml_points`) on the `flight_operations` table. This avoids re-parsing the KML file on every page load. The `GET /api/operations/{id}` response includes the points array so the frontend MapView can render the route directly. For flight orders, `GET /api/orders/{id}` includes the points from all linked operations.
+**Coordinate storage**: Parsed lat/lng points are stored as a field (`kmlPoints`) on the `flight_operations` document. This avoids re-parsing the KML file on every page load. The `GET /api/operations/{id}` response includes the points array so the frontend MapView can render the route directly. For flight orders, `GET /api/orders/{id}` includes the points from all linked operations.
 
 Uses `javax.xml.parsers.DocumentBuilder` — no external KML library needed since we only extract coordinates.
 
@@ -257,23 +257,19 @@ These are **blocking** — the save is rejected with a specific error message fo
 
 ## 6. Database Design Summary
 
-### Core Tables (4)
-- `helicopters` — fleet registry with status, inspection dates, capacity limits
-- `crew_members` — personnel with roles (PILOT/OBSERVER), certifications, weight
-- `landing_sites` — named coordinates (lat/lng)
-- `users` — login accounts with application roles
+### Core Documents (4 types)
+- `helicopter` — fleet registry with status, inspection dates, capacity limits
+- `crew_member` — personnel with roles (PILOT/OBSERVER), certifications, weight
+- `landing_site` — named coordinates (lat/lng)
+- `user` — login accounts with application roles
 
-### Business Tables (2 + 6 join/support)
-- `flight_operations` — planned aerial work items with KML routes and persisted coordinates
-  - `flight_operation_activity_types` (join)
-  - `flight_operation_contacts` (join)
-  - `operation_comments` (append-only log)
-  - `operation_change_history` (audit trail)
-- `flight_orders` — concrete flight assignments combining operations + resources
-  - `flight_order_crew_members` (join)
-  - `flight_order_operations` (join — the critical many-to-many)
+### Business Documents (2 types with embedded/referenced data)
+- `flight_operation` — planned aerial work items with KML routes and persisted coordinates
+  - Embedded: `activityTypes` (list), `contacts` (list), `comments` (append-only list), `changeHistory` (audit trail list)
+- `flight_order` — concrete flight assignments combining operations + resources
+  - References: `crewMemberIds` (list), `operationIds` (list — the critical many-to-many)
 
-Total: **12 tables**. Schema is detailed in `docs/plan.md` section 2 (note: `users.crew_member_id` FK was added post-plan as resolved decision #1).
+All documents stored in the `aero` bucket. Relationships between documents use ID references (not foreign keys). Embedded sub-documents (comments, history) are used where data is always accessed together with the parent.
 
 ---
 
@@ -283,7 +279,7 @@ Total: **12 tables**. Schema is detailed in `docs/plan.md` section 2 (note: `use
 
 | Phase | Focus | Est. Effort | MVP? |
 |-------|-------|-------------|------|
-| 0 | Scaffolding — monorepo, deps, Docker Postgres, proxy | ~2h | Setup |
+| 0 | Scaffolding — monorepo, deps, Docker Couchbase, proxy | ~2h | Setup |
 | 1 | Auth + App Shell — login, session, sidebar, role routing | ~2h | Foundation |
 | 2 | Admin CRUD — 4 entities, list+form pages, DataTable | ~3h | Supporting data |
 | 3 | Flight Operations — KML, status workflow, map, comments | ~4h | **MVP milestone** |
@@ -309,7 +305,7 @@ The order is driven by dependencies:
 | Map library | Leaflet + OpenStreetMap | Free, no API key, good enough for displaying routes and markers |
 | KML parsing | Built-in Java XML parser | KML is XML; we only need coordinates — no need for a full GIS library |
 | File storage | Local filesystem | No cloud requirements specified; simplest approach |
-| DB schema management | JPA auto-DDL (dev) | Fast for development; can add Flyway later if needed |
+| Database | Couchbase with Spring Data Couchbase | Document model fits flexible schemas; auto-index for development |
 
 ---
 
@@ -317,7 +313,7 @@ The order is driven by dependencies:
 
 | Area | Risk | Mitigation |
 |------|------|------------|
-| **Status cascading** (order → operations) | Race conditions if multiple orders reference same operation | Optimistic locking on operations; service-layer transaction boundaries |
+| **Status cascading** (order → operations) | Race conditions if multiple orders reference same operation | Optimistic locking via CAS on operations; service-layer consistency |
 | **Role-based field editing** | Complex matrix of who can edit what in which status | Centralize in service layer with clear permission checks; don't scatter across controllers |
 | **KML parsing** | Diverse KML formats, large files | Validate strictly (only extract coordinates); enforce 5000-point limit; reject malformed files gracefully |
 | **User ↔ CrewMember link** | Pilot user auto-populates from login, but pilot is a CrewMember FK | Explicit nullable FK `users.crew_member_id` — set by admin when creating pilot users |

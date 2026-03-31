@@ -22,10 +22,10 @@ My recommendation: **(a)** — simplest, no schema changes, works with the exist
 
 ## Q2: Database Setup
 
-The plan mentions Postgres. For local development:
-- (a) Docker Compose (I'll add a `docker-compose.yml` with Postgres)
-- (b) You have Postgres installed locally — tell me the port/db name
-- (c) Use H2 in-memory for now, Postgres later
+The plan mentions Couchbase. For local development:
+- (a) Docker Compose (I'll add a `docker-compose.yml` with Couchbase)
+- (b) You have Couchbase installed locally — tell me the connection details
+- (c) Use an embedded alternative for now, Couchbase later
 
 My recommendation: **(a)** — reproducible, no local install needed.
 
