@@ -5,15 +5,15 @@
 **Ref**: implementation-plan.md § 0.2, § 0.4
 
 ## Description
-Create the backend Gradle build file with Spring Boot 3.4.x plugin, Java 21 toolchain, and all required dependencies. Add the Spring Boot main application class and the application configuration YAML with PostgreSQL datasource settings, JPA configuration, server port, and file upload limits.
+Create the backend Gradle build file with Spring Boot 3.4.x plugin, Java 21 toolchain, and all required dependencies. Add the Spring Boot main application class and the application configuration YAML with Couchbase connection settings, server port, and file upload limits.
 
 ## Acceptance Criteria
 - [ ] `backend/build.gradle.kts` exists with Spring Boot 3.4.x plugin and Java 21 toolchain
-- [ ] Dependencies include: spring-boot-starter-web, spring-boot-starter-data-jpa, spring-boot-starter-security, spring-boot-starter-validation, postgresql (runtimeOnly), lombok (compileOnly + annotationProcessor)
+- [ ] Dependencies include: spring-boot-starter-web, spring-boot-starter-data-couchbase, spring-boot-starter-security, spring-boot-starter-validation, lombok (compileOnly + annotationProcessor)
 - [ ] `AeroApplication.java` exists with `@SpringBootApplication` and standard main method
-- [ ] `application.yml` configures datasource (jdbc:postgresql://localhost:5432/aero, user: aero, pw: aero), JPA ddl-auto: update, show-sql: false, server port 8080, upload dir `./uploads/kml`, multipart max-file-size 10MB
+- [ ] `application.yml` configures Couchbase connection (couchbase://localhost, user: aero, pw: aeropass), bucket: aero, auto-index: true, server port 8080, upload dir `./uploads/kml`, multipart max-file-size 10MB
 - [ ] `./gradlew :backend:compileJava` succeeds
-- [ ] `./gradlew :backend:bootRun` starts (will fail on Postgres connection if DB not up — that is expected)
+- [ ] `./gradlew :backend:bootRun` starts (will fail on Couchbase connection if DB not up — that is expected)
 
 ## Files to Create/Modify
 - backend/build.gradle.kts
