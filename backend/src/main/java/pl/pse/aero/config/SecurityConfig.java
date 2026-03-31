@@ -60,6 +60,15 @@ public class SecurityConfig {
                             .hasAnyRole("PLANNER", "SUPERVISOR")
                         .requestMatchers(HttpMethod.PUT, "/api/operations/**")
                             .hasAnyRole("PLANNER", "SUPERVISOR")
+                        // Orders: PILOT full, SUPERVISOR read+edit+status, ADMIN read-only, PLANNER denied
+                        .requestMatchers(HttpMethod.GET, "/api/orders/**")
+                            .hasAnyRole("ADMIN", "SUPERVISOR", "PILOT")
+                        .requestMatchers(HttpMethod.POST, "/api/orders")
+                            .hasRole("PILOT")
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/**")
+                            .hasAnyRole("PILOT", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.POST, "/api/orders/*/status")
+                            .hasAnyRole("PILOT", "SUPERVISOR")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
