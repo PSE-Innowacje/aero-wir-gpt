@@ -1,0 +1,26 @@
+{
+  "name": "aero-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "E2E tests for AERO application using Playwright",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:ui": "npx playwright test --ui",
+    "test:headed": "npx playwright test --headed",
+    "test:auth": "npx playwright test tests/auth.spec.ts",
+    "test:nav": "npx playwright test tests/navigation.spec.ts",
+    "test:helicopters": "npx playwright test tests/helicopters.spec.ts",
+    "test:operations": "npx playwright test tests/operations.spec.ts",
+    "test:crew": "npx playwright test tests/crew-members.spec.ts",
+    "test:landing-sites": "npx playwright test tests/landing-sites.spec.ts",
+    "test:users": "npx playwright test tests/users.spec.ts",
+    "test:dictionaries": "npx playwright test tests/dictionaries.spec.ts",
+    "test:performance": "npx playwright test tests/performance.spec.ts",
+    "test:api": "npx playwright test tests/dictionaries.spec.ts tests/helicopters.spec.ts tests/operations.spec.ts tests/crew-members.spec.ts tests/landing-sites.spec.ts tests/users.spec.ts",
+    "report": "npx playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "typescript": "^6.0.2"
+  }
+}
