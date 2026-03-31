@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   Box,
@@ -10,7 +9,6 @@ import {
   Toolbar,
   Typography,
   Avatar,
-  IconButton,
   Tooltip,
   Divider,
   AppBar,
@@ -24,7 +22,6 @@ import AltRouteOutlinedIcon from '@mui/icons-material/AltRouteOutlined';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
-import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import { aeroColors } from '../../theme';
 
 const DRAWER_WIDTH = 240;
@@ -74,7 +71,6 @@ export default function Layout({
 }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [_notifOpen, setNotifOpen] = useState(false);
 
   const currentTitle = PAGE_TITLES[location.pathname] ?? 'AERO';
 
@@ -93,43 +89,28 @@ export default function Layout({
             borderRight: 'none',
             display: 'flex',
             flexDirection: 'column',
+            overflowX: 'hidden',
           },
         }}
       >
-        {/* Logo — no hard border, spacing creates the break */}
-        <Box
-          sx={{
-            height: 72,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            px: 2.5,
-            gap: 0.25,
-            pb: 0.5,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box
+        {/* Logo block */}
+        <Box sx={{ px: 3, pt: 3, pb: 3.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FlightIcon
               sx={{
-                width: 30,
-                height: 30,
-                borderRadius: 1,
-                background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.primaryDark} 100%)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
+                color: aeroColors.tertiary,
+                fontSize: 18,
+                transform: 'rotate(-45deg)',
+                opacity: 0.85,
               }}
-            >
-              <FlightIcon sx={{ fontSize: 16, color: aeroColors.onPrimaryFixed }} />
-            </Box>
+            />
             <Typography
               sx={{
                 fontFamily: '"Space Grotesk", sans-serif',
+                fontSize: '1.375rem',
                 fontWeight: 700,
-                letterSpacing: '0.14em',
+                letterSpacing: '-0.03em',
                 color: aeroColors.primary,
-                fontSize: '1.0625rem',
                 lineHeight: 1,
               }}
             >
@@ -138,75 +119,70 @@ export default function Layout({
           </Box>
           <Typography
             sx={{
-              fontSize: '0.5rem',
-              letterSpacing: '0.22em',
+              fontSize: '0.5625rem',
+              letterSpacing: '0.18em',
+              color: aeroColors.outline,
               textTransform: 'uppercase',
-              color: aeroColors.tertiary,
               fontWeight: 600,
-              pl: '46px',
-              lineHeight: 1,
+              mt: 0.5,
+              pl: 0.25,
             }}
           >
-            Tactical Aviation
+            Flight Operations
           </Typography>
         </Box>
 
-        {/* Ghost separator — outlineVariant at ~10% */}
-        <Box sx={{ height: 1, mx: 2.5, bgcolor: `${aeroColors.outlineVariant}1a` }} />
-
-        {/* Nav label */}
-        <Box sx={{ px: 2.5, pt: 2.5, pb: 1 }}>
+        {/* Label separator */}
+        <Box sx={{ px: 3, mb: 1 }}>
           <Typography
             sx={{
               fontSize: '0.5625rem',
-              letterSpacing: '0.2em',
-              color: aeroColors.outline,
-              fontWeight: 600,
+              letterSpacing: '0.16em',
+              color: `${aeroColors.outline}70`,
               textTransform: 'uppercase',
+              fontWeight: 700,
             }}
           >
-            Nawigacja
+            Navigation
           </Typography>
         </Box>
 
-        {/* Nav items */}
-        <List disablePadding sx={{ flex: 1, overflow: 'auto', px: 1 }}>
+        {/* Navigation items */}
+        <List sx={{ px: 1, flex: 1, pt: 0 }} disablePadding>
           {NAV_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             return (
               <ListItemButton
                 key={item.path}
                 onClick={() => navigate(item.path)}
+                disableRipple={false}
                 sx={{
-                  position: 'relative',
-                  px: 1.5,
+                  px: 2,
                   py: 1.125,
-                  borderRadius: 1,
                   mb: 0.25,
-                  color: isActive ? aeroColors.primary : aeroColors.onSurfaceVariant,
-                  bgcolor: isActive ? `${aeroColors.primary}0d` : 'transparent',
-                  '&:hover': {
-                    bgcolor: `${aeroColors.primary}0a`,
-                    color: aeroColors.onSurface,
-                  },
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    left: 0,
-                    top: '18%',
-                    height: '64%',
-                    width: 2,
-                    borderRadius: '0 2px 2px 0',
-                    bgcolor: aeroColors.tertiary,
-                    opacity: isActive ? 1 : 0,
-                    transition: 'opacity 0.15s ease',
-                  },
+                  borderRadius: 0,
+                  borderLeft: isActive
+                    ? `2px solid ${aeroColors.tertiary}`
+                    : '2px solid transparent',
+                  bgcolor: isActive ? aeroColors.surfaceContainer : 'transparent',
+                  color: isActive ? aeroColors.tertiary : aeroColors.outline,
+                  gap: 1.5,
                   transition: 'all 0.15s ease',
+                  '&:hover': {
+                    bgcolor: isActive
+                      ? aeroColors.surfaceContainer
+                      : `${aeroColors.surfaceVariant}80`,
+                    color: isActive ? aeroColors.tertiary : aeroColors.onSurface,
+                    borderLeftColor: isActive ? aeroColors.tertiary : `${aeroColors.outline}50`,
+                  },
+                  '& .MuiTouchRipple-root .MuiTouchRipple-rippleVisible': {
+                    color: `${aeroColors.primary}20`,
+                  },
                 }}
               >
                 <ListItemIcon
                   sx={{
-                    minWidth: 34,
+                    minWidth: 0,
                     color: 'inherit',
                     '& .MuiSvgIcon-root': { fontSize: 17 },
                   }}
@@ -216,9 +192,14 @@ export default function Layout({
                 <ListItemText
                   primary={item.label}
                   primaryTypographyProps={{
-                    fontSize: '0.8125rem',
-                    fontWeight: isActive ? 600 : 400,
-                    letterSpacing: '0.01em',
+                    sx: {
+                      fontSize: '0.6875rem',
+                      fontWeight: 600,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      fontFamily: '"Inter", sans-serif',
+                      lineHeight: 1,
+                    },
                   }}
                 />
               </ListItemButton>
@@ -226,73 +207,107 @@ export default function Layout({
           })}
         </List>
 
-        {/* Ghost separator */}
-        <Box sx={{ height: 1, mx: 2.5, bgcolor: `${aeroColors.outlineVariant}1a` }} />
+        {/* Bottom section */}
+        <Box sx={{ px: 2, pb: 2.5 }}>
+          <Divider sx={{ borderColor: `${aeroColors.outlineVariant}30`, mb: 2 }} />
 
-        {/* User section — bg shift instead of border */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            px: 2,
-            py: 1.75,
-            bgcolor: `${aeroColors.surfaceContainerLowest}60`,
-          }}
-        >
-          <Avatar
+          {/* User card */}
+          <Box
             sx={{
-              width: 32,
-              height: 32,
-              bgcolor: aeroColors.primaryContainer,
-              color: aeroColors.primary,
-              fontSize: '0.6875rem',
-              fontWeight: 700,
-              border: `1px solid ${aeroColors.primary}30`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              px: 1,
+              py: 0.75,
+              mb: 1,
+              borderRadius: 1,
             }}
           >
-            {userInitials}
-          </Avatar>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
+            <Avatar
               sx={{
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                color: aeroColors.onSurface,
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                width: 28,
+                height: 28,
+                bgcolor: aeroColors.primaryContainer,
+                color: aeroColors.primary,
+                fontSize: '0.5625rem',
+                fontWeight: 700,
+                border: `1px solid ${aeroColors.primary}25`,
+                flexShrink: 0,
               }}
             >
-              {userName}
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: '0.625rem',
-                letterSpacing: '0.06em',
-                color: aeroColors.outline,
-                lineHeight: 1.2,
-                mt: 0.2,
-                textTransform: 'uppercase',
-                fontWeight: 500,
-              }}
-            >
-              {userRole}
-            </Typography>
+              {userInitials}
+            </Avatar>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                sx={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  color: aeroColors.onSurface,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  lineHeight: 1.3,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {userName}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: '0.5625rem',
+                  color: aeroColors.outline,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  lineHeight: 1.2,
+                }}
+              >
+                {userRole}
+              </Typography>
+            </Box>
           </Box>
-          <Tooltip title="Wyloguj">
-            <IconButton
-              size="small"
-              onClick={() => navigate('/login')}
+
+          {/* Logout */}
+          <Tooltip title="Wyloguj się" placement="right">
+            <ListItemButton
               sx={{
+                px: 2,
+                py: 1,
+                borderRadius: 0,
+                borderLeft: '2px solid transparent',
                 color: aeroColors.outline,
-                '&:hover': { color: aeroColors.error, bgcolor: `${aeroColors.error}10` },
-                p: 0.625,
+                gap: 1.5,
+                transition: 'all 0.15s ease',
+                '&:hover': {
+                  bgcolor: `${aeroColors.error}12`,
+                  color: aeroColors.error,
+                  borderLeftColor: `${aeroColors.error}60`,
+                },
               }}
             >
-              <LogoutOutlinedIcon sx={{ fontSize: 15 }} />
-            </IconButton>
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  color: 'inherit',
+                  '& .MuiSvgIcon-root': { fontSize: 17 },
+                }}
+              >
+                <LogoutOutlinedIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary="Wyloguj"
+                primaryTypographyProps={{
+                  sx: {
+                    fontSize: '0.6875rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontFamily: '"Inter", sans-serif',
+                    lineHeight: 1,
+                  },
+                }}
+              />
+            </ListItemButton>
           </Tooltip>
         </Box>
       </Drawer>
@@ -350,44 +365,6 @@ export default function Layout({
                   Operacyjny
                 </Typography>
               </Box>
-
-              <Divider
-                orientation="vertical"
-                flexItem
-                sx={{ borderColor: `${aeroColors.outlineVariant}40`, mx: 0.5 }}
-              />
-
-              <Tooltip title="Powiadomienia">
-                <IconButton
-                  size="small"
-                  onClick={() => setNotifOpen(true)}
-                  sx={{
-                    color: aeroColors.outline,
-                    '&:hover': {
-                      color: aeroColors.onSurface,
-                      bgcolor: `${aeroColors.primary}0d`,
-                    },
-                  }}
-                >
-                  <NotificationsOutlinedIcon sx={{ fontSize: 19 }} />
-                </IconButton>
-              </Tooltip>
-
-              <Avatar
-                sx={{
-                  width: 30,
-                  height: 30,
-                  bgcolor: aeroColors.primaryContainer,
-                  color: aeroColors.primary,
-                  fontSize: '0.625rem',
-                  fontWeight: 700,
-                  border: `1px solid ${aeroColors.primary}30`,
-                  ml: 0.5,
-                  cursor: 'pointer',
-                }}
-              >
-                {userInitials}
-              </Avatar>
             </Box>
           </Toolbar>
         </AppBar>
