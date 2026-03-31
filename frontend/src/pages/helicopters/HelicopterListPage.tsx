@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -17,6 +17,7 @@ import {
   TextField,
   MenuItem,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 import AirplanemodeActiveIcon from '@mui/icons-material/AirplanemodeActive';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
@@ -27,6 +28,8 @@ import AddIcon from '@mui/icons-material/Add';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { aeroColors } from '../../theme';
+import { getHelicopters, createHelicopter, updateHelicopter } from '../../api/helicopters.api';
+import type { HelicopterResponse, HelicopterStatus } from '../../api/types';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
 const GLASS_CARD = {
@@ -166,29 +169,26 @@ function StatCard({ label, value, icon, accent = aeroColors.primary, sublabel }:
 }
 
 /* ── Status config ────────────────────────────────────────────────────── */
-type StatusKey = 'Aktywny' | 'Nieaktywny' | 'W naprawie';
-
-const STATUS_CONFIG: Record<StatusKey, { color: string; bg: string }> = {
-  Aktywny: {
+const STATUS_CONFIG: Record<HelicopterStatus, { color: string; bg: string; label: string }> = {
+  ACTIVE: {
     color: aeroColors.tertiary,
     bg: `${aeroColors.tertiary}18`,
+    label: 'Aktywny',
   },
-  'W naprawie': {
-    color: aeroColors.secondary,
-    bg: `${aeroColors.secondary}18`,
-  },
-  Nieaktywny: {
+  INACTIVE: {
     color: aeroColors.onSurfaceVariant,
     bg: `${aeroColors.outlineVariant}40`,
+    label: 'Nieaktywny',
   },
 };
 
-const STATUS_OPTIONS: StatusKey[] = ['Aktywny', 'Nieaktywny', 'W naprawie'];
+const STATUS_OPTIONS: HelicopterStatus[] = ['ACTIVE', 'INACTIVE'];
 
-function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status as StatusKey] ?? {
+function StatusBadge({ status }: { status: HelicopterStatus }) {
+  const cfg = STATUS_CONFIG[status] ?? {
     color: aeroColors.onSurfaceVariant,
     bg: `${aeroColors.outlineVariant}40`,
+    label: status,
   };
   return (
     <Box
@@ -223,30 +223,11 @@ function StatusBadge({ status }: { status: string }) {
           lineHeight: 1,
         }}
       >
-        {status}
+        {cfg.label}
       </Typography>
     </Box>
   );
 }
-
-/* ── Mock data ─────────────────────────────────────────────────────────── */
-interface Helicopter {
-  id: number;
-  registration: string;
-  type: string;
-  status: string;
-  inspectionExpiry: string;
-  rangeKm: number;
-  maxCrewWeightKg: number;
-}
-
-const HELICOPTERS_INIT: Helicopter[] = [
-  { id: 1, registration: 'SP-AER1', type: 'Airbus H145', status: 'Aktywny', inspectionExpiry: '2024-12-24', rangeKm: 650, maxCrewWeightKg: 480 },
-  { id: 2, registration: 'SP-AER2', type: 'Bell 429', status: 'Aktywny', inspectionExpiry: '2024-11-15', rangeKm: 710, maxCrewWeightKg: 520 },
-  { id: 3, registration: 'SP-MAINT', type: 'Eurocopter EC135', status: 'Nieaktywny', inspectionExpiry: '2023-10-02', rangeKm: 635, maxCrewWeightKg: 450 },
-  { id: 4, registration: 'SP-AER3', type: 'Robinson R44', status: 'Aktywny', inspectionExpiry: '2025-05-10', rangeKm: 560, maxCrewWeightKg: 340 },
-  { id: 5, registration: 'SP-AER4', type: 'Leonardo AW139', status: 'Aktywny', inspectionExpiry: '2025-01-30', rangeKm: 1060, maxCrewWeightKg: 600 },
-];
 
 const HERO_IMG =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuAZxqWR9uO8aCwvOvyQgic2ZcxAAGBPWOvW6UP75Za8lzn5yfNXWmOBu9viOQvZiglIaHBs_blFZSavL5938cXtZXf_PFkyWCkSfzKMBEeu9PHy3ZmUYUvhrXaKd_hB5ADjhL3NQbpiB7LytJdZW8j_bP6wUmtRwwL3Y4QlTDzqJSE8wHMt3kzNa75DvXsD2v907DAoATmVsaLRWel2IIeVKX406nwiSjKqV73ectOOFB8_leSElVYw45zzSjWnd9RwPlyQZXEv77Ns';
@@ -255,8 +236,8 @@ const HERO_IMG =
 interface HelicopterModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (heli: Helicopter) => void;
-  helicopter: Helicopter | null;
+  onSave: (heli: HelicopterResponse) => void;
+  helicopter: HelicopterResponse | null;
 }
 
 function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalProps) {
@@ -264,10 +245,13 @@ function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalP
 
   const [registration, setRegistration] = useState('');
   const [type, setType] = useState('');
-  const [status, setStatus] = useState<string>('Aktywny');
+  const [status, setStatus] = useState<HelicopterStatus>('ACTIVE');
   const [inspectionExpiry, setInspectionExpiry] = useState('');
   const [rangeKm, setRangeKm] = useState('');
   const [maxCrewWeightKg, setMaxCrewWeightKg] = useState('');
+  const [maxCrewCount, setMaxCrewCount] = useState('');
+  const [description, setDescription] = useState('');
+  const [saving, setSaving] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
 
   useEffect(() => {
@@ -284,33 +268,49 @@ function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalP
 
   useEffect(() => {
     if (helicopter) {
-      setRegistration(helicopter.registration);
+      setRegistration(helicopter.registrationNumber);
       setType(helicopter.type);
       setStatus(helicopter.status);
-      setInspectionExpiry(helicopter.inspectionExpiry);
+      setInspectionExpiry(helicopter.inspectionExpiryDate ?? '');
       setRangeKm(String(helicopter.rangeKm));
       setMaxCrewWeightKg(String(helicopter.maxCrewWeightKg));
+      setMaxCrewCount(String(helicopter.maxCrewCount));
+      setDescription(helicopter.description ?? '');
     } else {
       setRegistration('');
       setType('');
-      setStatus('Aktywny');
+      setStatus('ACTIVE');
       setInspectionExpiry('');
       setRangeKm('');
       setMaxCrewWeightKg('');
+      setMaxCrewCount('');
+      setDescription('');
     }
   }, [helicopter, open]);
 
-  const handleSave = () => {
-    onSave({
-      id: helicopter?.id ?? Date.now(),
-      registration,
-      type,
-      status,
-      inspectionExpiry,
-      rangeKm: Number(rangeKm) || 0,
-      maxCrewWeightKg: Number(maxCrewWeightKg) || 0,
-    });
-    onClose();
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        registrationNumber: registration,
+        type,
+        status,
+        inspectionExpiryDate: inspectionExpiry || undefined,
+        rangeKm: Number(rangeKm) || 0,
+        maxCrewWeightKg: Number(maxCrewWeightKg) || 0,
+        maxCrewCount: Number(maxCrewCount) || 1,
+        description: description || undefined,
+      };
+      const saved = isEdit && helicopter
+        ? await updateHelicopter(helicopter.id, payload)
+        : await createHelicopter(payload);
+      onSave(saved);
+      onClose();
+    } catch (err) {
+      console.error('Failed to save helicopter:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -418,7 +418,7 @@ function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalP
                 mt: 0.25,
               }}
             >
-              ID jednostki: {helicopter.registration}
+              ID jednostki: {helicopter.registrationNumber}
             </Typography>
           )}
         </Box>
@@ -480,7 +480,7 @@ function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalP
             }}
             SelectProps={{
               renderValue: (val) => {
-                const cfg = STATUS_CONFIG[val as StatusKey];
+                const cfg = STATUS_CONFIG[val as HelicopterStatus];
                 return (
                   <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
                     <Box
@@ -502,7 +502,7 @@ function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalP
                         color: cfg?.color,
                       }}
                     >
-                      {val as string}
+                      {cfg?.label}
                     </Typography>
                   </Box>
                 );
@@ -524,7 +524,7 @@ function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalP
                       }}
                     />
                     <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: cfg.color }}>
-                      {opt}
+                      {cfg.label}
                     </Typography>
                   </Box>
                 </MenuItem>
@@ -665,21 +665,40 @@ function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalP
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function HelicopterListPage() {
   const [search, setSearch] = useState('');
-  const [helicopters, setHelicopters] = useState<Helicopter[]>(HELICOPTERS_INIT);
+  const [helicopters, setHelicopters] = useState<HelicopterResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingHeli, setEditingHeli] = useState<Helicopter | null>(null);
+  const [editingHeli, setEditingHeli] = useState<HelicopterResponse | null>(null);
+
+  const fetchHelicopters = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await getHelicopters();
+      setHelicopters(data);
+    } catch (err) {
+      console.error('Failed to fetch helicopters:', err);
+      setError('Nie udało się pobrać listy helikopterów.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHelicopters();
+  }, [fetchHelicopters]);
 
   const openAdd = () => {
     setEditingHeli(null);
     setModalOpen(true);
   };
 
-  const openEdit = (heli: Helicopter) => {
+  const openEdit = (heli: HelicopterResponse) => {
     setEditingHeli(heli);
     setModalOpen(true);
   };
 
-  const handleSave = (heli: Helicopter) => {
+  const handleSave = (heli: HelicopterResponse) => {
     setHelicopters((prev) => {
       const exists = prev.find((h) => h.id === heli.id);
       if (exists) {
@@ -689,25 +708,44 @@ export default function HelicopterListPage() {
     });
   };
 
+  const statusLabel = (s: HelicopterStatus) => STATUS_CONFIG[s]?.label ?? s;
+
   const filtered = helicopters.filter(
     (h) =>
-      h.registration.toLowerCase().includes(search.toLowerCase()) ||
+      h.registrationNumber.toLowerCase().includes(search.toLowerCase()) ||
       h.type.toLowerCase().includes(search.toLowerCase()) ||
-      h.status.toLowerCase().includes(search.toLowerCase()),
+      statusLabel(h.status).toLowerCase().includes(search.toLowerCase()),
   );
 
   const totalCount = helicopters.length;
-  const activeCount = helicopters.filter((h) => h.status === 'Aktywny').length;
-  const maintenanceCount = helicopters.filter(
-    (h) => h.status === 'Nieaktywny' || h.status === 'W naprawie',
-  ).length;
-  const availabilityPct = Math.round((activeCount / totalCount) * 100);
+  const activeCount = helicopters.filter((h) => h.status === 'ACTIVE').length;
+  const maintenanceCount = helicopters.filter((h) => h.status === 'INACTIVE').length;
+  const availabilityPct = totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0;
 
   const formatDate = (iso: string) => {
     if (!iso) return '—';
     const [y, m, d] = iso.split('-');
     return `${d}.${m}.${y}`;
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress sx={{ color: aeroColors.primary }} />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, minHeight: 400, justifyContent: 'center' }}>
+        <Typography sx={{ color: aeroColors.secondary }}>{error}</Typography>
+        <Button variant="outlined" onClick={fetchHelicopters} sx={{ color: aeroColors.primary, borderColor: aeroColors.primary }}>
+          Spróbuj ponownie
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
@@ -921,7 +959,7 @@ export default function HelicopterListPage() {
                         color: aeroColors.primary,
                       }}
                     >
-                      {heli.registration}
+                      {heli.registrationNumber}
                     </Typography>
                   </TableCell>
                   <TableCell sx={TD_SX}>
@@ -937,13 +975,13 @@ export default function HelicopterListPage() {
                       sx={{
                         fontSize: '0.8125rem',
                         color:
-                          heli.status === 'Nieaktywny'
+                          heli.status === 'INACTIVE'
                             ? aeroColors.secondary
                             : aeroColors.onSurfaceVariant,
                         fontFamily: '"Inter", monospace',
                       }}
                     >
-                      {formatDate(heli.inspectionExpiry)}
+                      {formatDate(heli.inspectionExpiryDate ?? '')}
                     </Typography>
                   </TableCell>
                   <TableCell sx={TD_SX}>
