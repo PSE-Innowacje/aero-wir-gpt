@@ -9,7 +9,7 @@ Based on `docs/description.md` (PRD), `docs/plan.md` (technical plan), and resol
 | # | Decision | Choice |
 |---|----------|--------|
 | 1 | User ↔ CrewMember link | Explicit FK: `users.crew_member_id → crew_members.id` (nullable) |
-| 2 | Database | Docker Compose with Couchbase |
+| 2 | Database | Couchbase Server 7.6 (local install; Testcontainers for integration testing) |
 | 3 | UI language | Polish UI, English codebase (enums, variables, API fields) |
 | 4 | Java version | Java 21 |
 | 5 | Crew roles | Fixed enum: `PILOT`, `OBSERVER` |
@@ -44,11 +44,11 @@ Dependencies:
   - lombok (optional, compileOnly)
 ```
 
-### 0.3 Docker Compose
-- `docker-compose.yml` at project root
-- Couchbase Server on ports 8091-8096, 11210
+### 0.3 Couchbase Setup
+- Install Couchbase Server 7.6+ locally (or use a running instance)
+- Ports: 8091-8096, 11210
 - Bucket: `aero`, user: `aero`, password: `aeropass`
-- Volume for data persistence
+- Integration tests use Testcontainers (`CouchbaseContainer`) — no manual setup needed for tests
 
 ### 0.4 Backend Configuration (`application.yml`)
 - Couchbase connection string pointing to Docker Couchbase (`couchbase://localhost`)
@@ -65,10 +65,11 @@ Dependencies:
 - Dev server on port 5173
 
 ### 0.6 Verification
-- `docker compose up -d` starts Couchbase
+- Couchbase running locally (localhost:8091 Web UI accessible)
 - `./gradlew :backend:bootRun` starts Spring Boot, connects to Couchbase
 - `cd frontend && npm run dev` starts Vite, proxy works
 - `GET http://localhost:5173/api/auth/me` returns 401 (no session) — proxy confirmed
+- `./gradlew :backend:test` passes using Testcontainers (no manual DB needed)
 
 ---
 
@@ -399,7 +400,7 @@ Dependencies:
 
 ### 5.3 End-to-End Smoke Test
 Walk through the complete workflow:
-1. Start Couchbase + backend + frontend
+1. Ensure Couchbase is running, start backend + frontend
 2. Admin: create helicopter, crew members, landing sites
 3. Planner: create flight operation with KML, view on map
 4. Supervisor: confirm operation with planned dates
@@ -412,7 +413,6 @@ Walk through the complete workflow:
 ## File Inventory (What Gets Created)
 
 ### Root
-- `docker-compose.yml`
 - `settings.gradle.kts` (modified: include backend)
 - `build.gradle.kts` (modified: allprojects only)
 - `.gitignore` (updated for uploads, node_modules, etc.)

@@ -32,7 +32,8 @@ integrations. A single Spring Boot backend serves a React SPA.
 | HTTP client | Axios |
 | Map | react-leaflet + Leaflet (OpenStreetMap tiles) |
 | Backend | Java 21, Spring Boot 3.x |
-| Persistence | Spring Data JPA, PostgreSQL 16 (Docker Compose) |
+| Persistence | Spring Data Couchbase, Couchbase Server 7.6 |
+| Testing DB | Testcontainers (CouchbaseContainer) — no Docker Compose |
 | Auth | Session-based (JSESSIONID cookie), Spring Security |
 | Build | Gradle (Kotlin DSL), backend only; frontend runs via npm |
 
@@ -49,8 +50,8 @@ aero-wir-gpt/
 │       ├── config/                   # SecurityConfig, CORS, DataInitializer
 │       ├── controller/               # Thin REST controllers
 │       ├── dto/                      # Request/Response objects
-│       ├── entity/                   # JPA entities + enums
-│       ├── repository/               # Spring Data JPA interfaces
+│       ├── domain/                   # Couchbase documents (@Document) + enums
+│       ├── repository/               # Spring Data Couchbase interfaces
 │       └── service/                  # Business logic, state machines, KML parsing
 ├── frontend/                         # Vite + React 18 + TypeScript
 │   ├── package.json
@@ -83,20 +84,20 @@ aero-wir-gpt/
 ### System Topology
 
 ```
-Browser (SPA)               Spring Boot              PostgreSQL
-React + TS + MUI  ←HTTPS→  REST API :8080  ←JDBC→   :5432
+Browser (SPA)               Spring Boot              Couchbase
+React + TS + MUI  ←HTTPS→  REST API :8080  ←SDK→    :8091-8096
 ```
 
 ### Backend — Layered Structure
 
 ```
 Controller → Service → Repository → Database
-  (DTO)      (Entity)    (JPA)      (Postgres)
+  (DTO)      (Document)  (Couchbase)  (Couchbase)
 ```
 
 - **Controllers** — handle HTTP only; validate request DTOs; call services; return response DTOs. No business logic.
 - **Services** — own all business rules: status transitions, role-based field restrictions, validation checks (crew weight, helicopter range, license dates), KML processing.
-- **Repositories** — standard Spring Data JPA; custom JPQL only for complex filtered queries.
+- **Repositories** — Spring Data Couchbase interfaces; custom N1QL only for complex filtered queries.
 
 ### Authentication & Authorization
 
@@ -112,25 +113,29 @@ Controller → Service → Repository → Database
   - `nadzor@aero.pl` / `nadzor` — SUPERVISOR
   - `pilot@aero.pl` / `pilot` — PILOT
 
-### Entity Relationships (12 Tables)
+### Document Relationships (6 Document Types)
 
-**Core (4):** `helicopters`, `crew_members`, `landing_sites`, `users`
+**Core (4):** `user`, `helicopter`, `crew_member`, `landing_site`
 
-**Business (2 + joins):**
-- `flight_operations` + `flight_operation_activity_types`, `flight_operation_contacts`, `operation_comments`, `operation_change_history`
-- `flight_orders` + `flight_order_crew_members`, `flight_order_operations` (the critical many-to-many)
+**Business (2 with embedded/referenced data):**
+- `flight_operation` — embedded: `activityTypes`, `contacts`, `comments` (append-only), `changeHistory` (audit trail)
+- `flight_order` — references: `crewMemberIds` (list), `operationIds` (list — the critical many-to-many)
 
 ```
 Helicopters ──── Flight Orders ──── Crew Members
                       │
               Flight Operations
                       │
-                  KML Points (JSON column)
+                  KML Points (embedded field)
 ```
 
-**User ↔ CrewMember**: Separate entities. Users have login credentials and roles.
+All documents stored in the `aero` bucket. Relationships use ID references (not foreign
+keys). Embedded sub-documents (comments, history) are used where data is always accessed
+together with the parent.
+
+**User ↔ CrewMember**: Separate documents. Users have login credentials and roles.
 CrewMembers are flight personnel (weight, training dates, etc.). Linked via an explicit
-nullable FK: `users.crew_member_id → crew_members.id`. Only populated for Pilot users.
+nullable reference: `user.crewMemberId → crew_member.id`. Only populated for Pilot users.
 
 ### KML Processing Pipeline
 
@@ -140,11 +145,11 @@ Upload KML file
   → Parse XML: extract <coordinates> from <Placemark> nodes
   → Validate: max 5000 points, within Poland bbox (lat 49.0–54.9, lng 14.1–24.2)
   → Calculate: Haversine formula on consecutive points → routeLengthKm
-  → Persist: parsed points as JSON column (kml_points) on flight_operations
+  → Persist: parsed points as embedded field (kmlPoints) on flight_operations document
   → Return: { filePath, points[], routeLengthKm }
 ```
 
-Coordinate storage as a JSON column avoids re-parsing KML on every page load.
+Coordinate storage as an embedded field avoids re-parsing KML on every page load.
 The `GET /api/operations/{id}` response includes the points array for the frontend MapView.
 
 ### Frontend — Page Structure
@@ -228,8 +233,8 @@ Every entity follows the pattern:
 
 | # | Decision | Choice |
 |---|----------|--------|
-| 1 | User ↔ CrewMember link | Explicit nullable FK: `users.crew_member_id → crew_members.id` |
-| 2 | Database | Docker Compose with Postgres 16 |
+| 1 | User ↔ CrewMember link | Explicit nullable reference: `user.crewMemberId → crew_member.id` |
+| 2 | Database | Couchbase Server 7.6 (local install; Testcontainers for integration testing) |
 | 3 | UI language | Polish UI, English codebase (enums, variables, API fields) |
 | 4 | Java version | Java 21 |
 | 5 | Crew roles | Fixed enum: `PILOT`, `OBSERVER` |
@@ -245,7 +250,7 @@ Every entity follows the pattern:
 
 | Phase | Focus | MVP? |
 |-------|-------|------|
-| 0 | Scaffolding — monorepo, deps, Docker Postgres, proxy | Setup |
+| 0 | Scaffolding — monorepo, deps, Couchbase, proxy | Setup |
 | 1 | Auth + App Shell — login, session, sidebar, role routing | Foundation |
 | 2 | Admin CRUD — helicopters, crew, landing sites, users | Supporting data |
 | 3 | Flight Operations — KML, status workflow, map, comments | **MVP milestone** |
@@ -259,20 +264,26 @@ display, and supervisors can approve/reject them.
 
 ## Running the Project
 
-```bash
-# 1. Start database
-docker compose up -d
+**Prerequisites**: Couchbase Server 7.6+ running locally with bucket `aero` (user: `aero`, password: `aeropass`).
 
-# 2. Start backend (from repo root)
+```bash
+# 1. Start backend (from repo root)
 ./gradlew :backend:bootRun
 
-# 3. Start frontend (in a separate terminal)
+# 2. Start frontend (in a separate terminal)
 cd frontend && npm run dev
 ```
 
 - Backend: http://localhost:8080
 - Frontend: http://localhost:5173 (proxies `/api/**` to backend)
-- Database: localhost:5432 — db/user/password all: `aero`
+- Couchbase: localhost:8091 (Web UI) — bucket: `aero`, user: `aero`, password: `aeropass`
+
+**Testing**: Integration tests use Testcontainers — a `CouchbaseContainer` is
+started automatically, no manual database setup needed.
+
+```bash
+./gradlew :backend:test
+```
 
 ---
 
@@ -329,9 +340,9 @@ docs/4-SC-AERO-api-readme
 ```
 feat(3-SC-AERO): add KML upload and coordinate persistence
 
-Store parsed lat/lng points as a JSON column on flight_operations to
-avoid re-parsing on every page load. Validate max 5000 points and
-Poland bounding box at upload time.
+Store parsed lat/lng points as an embedded field on flight_operations
+document to avoid re-parsing KML on every page load. Validate max 5000
+points and Poland bounding box at upload time.
 
 Refs #3
 ```

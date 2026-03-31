@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker ps:*)",
+      "Bash(curl -sf http://localhost:8091/pools)",
+      "Bash(echo \"EXIT_CODE=$?\")",
+      "Bash(./gradlew :backend:compileJava --debug)",
+      "Bash(./gradlew :backend:compileJava --stacktrace)",
+      "Bash(./gradlew :backend:test --tests \"pl.pse.aero.repository.UserRepositoryTest\")",
+      "Bash(docker info:*)",
+      "Bash(./gradlew :backend:test --tests \"pl.pse.aero.repository.UserRepositoryTest.shouldUpdateUser\" --info)",
+      "Bash(DOCKER_HOST=\"npipe:////./pipe/dockerDesktopLinuxEngine\" TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=\"/var/run/docker.sock\" cd C:/Users/sergi/code/hackaton-2026-03/aero-wir-gpt)",
+      "Bash(DOCKER_HOST=\"npipe:////./pipe/dockerDesktopLinuxEngine\" ./gradlew :backend:test --tests \"pl.pse.aero.repository.UserRepositoryTest.shouldSaveAndFindUserById\" --info)",
+      "Bash(curl:*)",
+      "Bash(./gradlew :backend:compileTestJava)",
+      "Bash(./gradlew :backend:test --tests \"pl.pse.aero.repository.UserRepositoryTest\" --rerun)",
+      "Bash(./gradlew :backend:test --tests \"pl.pse.aero.repository.UserRepositoryTest\" --rerun --info)",
+      "Bash(docker version:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''Client API:'''', d.get\\(''''Client'''',{}\\).get\\(''''ApiVersion'''',''''''''\\)\\); print\\(''''Server API:'''', d.get\\(''''Server'''',{}\\).get\\(''''ApiVersion'''',''''''''\\)\\)\")",
+      "Bash(./gradlew :backend:test --tests \"pl.pse.aero.repository.UserRepositoryTest.shouldSaveAndFindUserById\" --rerun --info)",
+      "Bash(find /c/Users/sergi/code/hackaton-2026-03/aero-wir-gpt -type f -name *Couchbase*.java -o -name *couchbase*.java)",
+      "Bash(xargs grep:*)",
+      "Bash(xargs cat:*)"
+    ]
+  }
+}
