@@ -29,6 +29,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import { z } from 'zod';
 import { aeroColors } from '../../theme';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
@@ -326,6 +327,84 @@ interface CrewMember {
 
 const ROLE_OPTIONS = ['Pilot', 'Obserwator'] as const;
 
+/* ── Zod validation schema ────────────────────────────────────────────── */
+const EMAIL_REGEX = /^[a-zA-Z0-9.@-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+const crewMemberSchema = z
+  .object({
+    firstName: z
+      .string()
+      .min(1, 'Imię jest wymagane')
+      .max(100, 'Imię może mieć max. 100 znaków'),
+    lastName: z
+      .string()
+      .min(1, 'Nazwisko jest wymagane')
+      .max(100, 'Nazwisko może mieć max. 100 znaków'),
+    email: z
+      .string()
+      .min(1, 'Email jest wymagany')
+      .max(100, 'Email może mieć max. 100 znaków')
+      .regex(EMAIL_REGEX, 'Nieprawidłowy format adresu email'),
+    role: z.enum(['Pilot', 'Obserwator']),
+    weightKg: z
+      .string()
+      .min(1, 'Waga jest wymagana')
+      .refine((v) => !isNaN(Number(v)), 'Waga musi być liczbą')
+      .refine((v) => Number(v) >= 30, 'Minimalna waga to 30 kg')
+      .refine((v) => Number(v) <= 200, 'Maksymalna waga to 200 kg'),
+    pilotLicenseNumber: z.string(),
+    licenseExpiry: z.string(),
+    trainingExpiry: z
+      .string()
+      .min(1, 'Data ważności szkolenia jest wymagana'),
+  })
+  .superRefine((data, ctx) => {
+    if (data.role === 'Pilot') {
+      if (!data.pilotLicenseNumber) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Nr licencji jest wymagany dla pilota',
+          path: ['pilotLicenseNumber'],
+        });
+      } else if (data.pilotLicenseNumber.length > 30) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Nr licencji może mieć max. 30 znaków',
+          path: ['pilotLicenseNumber'],
+        });
+      }
+      if (!data.licenseExpiry) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Data ważności licencji jest wymagana dla pilota',
+          path: ['licenseExpiry'],
+        });
+      }
+    }
+  });
+
+type FieldErrors = Partial<Record<string, string>>;
+
+const ERROR_SX = {
+  fontSize: '0.6875rem',
+  color: aeroColors.error,
+  mt: 0.5,
+  lineHeight: 1.3,
+};
+
+const inputErrorSx = (hasError: boolean) =>
+  hasError
+    ? {
+        ...INPUT_SX,
+        '& .MuiOutlinedInput-root': {
+          ...INPUT_SX['& .MuiOutlinedInput-root'],
+          '& fieldset': { borderColor: `${aeroColors.error}60` },
+          '&:hover fieldset': { borderColor: `${aeroColors.error}80` },
+          '&.Mui-focused fieldset': { borderColor: aeroColors.error, borderWidth: 1 },
+        },
+      }
+    : INPUT_SX;
+
 /* ── Crew Member Modal ────────────────────────────────────────────────── */
 interface CrewMemberModalProps {
   open: boolean;
@@ -345,6 +424,7 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
   const [pilotLicenseNumber, setPilotLicenseNumber] = useState('');
   const [licenseExpiry, setLicenseExpiry] = useState('');
   const [trainingExpiry, setTrainingExpiry] = useState('');
+  const [errors, setErrors] = useState<FieldErrors>({});
 
   useEffect(() => {
     if (member) {
@@ -366,6 +446,7 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
       setLicenseExpiry('');
       setTrainingExpiry('');
     }
+    setErrors({});
   }, [member, open]);
 
   const isPilot = role === 'Pilot';
@@ -416,6 +497,28 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
   };
 
   const handleSave = () => {
+    const result = crewMemberSchema.safeParse({
+      firstName,
+      lastName,
+      email,
+      role,
+      weightKg,
+      pilotLicenseNumber,
+      licenseExpiry,
+      trainingExpiry,
+    });
+
+    if (!result.success) {
+      const fieldErrors: FieldErrors = {};
+      result.error.issues.forEach((issue) => {
+        const key = issue.path[0] as string;
+        if (!fieldErrors[key]) fieldErrors[key] = issue.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
+    setErrors({});
     const initials = `${(firstName[0] || '').toUpperCase()}${(lastName[0] || '').toUpperCase()}`;
     onSave({
       id: member?.id ?? Date.now(),
@@ -546,11 +649,12 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
               size="small"
               fullWidth
               value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              onChange={(e) => { setFirstName(e.target.value); setErrors((p) => ({ ...p, firstName: undefined })); }}
               placeholder="np. Andrzej"
               inputProps={{ maxLength: 100 }}
-              sx={INPUT_SX}
+              sx={inputErrorSx(!!errors.firstName)}
             />
+            {errors.firstName && <Typography sx={ERROR_SX}>{errors.firstName}</Typography>}
           </Box>
           <Box sx={{ flex: 1 }}>
             <Typography sx={FIELD_LABEL_SX}>Nazwisko</Typography>
@@ -558,11 +662,12 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
               size="small"
               fullWidth
               value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              onChange={(e) => { setLastName(e.target.value); setErrors((p) => ({ ...p, lastName: undefined })); }}
               placeholder="np. Kwiatkowski"
               inputProps={{ maxLength: 100 }}
-              sx={INPUT_SX}
+              sx={inputErrorSx(!!errors.lastName)}
             />
+            {errors.lastName && <Typography sx={ERROR_SX}>{errors.lastName}</Typography>}
           </Box>
         </Box>
 
@@ -574,11 +679,12 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
             fullWidth
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })); }}
             placeholder="np. a.kwiatkowski@aero.pl"
             inputProps={{ maxLength: 100 }}
-            sx={INPUT_SX}
+            sx={inputErrorSx(!!errors.email)}
           />
+          {errors.email && <Typography sx={ERROR_SX}>{errors.email}</Typography>}
         </Box>
 
         {/* Rola */}
@@ -662,7 +768,7 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
             fullWidth
             type="number"
             value={weightKg}
-            onChange={(e) => setWeightKg(e.target.value)}
+            onChange={(e) => { setWeightKg(e.target.value); setErrors((p) => ({ ...p, weightKg: undefined })); }}
             placeholder="np. 80"
             InputProps={{
               endAdornment: (
@@ -673,8 +779,9 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
                 </InputAdornment>
               ),
             }}
-            sx={INPUT_SX}
+            sx={inputErrorSx(!!errors.weightKg)}
           />
+          {errors.weightKg && <Typography sx={ERROR_SX}>{errors.weightKg}</Typography>}
         </Box>
 
         {/* Conditional pilot fields */}
@@ -686,11 +793,12 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
                 size="small"
                 fullWidth
                 value={pilotLicenseNumber}
-                onChange={(e) => setPilotLicenseNumber(e.target.value)}
+                onChange={(e) => { setPilotLicenseNumber(e.target.value); setErrors((p) => ({ ...p, pilotLicenseNumber: undefined })); }}
                 placeholder="np. PL-12345"
                 inputProps={{ maxLength: 30 }}
-                sx={INPUT_SX}
+                sx={inputErrorSx(!!errors.pilotLicenseNumber)}
               />
+              {errors.pilotLicenseNumber && <Typography sx={ERROR_SX}>{errors.pilotLicenseNumber}</Typography>}
             </Box>
 
             <Box>
@@ -700,10 +808,11 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
                 fullWidth
                 type="date"
                 value={licenseExpiry}
-                onChange={(e) => setLicenseExpiry(e.target.value)}
+                onChange={(e) => { setLicenseExpiry(e.target.value); setErrors((p) => ({ ...p, licenseExpiry: undefined })); }}
                 InputLabelProps={{ shrink: true }}
-                sx={INPUT_SX}
+                sx={inputErrorSx(!!errors.licenseExpiry)}
               />
+              {errors.licenseExpiry && <Typography sx={ERROR_SX}>{errors.licenseExpiry}</Typography>}
             </Box>
           </>
         )}
@@ -716,10 +825,11 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
             fullWidth
             type="date"
             value={trainingExpiry}
-            onChange={(e) => setTrainingExpiry(e.target.value)}
+            onChange={(e) => { setTrainingExpiry(e.target.value); setErrors((p) => ({ ...p, trainingExpiry: undefined })); }}
             InputLabelProps={{ shrink: true }}
-            sx={INPUT_SX}
+            sx={inputErrorSx(!!errors.trainingExpiry)}
           />
+          {errors.trainingExpiry && <Typography sx={ERROR_SX}>{errors.trainingExpiry}</Typography>}
         </Box>
 
         {/* ── Alerty i sprawdzenie ── */}
