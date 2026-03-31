@@ -2,6 +2,8 @@
 .gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
+# Local developer overrides (e.g. org.gradle.java.home)
+gradle.properties
 
 # IDE
 .idea/
