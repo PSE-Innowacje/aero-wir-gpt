@@ -15,6 +15,7 @@ import pl.pse.aero.dto.LoginRequest;
 import pl.pse.aero.dto.UserResponse;
 import pl.pse.aero.repository.UserRepository;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -58,6 +59,14 @@ public class AuthController {
         }
         SecurityContextHolder.clearContext();
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<List<UserResponse>> users() {
+        List<UserResponse> all = userRepository.findAll().stream()
+                .map(UserResponse::from)
+                .toList();
+        return ResponseEntity.ok(all);
     }
 
     @GetMapping("/me")
