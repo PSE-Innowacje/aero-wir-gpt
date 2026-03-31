@@ -15,9 +15,14 @@ import pl.pse.aero.dto.LoginRequest;
 import pl.pse.aero.dto.UserResponse;
 import pl.pse.aero.repository.UserRepository;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "Authentication", description = "Login, logout, and session management")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -31,6 +36,9 @@ public class AuthController {
         this.userRepository = userRepository;
     }
 
+    @Operation(summary = "Login", description = "Authenticate with email and password, create session")
+    @ApiResponse(responseCode = "200", description = "Login successful, returns user info")
+    @ApiResponse(responseCode = "401", description = "Invalid credentials")
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request,
                                    HttpServletRequest httpRequest) {
@@ -51,6 +59,8 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Logout", description = "Invalidate current session")
+    @ApiResponse(responseCode = "200", description = "Logged out successfully")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
@@ -61,6 +71,7 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "List all users", description = "Returns all registered users")
     @GetMapping("/users")
     public ResponseEntity<List<UserResponse>> users() {
         List<UserResponse> all = userRepository.findAll().stream()
@@ -69,6 +80,9 @@ public class AuthController {
         return ResponseEntity.ok(all);
     }
 
+    @Operation(summary = "Current user", description = "Returns the currently authenticated user")
+    @ApiResponse(responseCode = "200", description = "Authenticated user info")
+    @ApiResponse(responseCode = "401", description = "Not authenticated")
     @GetMapping("/me")
     public ResponseEntity<?> me(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {

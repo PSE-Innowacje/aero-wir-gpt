@@ -364,6 +364,22 @@ chore(deps): upgrade Spring Boot to 3.4.1
 refactor(auth): extract session creation into AuthService
 ```
 
+---
+
+## API Documentation (OpenAPI / Swagger)
+
+Every REST controller endpoint **must** have OpenAPI annotations:
+
+- **`@Tag`** on the controller class — with `name` and `description`
+- **`@Operation`** on every endpoint method — with `summary` (required) and `description` (when non-obvious)
+- **`@ApiResponse`** on POST/PUT endpoints — document `201`, `400`, `401` as applicable
+
+Swagger UI is available at `http://localhost:8080/swagger-ui.html` when the backend is running.
+
+**Do not** create or modify a controller endpoint without adding these annotations.
+
+---
+
 ### Do Not
 
 - Do not use past tense — use `add` not `added`, `fix` not `fixed`
