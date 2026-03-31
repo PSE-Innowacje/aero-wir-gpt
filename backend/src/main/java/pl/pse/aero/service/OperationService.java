@@ -6,10 +6,8 @@ import pl.pse.aero.domain.*;
 import pl.pse.aero.dto.KmlProcessingResult;
 import pl.pse.aero.repository.FlightOperationRepository;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
+import java.util.function.Function;
 
 @Service
 public class OperationService {
@@ -69,8 +67,11 @@ public class OperationService {
         return operationRepository.save(operation);
     }
 
-    public FlightOperation update(String id, FlightOperation updates, UserRole currentUserRole) {
+    public FlightOperation update(String id, FlightOperation updates, UserRole currentUserRole, String userEmail) {
         FlightOperation existing = findById(id);
+
+        // Snapshot old values before applying changes
+        Map<String, String> oldValues = snapshotFields(existing);
 
         if (currentUserRole == UserRole.PLANNER) {
             validatePlannerEdit(existing);
@@ -81,6 +82,10 @@ public class OperationService {
             throw new org.springframework.security.access.AccessDeniedException(
                     "Role " + currentUserRole + " cannot edit operations");
         }
+
+        // Compare and record changes
+        Map<String, String> newValues = snapshotFields(existing);
+        recordChanges(existing, oldValues, newValues, userEmail);
 
         existing.prePersist();
         return operationRepository.save(existing);
@@ -112,8 +117,9 @@ public class OperationService {
 
     // --- Status state machine (39-SC-AERO) ---
 
-    public FlightOperation changeStatus(String operationId, String action, UserRole role) {
+    public FlightOperation changeStatus(String operationId, String action, UserRole role, String userEmail) {
         FlightOperation op = findById(operationId);
+        OperationStatus oldStatus = op.getStatus();
 
         switch (action) {
             case "reject" -> {
@@ -157,6 +163,16 @@ public class OperationService {
                 op.setStatus(OperationStatus.CONFIRMED);
             }
             default -> throw new IllegalArgumentException("Unknown action: " + action);
+        }
+
+        // Record status change in history
+        if (op.getStatus() != oldStatus) {
+            op.getChangeHistory().add(OperationChangeHistory.builder()
+                    .fieldName("status")
+                    .oldValue(oldStatus.name())
+                    .newValue(op.getStatus().name())
+                    .changedByEmail(userEmail)
+                    .build());
         }
 
         op.prePersist();
@@ -208,5 +224,44 @@ public class OperationService {
         existing.setPlannedDateEarliest(updates.getPlannedDateEarliest());
         existing.setPlannedDateLatest(updates.getPlannedDateLatest());
         existing.setPostCompletionNotes(updates.getPostCompletionNotes());
+    }
+
+    // --- Change history tracking ---
+
+    private Map<String, String> snapshotFields(FlightOperation op) {
+        Map<String, String> snapshot = new LinkedHashMap<>();
+        snapshot.put("orderNumber", str(op.getOrderNumber()));
+        snapshot.put("shortDescription", str(op.getShortDescription()));
+        snapshot.put("proposedDateEarliest", str(op.getProposedDateEarliest()));
+        snapshot.put("proposedDateLatest", str(op.getProposedDateLatest()));
+        snapshot.put("additionalInfo", str(op.getAdditionalInfo()));
+        snapshot.put("activityTypes", str(op.getActivityTypes()));
+        snapshot.put("contacts", str(op.getContacts()));
+        snapshot.put("plannedDateEarliest", str(op.getPlannedDateEarliest()));
+        snapshot.put("plannedDateLatest", str(op.getPlannedDateLatest()));
+        snapshot.put("postCompletionNotes", str(op.getPostCompletionNotes()));
+        snapshot.put("status", str(op.getStatus()));
+        return snapshot;
+    }
+
+    private void recordChanges(FlightOperation op, Map<String, String> oldValues,
+                               Map<String, String> newValues, String userEmail) {
+        for (Map.Entry<String, String> entry : newValues.entrySet()) {
+            String field = entry.getKey();
+            String newVal = entry.getValue();
+            String oldVal = oldValues.get(field);
+            if (!Objects.equals(oldVal, newVal)) {
+                op.getChangeHistory().add(OperationChangeHistory.builder()
+                        .fieldName(field)
+                        .oldValue(oldVal)
+                        .newValue(newVal)
+                        .changedByEmail(userEmail)
+                        .build());
+            }
+        }
+    }
+
+    private String str(Object value) {
+        return value == null ? null : value.toString();
     }
 }

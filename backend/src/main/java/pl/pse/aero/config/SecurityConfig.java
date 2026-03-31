@@ -53,6 +53,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/helicopters/**", "/api/crew-members/**",
                                 "/api/landing-sites/**", "/api/users/**")
                             .hasRole("ADMIN")
+                        // Operations: PLANNER/SUPERVISOR full access, ADMIN/PILOT read-only
+                        .requestMatchers(HttpMethod.GET, "/api/operations/**")
+                            .hasAnyRole("ADMIN", "PLANNER", "SUPERVISOR", "PILOT")
+                        .requestMatchers(HttpMethod.POST, "/api/operations/**")
+                            .hasAnyRole("PLANNER", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/operations/**")
+                            .hasAnyRole("PLANNER", "SUPERVISOR")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

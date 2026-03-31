@@ -100,7 +100,7 @@ class OperationServiceSpec extends Specification {
                 .build()
 
         when:
-        def result = service.update("o1", updates, UserRole.PLANNER)
+        def result = service.update("o1", updates, UserRole.PLANNER, "planista@aero.pl")
 
         then:
         result.orderNumber == "NEW"
@@ -127,7 +127,7 @@ class OperationServiceSpec extends Specification {
                 .build()
 
         when:
-        def result = service.update("o1", updates, UserRole.SUPERVISOR)
+        def result = service.update("o1", updates, UserRole.SUPERVISOR, "nadzor@aero.pl")
 
         then:
         result.plannedDateEarliest == LocalDate.of(2026, 7, 1)
@@ -144,10 +144,35 @@ class OperationServiceSpec extends Specification {
         repository.findById("o1") >> Optional.of(existing)
 
         when:
-        service.update("o1", FlightOperation.builder().build(), UserRole.PLANNER)
+        service.update("o1", FlightOperation.builder().build(), UserRole.PLANNER, "planista@aero.pl")
 
         then:
         thrown(IllegalStateException)
+    }
+
+    def "update should record change history for modified fields"() {
+        given:
+        def existing = FlightOperation.builder()
+                .id("o1")
+                .orderNumber("OLD-NUM")
+                .shortDescription("Old desc")
+                .status(OperationStatus.SUBMITTED)
+                .build()
+        repository.findById("o1") >> Optional.of(existing)
+        repository.save(_) >> { FlightOperation o -> o }
+
+        def updates = FlightOperation.builder()
+                .orderNumber("NEW-NUM")
+                .shortDescription("Old desc")  // unchanged
+                .build()
+
+        when:
+        def result = service.update("o1", updates, UserRole.PLANNER, "planista@aero.pl")
+
+        then:
+        result.changeHistory.any { it.fieldName == "orderNumber" && it.oldValue == "OLD-NUM" && it.newValue == "NEW-NUM" }
+        !result.changeHistory.any { it.fieldName == "shortDescription" }
+        result.changeHistory.every { it.changedByEmail == "planista@aero.pl" }
     }
 
     def "update as ADMIN should throw AccessDeniedException"() {
@@ -156,7 +181,7 @@ class OperationServiceSpec extends Specification {
         repository.findById("o1") >> Optional.of(existing)
 
         when:
-        service.update("o1", FlightOperation.builder().build(), UserRole.ADMIN)
+        service.update("o1", FlightOperation.builder().build(), UserRole.ADMIN, "admin@aero.pl")
 
         then:
         thrown(AccessDeniedException)
