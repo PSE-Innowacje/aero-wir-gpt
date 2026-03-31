@@ -5,6 +5,9 @@ import DashboardPage from './pages/dashboard/DashboardPage';
 import HelicopterListPage from './pages/helicopters/HelicopterListPage';
 import CrewListPage from './pages/crew/CrewListPage';
 import LandingSiteListPage from './pages/landing-sites/LandingSiteListPage';
+import UserListPage from './pages/users/UserListPage';
+import OperationListPage from './pages/operations/OperationListPage';
+import OrderListPage from './pages/orders/OrderListPage';
 
 function App() {
   return (
@@ -16,6 +19,9 @@ function App() {
           <Route path="/helicopters" element={<HelicopterListPage />} />
           <Route path="/crew" element={<CrewListPage />} />
           <Route path="/landing-sites" element={<LandingSiteListPage />} />
+          <Route path="/users" element={<UserListPage />} />
+          <Route path="/operations" element={<OperationListPage />} />
+          <Route path="/orders" element={<OrderListPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
