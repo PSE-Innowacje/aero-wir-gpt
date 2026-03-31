@@ -6,6 +6,7 @@ import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
+import org.springframework.security.crypto.password.PasswordEncoder
 import pl.pse.aero.domain.User
 import pl.pse.aero.domain.UserRole
 import pl.pse.aero.dto.LoginRequest
@@ -16,7 +17,8 @@ class AuthControllerSpec extends Specification {
 
     AuthenticationManager authManager = Mock()
     UserRepository userRepository = Mock()
-    AuthController controller = new AuthController(authManager, userRepository)
+    PasswordEncoder passwordEncoder = Mock()
+    AuthController controller = new AuthController(authManager, userRepository, passwordEncoder)
 
     def pilotUser = User.builder()
             .id("u1")
