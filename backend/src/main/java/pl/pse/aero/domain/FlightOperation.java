@@ -87,6 +87,14 @@ public class FlightOperation {
     private List<String> contacts = new ArrayList<>();
 
     @Field
+    @Builder.Default
+    private List<OperationComment> comments = new ArrayList<>();
+
+    @Field
+    @Builder.Default
+    private List<OperationChangeHistory> changeHistory = new ArrayList<>();
+
+    @Field
     private LocalDateTime createdAt;
 
     @Field
