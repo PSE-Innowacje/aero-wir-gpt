@@ -5,11 +5,11 @@
 **Ref**: implementation-plan.md § 2.4
 
 ## Description
-Create the landing site domain model. Build a JPA entity representing a named geographic location with latitude and longitude coordinates. Provide a Spring Data repository for persistence.
+Create the landing site domain model. Build a Couchbase document representing a named geographic location with latitude and longitude coordinates. Provide a Spring Data repository for persistence.
 
 ## Acceptance Criteria
 - [ ] `LandingSite` entity has fields: id (Long, auto-generated), name (not blank), latitude (double), longitude (double)
-- [ ] `LandingSiteRepository` extends `JpaRepository<LandingSite, Long>`
+- [ ] `LandingSiteRepository` extends `CouchbaseRepository<LandingSite, Long>`
 - [ ] Backend compiles successfully
 - [ ] `landing_sites` table is created on application startup
 

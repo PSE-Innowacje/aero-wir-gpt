@@ -1,13 +1,12 @@
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/aero
+  couchbase:
+    connection-string: couchbase://localhost
     username: aero
-    password: aero
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
+    password: aeropass
+  data:
+    couchbase:
+      bucket-name: aero
+      auto-index: true
   servlet:
     multipart:
       max-file-size: 10MB

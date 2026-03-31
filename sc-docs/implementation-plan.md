@@ -9,7 +9,7 @@ Based on `docs/description.md` (PRD), `docs/plan.md` (technical plan), and resol
 | # | Decision | Choice |
 |---|----------|--------|
 | 1 | User ↔ CrewMember link | Explicit FK: `users.crew_member_id → crew_members.id` (nullable) |
-| 2 | Database | Docker Compose with Postgres |
+| 2 | Database | Docker Compose with Couchbase |
 | 3 | UI language | Polish UI, English codebase (enums, variables, API fields) |
 | 4 | Java version | Java 21 |
 | 5 | Crew roles | Fixed enum: `PILOT`, `OBSERVER` |
@@ -38,22 +38,21 @@ Spring Boot 3.x (latest stable)
 Java 21 toolchain
 Dependencies:
   - spring-boot-starter-web
-  - spring-boot-starter-data-jpa
+  - spring-boot-starter-data-couchbase
   - spring-boot-starter-security
   - spring-boot-starter-validation
-  - postgresql (runtime)
   - lombok (optional, compileOnly)
 ```
 
 ### 0.3 Docker Compose
 - `docker-compose.yml` at project root
-- Postgres 16 on port 5432
-- Database: `aero`, user: `aero`, password: `aero`
+- Couchbase Server on ports 8091-8096, 11210
+- Bucket: `aero`, user: `aero`, password: `aeropass`
 - Volume for data persistence
 
 ### 0.4 Backend Configuration (`application.yml`)
-- Datasource pointing to Docker Postgres
-- JPA: `ddl-auto: update` (dev mode — schema auto-created from entities)
+- Couchbase connection string pointing to Docker Couchbase (`couchbase://localhost`)
+- Spring Data Couchbase: `auto-index: true` (dev mode — indexes auto-created)
 - File upload directory: `./uploads/kml`
 - Server port: 8080
 
@@ -66,8 +65,8 @@ Dependencies:
 - Dev server on port 5173
 
 ### 0.6 Verification
-- `docker compose up -d` starts Postgres
-- `./gradlew :backend:bootRun` starts Spring Boot, connects to DB
+- `docker compose up -d` starts Couchbase
+- `./gradlew :backend:bootRun` starts Spring Boot, connects to Couchbase
 - `cd frontend && npm run dev` starts Vite, proxy works
 - `GET http://localhost:5173/api/auth/me` returns 401 (no session) — proxy confirmed
 
@@ -78,9 +77,9 @@ Dependencies:
 **Goal**: Login works for all 4 roles, sidebar is role-aware, protected routes redirect unauthenticated users.
 
 ### 1.1 Backend: User Entity & Auth
-- `User` entity with fields: id, firstName, lastName, email, passwordHash, role, **crewMemberId** (nullable FK)
+- `User` document with fields: id, firstName, lastName, email, passwordHash, role, **crewMemberId** (nullable reference)
 - `UserRole` enum: `ADMIN`, `PLANNER`, `SUPERVISOR`, `PILOT`
-- `UserRepository` with `findByEmail()`
+- `UserRepository` (Spring Data Couchbase) with `findByEmail()`
 - `SecurityConfig`:
   - Session-based auth (JSESSIONID cookie)
   - CSRF disabled (SPA uses JSON)
@@ -133,7 +132,7 @@ Dependencies:
 
 ### 2.2 Helicopters
 **Backend**:
-- `Helicopter` entity (all fields from PRD 6.1)
+- `Helicopter` document (all fields from PRD 6.1)
 - `HelicopterStatus` enum: `ACTIVE`, `INACTIVE`
 - Repository, Service, Controller (`/api/helicopters`)
 - Validation: inspectionExpiryDate required when status = ACTIVE
@@ -144,7 +143,7 @@ Dependencies:
 
 ### 2.3 Crew Members
 **Backend**:
-- `CrewMember` entity (all fields from PRD 6.2)
+- `CrewMember` document (all fields from PRD 6.2)
 - `CrewRole` enum: `PILOT`, `OBSERVER`
 - Repository, Service, Controller (`/api/crew-members`)
 - Validation: pilotLicenseNumber + licenseExpiryDate required when role = PILOT
@@ -156,7 +155,7 @@ Dependencies:
 
 ### 2.4 Landing Sites
 **Backend**:
-- `LandingSite` entity: id, name, latitude, longitude
+- `LandingSite` document: id, name, latitude, longitude
 - Repository, Service, Controller (`/api/landing-sites`)
 
 **Frontend**:
@@ -207,19 +206,19 @@ Dependencies:
   3. Validate: max 5000 points, all within Poland bounding box (lat 49.0–54.9, lng 14.1–24.2)
   4. Calculate route length: Haversine formula on consecutive points, sum in km
   5. Return: `KmlProcessingResult { filePath, List<LatLng> points, int routeLengthKm }`
-- **Coordinate persistence**: Parsed points are stored as a JSON column (`kml_points TEXT/JSONB`) on the `flight_operations` entity. This avoids re-parsing KML on every page load. The column stores a JSON array of `[lat, lng]` pairs.
+- **Coordinate persistence**: Parsed points are stored as a field (`kmlPoints`) on the `flight_operations` document. This avoids re-parsing KML on every page load. The field stores a list of `[lat, lng]` pairs.
 - Endpoint: `POST /api/operations/upload-kml` — multipart file upload, returns result
 - Endpoint: `GET /api/operations/{id}/kml` — serves the stored KML file (raw download)
 
 ### 3.2 Backend: Flight Operation Entity & Supporting Tables
-- `FlightOperation` entity with all fields from PRD 6.5
-- **`kml_points`** — TEXT/JSONB column storing parsed coordinates as JSON array (persisted at upload time, served in detail response)
-- **`auto_number`** — display-friendly sequential number. Strategy: use the entity `id` as the display number (both are sequential). Avoids complexity of managing a second sequence with JPA `ddl-auto: update`. If distinct numbering is needed later, switch to a `@PrePersist` hook with `SELECT COALESCE(MAX(auto_number), 0) + 1`.
+- `FlightOperation` document with all fields from PRD 6.5
+- **`kmlPoints`** — field storing parsed coordinates as a list (persisted at upload time, served in detail response)
+- **`autoNumber`** — display-friendly sequential number. Strategy: use an atomic counter document in Couchbase to generate sequential numbers on create.
 - `OperationStatus` enum: `SUBMITTED(1)`, `REJECTED(2)`, `CONFIRMED(3)`, `SCHEDULED(4)`, `PARTIALLY_COMPLETED(5)`, `COMPLETED(6)`, `CANCELLED(7)`
 - `ActivityType` enum: `VISUAL_INSPECTION`, `SCAN_3D`, `FAULT_LOCATION`, `PHOTOS`, `PATROL` (with Polish labels)
-- Join tables: `flight_operation_activity_types`, `flight_operation_contacts`
-- `OperationComment` entity (append-only)
-- `OperationChangeHistory` entity (audit trail, auto-populated on updates)
+- Embedded lists: `activityTypes`, `contacts`
+- Embedded `comments` list (append-only)
+- Embedded `changeHistory` list (audit trail, auto-populated on updates)
 
 ### 3.3 Backend: Operation Service (Business Logic)
 - **Status transitions** — validated state machine:
@@ -306,10 +305,10 @@ Dependencies:
 **Goal**: Pilots create flight orders combining operations + resources, with full validation. Supervisors approve. Status cascading works.
 
 ### 4.1 Backend: Flight Order Entity
-- `FlightOrder` entity with all fields from PRD 6.6
-- **`auto_number`** — same strategy as operations: use entity `id` as display number
+- `FlightOrder` document with all fields from PRD 6.6
+- **`autoNumber`** — same strategy as operations: atomic counter document in Couchbase
 - `OrderStatus` enum: `SUBMITTED(1)`, `SENT_FOR_APPROVAL(2)`, `REJECTED(3)`, `APPROVED(4)`, `PARTIALLY_COMPLETED(5)`, `COMPLETED(6)`, `NOT_COMPLETED(7)`
-- Join tables: `flight_order_crew_members`, `flight_order_operations`
+- Reference lists: `crewMemberIds`, `operationIds`
 
 ### 4.2 Backend: Order Service (Business Logic)
 - **Auto-fill pilot** from logged-in user's linked crew member (via `user.crewMemberId`). If user has no linked crew member, block order creation with error.
@@ -400,7 +399,7 @@ Dependencies:
 
 ### 5.3 End-to-End Smoke Test
 Walk through the complete workflow:
-1. Start Postgres + backend + frontend
+1. Start Couchbase + backend + frontend
 2. Admin: create helicopter, crew members, landing sites
 3. Planner: create flight operation with KML, view on map
 4. Supervisor: confirm operation with planned dates
@@ -424,8 +423,8 @@ Walk through the complete workflow:
 - `src/main/java/com/nullterrier/aero/`
   - `AeroApplication.java`
   - `config/` — SecurityConfig, WebConfig, DataInitializer
-  - `entity/` — User, Helicopter, CrewMember, LandingSite, FlightOperation, FlightOrder, OperationComment, OperationChangeHistory + enums
-  - `repository/` — one per entity
+  - `document/` — User, Helicopter, CrewMember, LandingSite, FlightOperation, FlightOrder + embedded types (OperationComment, OperationChangeHistory) + enums
+  - `repository/` — one per document (Spring Data Couchbase)
   - `service/` — UserService, HelicopterService, CrewMemberService, LandingSiteService, OperationService, OrderService, KmlService
   - `controller/` — AuthController, UserController, HelicopterController, CrewMemberController, LandingSiteController, OperationController, OrderController, DictionaryController
   - `dto/` — request/response DTOs per entity
@@ -450,7 +449,7 @@ Walk through the complete workflow:
   - `App.tsx` — router + layout
 
 ### Approximate counts
-- ~12 Java entities/enums
+- ~12 Java documents/enums
 - ~8 repositories
 - ~8 services
 - ~9 controllers
