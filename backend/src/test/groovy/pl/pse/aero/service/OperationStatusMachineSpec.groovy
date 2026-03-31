@@ -36,7 +36,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.SUBMITTED)
 
         when:
-        def result = service.changeStatus("o1", "reject", UserRole.SUPERVISOR)
+        def result = service.changeStatus("o1", "reject", UserRole.SUPERVISOR, "nadzor@aero.pl")
 
         then:
         result.status == OperationStatus.REJECTED
@@ -47,7 +47,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.SUBMITTED)
 
         when:
-        service.changeStatus("o1", "reject", UserRole.PLANNER)
+        service.changeStatus("o1", "reject", UserRole.PLANNER, "planista@aero.pl")
 
         then:
         thrown(AccessDeniedException)
@@ -58,7 +58,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.CONFIRMED)
 
         when:
-        service.changeStatus("o1", "reject", UserRole.SUPERVISOR)
+        service.changeStatus("o1", "reject", UserRole.SUPERVISOR, "nadzor@aero.pl")
 
         then:
         thrown(IllegalStateException)
@@ -71,7 +71,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.SUBMITTED, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 1))
 
         when:
-        def result = service.changeStatus("o1", "confirm", UserRole.SUPERVISOR)
+        def result = service.changeStatus("o1", "confirm", UserRole.SUPERVISOR, "nadzor@aero.pl")
 
         then:
         result.status == OperationStatus.CONFIRMED
@@ -82,7 +82,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.SUBMITTED)
 
         when:
-        service.changeStatus("o1", "confirm", UserRole.SUPERVISOR)
+        service.changeStatus("o1", "confirm", UserRole.SUPERVISOR, "nadzor@aero.pl")
 
         then:
         thrown(IllegalArgumentException)
@@ -93,7 +93,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.SUBMITTED, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 1))
 
         when:
-        service.changeStatus("o1", "confirm", UserRole.PLANNER)
+        service.changeStatus("o1", "confirm", UserRole.PLANNER, "planista@aero.pl")
 
         then:
         thrown(AccessDeniedException)
@@ -106,7 +106,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", fromStatus)
 
         when:
-        def result = service.changeStatus("o1", "cancel", UserRole.PLANNER)
+        def result = service.changeStatus("o1", "cancel", UserRole.PLANNER, "planista@aero.pl")
 
         then:
         result.status == OperationStatus.CANCELLED
@@ -120,7 +120,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.SUBMITTED)
 
         when:
-        service.changeStatus("o1", "cancel", UserRole.SUPERVISOR)
+        service.changeStatus("o1", "cancel", UserRole.SUPERVISOR, "nadzor@aero.pl")
 
         then:
         thrown(AccessDeniedException)
@@ -131,7 +131,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.COMPLETED)
 
         when:
-        service.changeStatus("o1", "cancel", UserRole.PLANNER)
+        service.changeStatus("o1", "cancel", UserRole.PLANNER, "planista@aero.pl")
 
         then:
         thrown(IllegalStateException)
@@ -144,7 +144,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.CONFIRMED)
 
         when:
-        def result = service.changeStatus("o1", "schedule", null)
+        def result = service.changeStatus("o1", "schedule", null, "system")
 
         then:
         result.status == OperationStatus.SCHEDULED
@@ -155,7 +155,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.SCHEDULED)
 
         when:
-        def result = service.changeStatus("o1", "complete", null)
+        def result = service.changeStatus("o1", "complete", null, "system")
 
         then:
         result.status == OperationStatus.COMPLETED
@@ -166,7 +166,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.SCHEDULED)
 
         when:
-        def result = service.changeStatus("o1", "partialComplete", null)
+        def result = service.changeStatus("o1", "partialComplete", null, "system")
 
         then:
         result.status == OperationStatus.PARTIALLY_COMPLETED
@@ -177,7 +177,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.SCHEDULED)
 
         when:
-        def result = service.changeStatus("o1", "unschedule", null)
+        def result = service.changeStatus("o1", "unschedule", null, "system")
 
         then:
         result.status == OperationStatus.CONFIRMED
@@ -190,7 +190,7 @@ class OperationStatusMachineSpec extends Specification {
         makeOp("o1", OperationStatus.SUBMITTED)
 
         when:
-        service.changeStatus("o1", "bogus", UserRole.SUPERVISOR)
+        service.changeStatus("o1", "bogus", UserRole.SUPERVISOR, "nadzor@aero.pl")
 
         then:
         thrown(IllegalArgumentException)
