@@ -29,7 +29,7 @@ The plan mentions Couchbase. For local development:
 
 My recommendation: **(a)** — reproducible, no local install needed.
 
-**Your answer:** **(a)** — Docker Compose
+**Your answer:** **(b)** — Local Couchbase install for dev; Testcontainers for integration tests (no Docker Compose)
 
 
 ---
