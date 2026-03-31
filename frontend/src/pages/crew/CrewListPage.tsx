@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -18,6 +18,7 @@ import {
   TextField,
   MenuItem,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import FlightIcon from '@mui/icons-material/Flight';
@@ -31,6 +32,8 @@ import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { z } from 'zod';
 import { aeroColors } from '../../theme';
+import { getCrewMembers, createCrewMember, updateCrewMember } from '../../api/crew.api';
+import type { CrewMemberResponse, CrewRole } from '../../api/types';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
 const GLASS_CARD = {
@@ -235,6 +238,30 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+/* ── Role mapping ─────────────────────────────────────────────────────── */
+const ROLE_LABEL: Record<CrewRole, string> = { PILOT: 'Pilot', OBSERVER: 'Obserwator' };
+const ROLE_FROM_LABEL: Record<string, CrewRole> = { Pilot: 'PILOT', Obserwator: 'OBSERVER' };
+
+function getInitials(first: string, last: string) {
+  return `${(first[0] || '').toUpperCase()}${(last[0] || '').toUpperCase()}`;
+}
+
+function computeStatus(member: CrewMemberResponse): string {
+  const now = new Date();
+  const soon = new Date();
+  soon.setDate(soon.getDate() + 30);
+
+  if (member.role === 'PILOT' && member.licenseExpiryDate) {
+    if (new Date(member.licenseExpiryDate) < now) return 'Wygasła licencja';
+  }
+  if (member.trainingExpiryDate) {
+    const td = new Date(member.trainingExpiryDate);
+    if (td < now) return 'Nieaktywny';
+    if (td < soon) return 'Szkolenie wkrótce';
+  }
+  return 'Aktywny';
+}
+
 /* ── Crew member mini card ─────────────────────────────────────────────── */
 interface CrewCardProps {
   initials: string;
@@ -309,21 +336,6 @@ function CrewMemberCard({ initials, name, role, status, accent }: CrewCardProps)
 /* ── Hero image for crew modal ────────────────────────────────────────── */
 const CREW_HERO_IMG =
   'https://kursyszkolenia.online/wp-content/uploads/2025/03/Personel-pokladowy-stewardessa-zarobki.jpg';
-
-/* ── Crew member interface ────────────────────────────────────────────── */
-interface CrewMember {
-  id: number;
-  initials: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  weightKg: number;
-  pilotLicenseNumber: string;
-  licenseExpiry: string;
-  trainingExpiry: string;
-  status: string;
-}
 
 const ROLE_OPTIONS = ['Pilot', 'Obserwator'] as const;
 
@@ -409,8 +421,8 @@ const inputErrorSx = (hasError: boolean) =>
 interface CrewMemberModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (member: CrewMember) => void;
-  member: CrewMember | null;
+  onSave: (member: CrewMemberResponse) => void;
+  member: CrewMemberResponse | null;
 }
 
 function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps) {
@@ -425,17 +437,18 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
   const [licenseExpiry, setLicenseExpiry] = useState('');
   const [trainingExpiry, setTrainingExpiry] = useState('');
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (member) {
       setFirstName(member.firstName);
       setLastName(member.lastName);
       setEmail(member.email);
-      setRole(member.role);
+      setRole(ROLE_LABEL[member.role]);
       setWeightKg(String(member.weightKg));
-      setPilotLicenseNumber(member.pilotLicenseNumber);
-      setLicenseExpiry(member.licenseExpiry);
-      setTrainingExpiry(member.trainingExpiry);
+      setPilotLicenseNumber(member.pilotLicenseNumber ?? '');
+      setLicenseExpiry(member.licenseExpiryDate ?? '');
+      setTrainingExpiry(member.trainingExpiryDate);
     } else {
       setFirstName('');
       setLastName('');
@@ -481,22 +494,7 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
     }
   }
 
-  const computeStatus = (): string => {
-    if (licenseExpiry && isPilot) {
-      const ld = new Date(licenseExpiry);
-      if (ld < new Date()) return 'Wygasła licencja';
-    }
-    if (trainingExpiry) {
-      const td = new Date(trainingExpiry);
-      const soon = new Date();
-      soon.setDate(soon.getDate() + 30);
-      if (td < new Date()) return 'Nieaktywny';
-      if (td < soon) return 'Szkolenie wkrótce';
-    }
-    return 'Aktywny';
-  };
-
-  const handleSave = () => {
+  const handleSave = async () => {
     const result = crewMemberSchema.safeParse({
       firstName,
       lastName,
@@ -519,21 +517,29 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
     }
 
     setErrors({});
-    const initials = `${(firstName[0] || '').toUpperCase()}${(lastName[0] || '').toUpperCase()}`;
-    onSave({
-      id: member?.id ?? Date.now(),
-      initials,
-      firstName,
-      lastName,
-      email,
-      role,
-      weightKg: Number(weightKg) || 0,
-      pilotLicenseNumber: isPilot ? pilotLicenseNumber : '',
-      licenseExpiry: isPilot ? licenseExpiry : '',
-      trainingExpiry,
-      status: computeStatus(),
-    });
-    onClose();
+    setSaving(true);
+    try {
+      const apiRole = ROLE_FROM_LABEL[role] ?? 'PILOT';
+      const payload = {
+        firstName,
+        lastName,
+        email,
+        role: apiRole,
+        weightKg: Number(weightKg) || 0,
+        pilotLicenseNumber: isPilot ? pilotLicenseNumber : undefined,
+        licenseExpiryDate: isPilot ? licenseExpiry : undefined,
+        trainingExpiryDate: trainingExpiry,
+      };
+      const saved = isEdit && member
+        ? await updateCrewMember(member.id, payload)
+        : await createCrewMember(payload);
+      onSave(saved);
+      onClose();
+    } catch (err) {
+      console.error('Failed to save crew member:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -624,7 +630,7 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
             }}
           >
             {isEdit && member
-              ? `Edycja personelu nr systemu #${member.id}`
+              ? `Edycja: ${member.firstName} ${member.lastName}`
               : 'Rejestruj personel w systemie AERO'}
           </Typography>
         </Box>
@@ -945,87 +951,45 @@ function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps
   );
 }
 
-/* ── Mock data ─────────────────────────────────────────────────────────── */
-const CREW_MEMBERS_INIT: CrewMember[] = [
-  {
-    id: 1,
-    initials: 'AK',
-    firstName: 'Andrzej',
-    lastName: 'Kwiatkowski',
-    email: 'a.kwiatkowski@aero.com',
-    role: 'Pilot',
-    weightKg: 82,
-    pilotLicenseNumber: 'PL-44210',
-    licenseExpiry: '2025-12-15',
-    trainingExpiry: '2024-06-20',
-    status: 'Aktywny',
-  },
-  {
-    id: 2,
-    initials: 'MN',
-    firstName: 'Marta',
-    lastName: 'Nowak',
-    email: 'm.nowak@aero.com',
-    role: 'Obserwator',
-    weightKg: 65,
-    pilotLicenseNumber: '',
-    licenseExpiry: '',
-    trainingExpiry: '2024-03-12',
-    status: 'Aktywny',
-  },
-  {
-    id: 3,
-    initials: 'JR',
-    firstName: 'Jan',
-    lastName: 'Rybak',
-    email: 'j.rybak@aero.com',
-    role: 'Pilot',
-    weightKg: 90,
-    pilotLicenseNumber: 'PL-33187',
-    licenseExpiry: '2024-01-10',
-    trainingExpiry: '2023-11-05',
-    status: 'Wygasła licencja',
-  },
-  {
-    id: 4,
-    initials: 'TP',
-    firstName: 'Tomasz',
-    lastName: 'Pilch',
-    email: 't.pilch@aero.com',
-    role: 'Obserwator',
-    weightKg: 78,
-    pilotLicenseNumber: '',
-    licenseExpiry: '',
-    trainingExpiry: '2024-05-01',
-    status: 'Szkolenie wkrótce',
-  },
-];
-
-const CARD_ACCENTS: Record<number, string> = {
-  1: aeroColors.primary,
-  2: aeroColors.tertiary,
-  3: aeroColors.error,
-  4: aeroColors.secondary,
-};
+const CARD_ACCENT_PALETTE = [aeroColors.primary, aeroColors.tertiary, aeroColors.error, aeroColors.secondary];
 
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function CrewListPage() {
   const [search, setSearch] = useState('');
-  const [crewMembers, setCrewMembers] = useState<CrewMember[]>(CREW_MEMBERS_INIT);
+  const [crewMembers, setCrewMembers] = useState<CrewMemberResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingMember, setEditingMember] = useState<CrewMember | null>(null);
+  const [editingMember, setEditingMember] = useState<CrewMemberResponse | null>(null);
+
+  const fetchCrewMembers = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await getCrewMembers();
+      setCrewMembers(data);
+    } catch (err) {
+      console.error('Failed to fetch crew members:', err);
+      setError('Nie udało się pobrać listy członków załogi.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCrewMembers();
+  }, [fetchCrewMembers]);
 
   const openAdd = () => {
     setEditingMember(null);
     setModalOpen(true);
   };
 
-  const openEdit = (member: CrewMember) => {
+  const openEdit = (member: CrewMemberResponse) => {
     setEditingMember(member);
     setModalOpen(true);
   };
 
-  const handleSave = (member: CrewMember) => {
+  const handleSave = (member: CrewMemberResponse) => {
     setCrewMembers((prev) => {
       const exists = prev.find((m) => m.id === member.id);
       if (exists) {
@@ -1037,24 +1001,45 @@ export default function CrewListPage() {
 
   const filtered = crewMembers.filter((m) => {
     const q = search.toLowerCase();
+    const roleLabel = ROLE_LABEL[m.role];
+    const status = computeStatus(m);
     return (
       `${m.firstName} ${m.lastName}`.toLowerCase().includes(q) ||
       m.email.toLowerCase().includes(q) ||
-      m.role.toLowerCase().includes(q) ||
-      m.status.toLowerCase().includes(q)
+      roleLabel.toLowerCase().includes(q) ||
+      status.toLowerCase().includes(q)
     );
   });
 
   const totalCount = crewMembers.length;
-  const pilotsCount = crewMembers.filter((m) => m.role === 'Pilot').length;
-  const observersCount = crewMembers.filter((m) => m.role === 'Obserwator').length;
-  const activeCount = crewMembers.filter((m) => m.status === 'Aktywny').length;
+  const pilotsCount = crewMembers.filter((m) => m.role === 'PILOT').length;
+  const observersCount = crewMembers.filter((m) => m.role === 'OBSERVER').length;
+  const activeCount = crewMembers.filter((m) => computeStatus(m) === 'Aktywny').length;
 
   const formatDate = (iso: string) => {
     if (!iso || iso === '—') return '—';
     const [y, m, d] = iso.split('-');
     return `${d}.${m}.${y}`;
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress sx={{ color: aeroColors.primary }} />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, minHeight: 400, justifyContent: 'center' }}>
+        <Typography sx={{ color: aeroColors.secondary }}>{error}</Typography>
+        <Button variant="outlined" onClick={fetchCrewMembers} sx={{ color: aeroColors.primary, borderColor: aeroColors.primary }}>
+          Spróbuj ponownie
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
@@ -1165,11 +1150,11 @@ export default function CrewListPage() {
         {crewMembers.slice(0, 4).map((member, idx) => (
           <Grid key={member.id} size={{ xs: 12, sm: 6, md: 3 }}>
             <CrewMemberCard
-              initials={member.initials}
+              initials={getInitials(member.firstName, member.lastName)}
               name={`${member.firstName} ${member.lastName}`}
-              role={member.role}
-              status={member.status}
-              accent={CARD_ACCENTS[idx + 1] ?? aeroColors.primary}
+              role={ROLE_LABEL[member.role]}
+              status={computeStatus(member)}
+              accent={CARD_ACCENT_PALETTE[idx % CARD_ACCENT_PALETTE.length]}
             />
           </Grid>
         ))}
@@ -1275,16 +1260,16 @@ export default function CrewListPage() {
                         sx={{
                           width: 28,
                           height: 28,
-                          bgcolor: `${CARD_ACCENTS[member.id]}20`,
-                          color: CARD_ACCENTS[member.id],
-                          border: `1px solid ${CARD_ACCENTS[member.id]}30`,
+                          bgcolor: `${CARD_ACCENT_PALETTE[idx % CARD_ACCENT_PALETTE.length]}20`,
+                          color: CARD_ACCENT_PALETTE[idx % CARD_ACCENT_PALETTE.length],
+                          border: `1px solid ${CARD_ACCENT_PALETTE[idx % CARD_ACCENT_PALETTE.length]}30`,
                           fontSize: '0.625rem',
                           fontWeight: 700,
                           fontFamily: '"Space Grotesk", sans-serif',
                           flexShrink: 0,
                         }}
                       >
-                        {member.initials}
+                        {getInitials(member.firstName, member.lastName)}
                       </Avatar>
                       <Typography
                         sx={{
@@ -1322,10 +1307,10 @@ export default function CrewListPage() {
                         fontWeight: 700,
                         letterSpacing: '0.08em',
                         textTransform: 'uppercase',
-                        color: member.role === 'Pilot' ? aeroColors.tertiary : aeroColors.secondary,
+                        color: member.role === 'PILOT' ? aeroColors.tertiary : aeroColors.secondary,
                       }}
                     >
-                      {member.role}
+                      {ROLE_LABEL[member.role]}
                     </Typography>
                   </TableCell>
                   <TableCell sx={TD_SX}>
@@ -1333,15 +1318,15 @@ export default function CrewListPage() {
                       sx={{
                         fontSize: '0.8125rem',
                         color:
-                          !member.licenseExpiry
+                          !member.licenseExpiryDate
                             ? aeroColors.outline
-                            : member.status === 'Wygasła licencja'
+                            : computeStatus(member) === 'Wygasła licencja'
                             ? aeroColors.error
                             : aeroColors.onSurfaceVariant,
                         fontFamily: '"Inter", monospace',
                       }}
                     >
-                      {member.licenseExpiry ? formatDate(member.licenseExpiry) : '—'}
+                      {member.licenseExpiryDate ? formatDate(member.licenseExpiryDate) : '—'}
                     </Typography>
                   </TableCell>
                   <TableCell sx={TD_SX}>
@@ -1349,17 +1334,17 @@ export default function CrewListPage() {
                       sx={{
                         fontSize: '0.8125rem',
                         color:
-                          member.status === 'Szkolenie wkrótce'
+                          computeStatus(member) === 'Szkolenie wkrótce'
                             ? aeroColors.secondary
                             : aeroColors.onSurfaceVariant,
                         fontFamily: '"Inter", monospace',
                       }}
                     >
-                      {formatDate(member.trainingExpiry)}
+                      {formatDate(member.trainingExpiryDate)}
                     </Typography>
                   </TableCell>
                   <TableCell sx={TD_SX}>
-                    <StatusBadge status={member.status} />
+                    <StatusBadge status={computeStatus(member)} />
                   </TableCell>
                   <TableCell sx={{ ...TD_SX, textAlign: 'right' }}>
                     <Tooltip title="Edytuj" placement="left">
