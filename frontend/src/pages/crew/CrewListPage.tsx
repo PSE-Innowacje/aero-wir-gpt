@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -14,6 +14,10 @@ import {
   IconButton,
   Tooltip,
   Avatar,
+  Dialog,
+  TextField,
+  MenuItem,
+  InputAdornment,
 } from '@mui/material';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import FlightIcon from '@mui/icons-material/Flight';
@@ -22,6 +26,9 @@ import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { aeroColors } from '../../theme';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
@@ -60,6 +67,34 @@ const TD_SX = {
   px: 2,
   fontSize: '0.8125rem',
   color: aeroColors.onSurface,
+};
+
+const INPUT_SX = {
+  '& .MuiOutlinedInput-root': {
+    bgcolor: aeroColors.surfaceContainerLowest,
+    '& fieldset': { borderColor: `${aeroColors.outlineVariant}30` },
+    '&:hover fieldset': { borderColor: `${aeroColors.outline}50` },
+    '&.Mui-focused fieldset': { borderColor: `${aeroColors.tertiary}50`, borderWidth: 1 },
+  },
+  '& .MuiInputLabel-root': {
+    fontSize: '0.75rem',
+    color: aeroColors.outline,
+    '&.Mui-focused': { color: aeroColors.tertiary },
+  },
+  '& .MuiOutlinedInput-input': {
+    fontSize: '0.8125rem',
+    color: aeroColors.onSurface,
+    py: 1.25,
+  },
+};
+
+const FIELD_LABEL_SX = {
+  fontSize: '0.625rem',
+  fontWeight: 700,
+  letterSpacing: '0.14em',
+  textTransform: 'uppercase' as const,
+  color: aeroColors.onSurfaceVariant,
+  mb: 0.75,
 };
 
 /* ── Stat card ─────────────────────────────────────────────────────────── */
@@ -270,8 +305,538 @@ function CrewMemberCard({ initials, name, role, status, accent }: CrewCardProps)
   );
 }
 
+/* ── Hero image for crew modal ────────────────────────────────────────── */
+const CREW_HERO_IMG =
+  'https://kursyszkolenia.online/wp-content/uploads/2025/03/Personel-pokladowy-stewardessa-zarobki.jpg';
+
+/* ── Crew member interface ────────────────────────────────────────────── */
+interface CrewMember {
+  id: number;
+  initials: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  weightKg: number;
+  pilotLicenseNumber: string;
+  licenseExpiry: string;
+  trainingExpiry: string;
+  status: string;
+}
+
+const ROLE_OPTIONS = ['Pilot', 'Obserwator'] as const;
+
+/* ── Crew Member Modal ────────────────────────────────────────────────── */
+interface CrewMemberModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSave: (member: CrewMember) => void;
+  member: CrewMember | null;
+}
+
+function CrewMemberModal({ open, onClose, onSave, member }: CrewMemberModalProps) {
+  const isEdit = Boolean(member);
+
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<string>('Pilot');
+  const [weightKg, setWeightKg] = useState('');
+  const [pilotLicenseNumber, setPilotLicenseNumber] = useState('');
+  const [licenseExpiry, setLicenseExpiry] = useState('');
+  const [trainingExpiry, setTrainingExpiry] = useState('');
+
+  useEffect(() => {
+    if (member) {
+      setFirstName(member.firstName);
+      setLastName(member.lastName);
+      setEmail(member.email);
+      setRole(member.role);
+      setWeightKg(String(member.weightKg));
+      setPilotLicenseNumber(member.pilotLicenseNumber);
+      setLicenseExpiry(member.licenseExpiry);
+      setTrainingExpiry(member.trainingExpiry);
+    } else {
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setRole('Pilot');
+      setWeightKg('');
+      setPilotLicenseNumber('');
+      setLicenseExpiry('');
+      setTrainingExpiry('');
+    }
+  }, [member, open]);
+
+  const isPilot = role === 'Pilot';
+
+  // Alerts computation
+  const alerts: { type: 'warning' | 'ok'; text: string }[] = [];
+  if (licenseExpiry && isPilot) {
+    const ld = new Date(licenseExpiry);
+    if (ld < new Date()) {
+      alerts.push({ type: 'warning', text: 'Licencja pilota wygasła' });
+    } else {
+      alerts.push({ type: 'ok', text: 'Licencja pilota ważna' });
+    }
+  }
+  if (trainingExpiry) {
+    const td = new Date(trainingExpiry);
+    const now = new Date();
+    const soon = new Date();
+    soon.setDate(soon.getDate() + 30);
+    if (td < now) {
+      alerts.push({ type: 'warning', text: 'Szkolenie wygasło' });
+    } else if (td < soon) {
+      alerts.push({ type: 'warning', text: 'Szkolenie wygasa w ciągu 30 dni' });
+    } else {
+      alerts.push({ type: 'ok', text: 'Szkolenie ważne' });
+    }
+  }
+  if (weightKg) {
+    const w = Number(weightKg);
+    if (w < 30 || w > 200) {
+      alerts.push({ type: 'warning', text: 'Waga poza zakresem (30–200 kg)' });
+    }
+  }
+
+  const computeStatus = (): string => {
+    if (licenseExpiry && isPilot) {
+      const ld = new Date(licenseExpiry);
+      if (ld < new Date()) return 'Wygasła licencja';
+    }
+    if (trainingExpiry) {
+      const td = new Date(trainingExpiry);
+      const soon = new Date();
+      soon.setDate(soon.getDate() + 30);
+      if (td < new Date()) return 'Nieaktywny';
+      if (td < soon) return 'Szkolenie wkrótce';
+    }
+    return 'Aktywny';
+  };
+
+  const handleSave = () => {
+    const initials = `${(firstName[0] || '').toUpperCase()}${(lastName[0] || '').toUpperCase()}`;
+    onSave({
+      id: member?.id ?? Date.now(),
+      initials,
+      firstName,
+      lastName,
+      email,
+      role,
+      weightKg: Number(weightKg) || 0,
+      pilotLicenseNumber: isPilot ? pilotLicenseNumber : '',
+      licenseExpiry: isPilot ? licenseExpiry : '',
+      trainingExpiry,
+      status: computeStatus(),
+    });
+    onClose();
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth={false}
+      PaperProps={{
+        sx: {
+          width: 480,
+          maxHeight: '90vh',
+          ...GLASS_CARD,
+          bgcolor: aeroColors.surfaceContainer,
+          overflow: 'hidden',
+          m: 2,
+        },
+      }}
+      slotProps={{
+        backdrop: {
+          sx: { bgcolor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' },
+        },
+      }}
+    >
+      {/* ── Hero image ── */}
+      <Box
+        sx={{
+          height: 160,
+          backgroundImage: `url(${CREW_HERO_IMG})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center top',
+          position: 'relative',
+          flexShrink: 0,
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            background:
+              'linear-gradient(to top, rgba(30,32,35,1) 0%, rgba(30,32,35,0.4) 50%, rgba(30,32,35,0.15) 100%)',
+          },
+        }}
+      >
+        <IconButton
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 2,
+            color: aeroColors.onSurface,
+            bgcolor: 'rgba(0,0,0,0.35)',
+            backdropFilter: 'blur(8px)',
+            '&:hover': { bgcolor: 'rgba(0,0,0,0.55)' },
+            width: 30,
+            height: 30,
+          }}
+        >
+          <CloseOutlinedIcon sx={{ fontSize: 16 }} />
+        </IconButton>
+
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            px: 3,
+            pb: 2,
+            zIndex: 1,
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: '"Space Grotesk", sans-serif',
+              fontWeight: 700,
+              fontSize: '1.125rem',
+              color: aeroColors.onSurface,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {isEdit ? 'Edycja członka załogi' : 'Nowy członek załogi'}
+          </Typography>
+          <Typography
+            sx={{
+              ...SECTION_LABEL_SX,
+              fontSize: '0.5625rem',
+              mt: 0.25,
+            }}
+          >
+            {isEdit && member
+              ? `Edycja personelu nr systemu #${member.id}`
+              : 'Rejestruj personel w systemie AERO'}
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* ── Form fields ── */}
+      <Box
+        sx={{
+          px: 3,
+          py: 2.5,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2.5,
+          overflowY: 'auto',
+        }}
+      >
+        {/* Imię i Nazwisko — row */}
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={FIELD_LABEL_SX}>Imię</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="np. Andrzej"
+              inputProps={{ maxLength: 100 }}
+              sx={INPUT_SX}
+            />
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={FIELD_LABEL_SX}>Nazwisko</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="np. Kwiatkowski"
+              inputProps={{ maxLength: 100 }}
+              sx={INPUT_SX}
+            />
+          </Box>
+        </Box>
+
+        {/* Email */}
+        <Box>
+          <Typography sx={FIELD_LABEL_SX}>Email</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="np. a.kwiatkowski@aero.pl"
+            inputProps={{ maxLength: 100 }}
+            sx={INPUT_SX}
+          />
+        </Box>
+
+        {/* Rola */}
+        <Box>
+          <Typography sx={FIELD_LABEL_SX}>Rola</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            sx={{
+              ...INPUT_SX,
+              '& .MuiSelect-select': {
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              },
+            }}
+            SelectProps={{
+              renderValue: (val) => {
+                const isPilotVal = val === 'Pilot';
+                const col = isPilotVal ? aeroColors.tertiary : aeroColors.secondary;
+                return (
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        bgcolor: col,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Typography
+                      component="span"
+                      sx={{
+                        fontSize: '0.6875rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        color: col,
+                      }}
+                    >
+                      {val as string}
+                    </Typography>
+                  </Box>
+                );
+              },
+            }}
+          >
+            {ROLE_OPTIONS.map((opt) => {
+              const col = opt === 'Pilot' ? aeroColors.tertiary : aeroColors.secondary;
+              return (
+                <MenuItem key={opt} value={opt}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        bgcolor: col,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: col }}>
+                      {opt}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              );
+            })}
+          </TextField>
+        </Box>
+
+        {/* Waga */}
+        <Box>
+          <Typography sx={FIELD_LABEL_SX}>Waga</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="number"
+            value={weightKg}
+            onChange={(e) => setWeightKg(e.target.value)}
+            placeholder="np. 80"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Typography sx={{ fontSize: '0.6875rem', color: aeroColors.outline, fontWeight: 600 }}>
+                    KG
+                  </Typography>
+                </InputAdornment>
+              ),
+            }}
+            sx={INPUT_SX}
+          />
+        </Box>
+
+        {/* Conditional pilot fields */}
+        {isPilot && (
+          <>
+            <Box>
+              <Typography sx={FIELD_LABEL_SX}>Nr licencji pilota</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                value={pilotLicenseNumber}
+                onChange={(e) => setPilotLicenseNumber(e.target.value)}
+                placeholder="np. PL-12345"
+                inputProps={{ maxLength: 30 }}
+                sx={INPUT_SX}
+              />
+            </Box>
+
+            <Box>
+              <Typography sx={FIELD_LABEL_SX}>Data ważności licencji</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                type="date"
+                value={licenseExpiry}
+                onChange={(e) => setLicenseExpiry(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={INPUT_SX}
+              />
+            </Box>
+          </>
+        )}
+
+        {/* Data ważności szkolenia */}
+        <Box>
+          <Typography sx={FIELD_LABEL_SX}>Data ważności szkolenia</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="date"
+            value={trainingExpiry}
+            onChange={(e) => setTrainingExpiry(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={INPUT_SX}
+          />
+        </Box>
+
+        {/* ── Alerty i sprawdzenie ── */}
+        {alerts.length > 0 && (
+          <Box>
+            <Typography
+              sx={{
+                ...FIELD_LABEL_SX,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.75,
+                mb: 1.25,
+              }}
+            >
+              Alerty i sprawdzenie
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {alerts.map((alert, i) => (
+                <Box
+                  key={i}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    p: 1.25,
+                    borderRadius: 1.5,
+                    bgcolor:
+                      alert.type === 'warning'
+                        ? `${aeroColors.secondary}10`
+                        : `${aeroColors.tertiary}10`,
+                    border: `1px solid ${
+                      alert.type === 'warning'
+                        ? `${aeroColors.secondary}25`
+                        : `${aeroColors.tertiary}25`
+                    }`,
+                  }}
+                >
+                  {alert.type === 'warning' ? (
+                    <WarningAmberOutlinedIcon
+                      sx={{ fontSize: 16, color: aeroColors.secondary, flexShrink: 0 }}
+                    />
+                  ) : (
+                    <CheckCircleOutlineIcon
+                      sx={{ fontSize: 16, color: aeroColors.tertiary, flexShrink: 0 }}
+                    />
+                  )}
+                  <Typography
+                    sx={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color:
+                        alert.type === 'warning' ? aeroColors.secondary : aeroColors.tertiary,
+                    }}
+                  >
+                    {alert.text}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        )}
+
+        {/* ── Action buttons ── */}
+        <Box sx={{ display: 'flex', gap: 1.5, mt: 0.5 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            onClick={onClose}
+            sx={{
+              color: aeroColors.outline,
+              borderColor: `${aeroColors.outlineVariant}40`,
+              fontFamily: '"Space Grotesk", sans-serif',
+              fontWeight: 700,
+              fontSize: '0.6875rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              py: 1.25,
+              borderRadius: 1,
+              '&:hover': {
+                borderColor: aeroColors.outline,
+                bgcolor: `${aeroColors.outline}08`,
+              },
+            }}
+          >
+            Anuluj
+          </Button>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={handleSave}
+            sx={{
+              background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
+              color: aeroColors.onPrimaryFixed,
+              fontFamily: '"Space Grotesk", sans-serif',
+              fontWeight: 700,
+              fontSize: '0.6875rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              py: 1.25,
+              borderRadius: 1,
+              boxShadow: `0 4px 20px ${aeroColors.primaryContainer}60`,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
+                opacity: 0.9,
+              },
+            }}
+          >
+            {isEdit ? 'Zapisz zmiany' : 'Dodaj członka do bazy'}
+          </Button>
+        </Box>
+      </Box>
+    </Dialog>
+  );
+}
+
 /* ── Mock data ─────────────────────────────────────────────────────────── */
-const CREW_MEMBERS = [
+const CREW_MEMBERS_INIT: CrewMember[] = [
   {
     id: 1,
     initials: 'AK',
@@ -279,8 +844,10 @@ const CREW_MEMBERS = [
     lastName: 'Kwiatkowski',
     email: 'a.kwiatkowski@aero.com',
     role: 'Pilot',
-    licenseExpiry: '15.12.2025',
-    trainingExpiry: '20.06.2024',
+    weightKg: 82,
+    pilotLicenseNumber: 'PL-44210',
+    licenseExpiry: '2025-12-15',
+    trainingExpiry: '2024-06-20',
     status: 'Aktywny',
   },
   {
@@ -290,8 +857,10 @@ const CREW_MEMBERS = [
     lastName: 'Nowak',
     email: 'm.nowak@aero.com',
     role: 'Obserwator',
-    licenseExpiry: '—',
-    trainingExpiry: '12.03.2024',
+    weightKg: 65,
+    pilotLicenseNumber: '',
+    licenseExpiry: '',
+    trainingExpiry: '2024-03-12',
     status: 'Aktywny',
   },
   {
@@ -301,8 +870,10 @@ const CREW_MEMBERS = [
     lastName: 'Rybak',
     email: 'j.rybak@aero.com',
     role: 'Pilot',
-    licenseExpiry: '10.01.2024',
-    trainingExpiry: '05.11.2023',
+    weightKg: 90,
+    pilotLicenseNumber: 'PL-33187',
+    licenseExpiry: '2024-01-10',
+    trainingExpiry: '2023-11-05',
     status: 'Wygasła licencja',
   },
   {
@@ -312,8 +883,10 @@ const CREW_MEMBERS = [
     lastName: 'Pilch',
     email: 't.pilch@aero.com',
     role: 'Obserwator',
-    licenseExpiry: '—',
-    trainingExpiry: '01.05.2024',
+    weightKg: 78,
+    pilotLicenseNumber: '',
+    licenseExpiry: '',
+    trainingExpiry: '2024-05-01',
     status: 'Szkolenie wkrótce',
   },
 ];
@@ -328,8 +901,31 @@ const CARD_ACCENTS: Record<number, string> = {
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function CrewListPage() {
   const [search, setSearch] = useState('');
+  const [crewMembers, setCrewMembers] = useState<CrewMember[]>(CREW_MEMBERS_INIT);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<CrewMember | null>(null);
 
-  const filtered = CREW_MEMBERS.filter((m) => {
+  const openAdd = () => {
+    setEditingMember(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (member: CrewMember) => {
+    setEditingMember(member);
+    setModalOpen(true);
+  };
+
+  const handleSave = (member: CrewMember) => {
+    setCrewMembers((prev) => {
+      const exists = prev.find((m) => m.id === member.id);
+      if (exists) {
+        return prev.map((m) => (m.id === member.id ? member : m));
+      }
+      return [...prev, member];
+    });
+  };
+
+  const filtered = crewMembers.filter((m) => {
     const q = search.toLowerCase();
     return (
       `${m.firstName} ${m.lastName}`.toLowerCase().includes(q) ||
@@ -339,13 +935,26 @@ export default function CrewListPage() {
     );
   });
 
-  const totalCount = CREW_MEMBERS.length;
-  const pilotsCount = CREW_MEMBERS.filter((m) => m.role === 'Pilot').length;
-  const observersCount = CREW_MEMBERS.filter((m) => m.role === 'Obserwator').length;
-  const activeCount = CREW_MEMBERS.filter((m) => m.status === 'Aktywny').length;
+  const totalCount = crewMembers.length;
+  const pilotsCount = crewMembers.filter((m) => m.role === 'Pilot').length;
+  const observersCount = crewMembers.filter((m) => m.role === 'Obserwator').length;
+  const activeCount = crewMembers.filter((m) => m.status === 'Aktywny').length;
+
+  const formatDate = (iso: string) => {
+    if (!iso || iso === '—') return '—';
+    const [y, m, d] = iso.split('-');
+    return `${d}.${m}.${y}`;
+  };
 
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
+      {/* ── Modal ── */}
+      <CrewMemberModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSave}
+        member={editingMember}
+      />
 
       {/* ── Page header ── */}
       <Box
@@ -378,6 +987,7 @@ export default function CrewListPage() {
         <Button
           variant="contained"
           startIcon={<PersonAddOutlinedIcon />}
+          onClick={openAdd}
           sx={{
             background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
             color: aeroColors.onPrimaryFixed,
@@ -442,14 +1052,14 @@ export default function CrewListPage() {
 
       {/* ── Crew member cards ── */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        {CREW_MEMBERS.map((member) => (
+        {crewMembers.slice(0, 4).map((member, idx) => (
           <Grid key={member.id} size={{ xs: 12, sm: 6, md: 3 }}>
             <CrewMemberCard
               initials={member.initials}
               name={`${member.firstName} ${member.lastName}`}
               role={member.role}
               status={member.status}
-              accent={CARD_ACCENTS[member.id]}
+              accent={CARD_ACCENTS[idx + 1] ?? aeroColors.primary}
             />
           </Grid>
         ))}
@@ -484,7 +1094,7 @@ export default function CrewListPage() {
               Rejestr załogi
             </Typography>
             <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline, mt: 0.25 }}>
-              {filtered.length} z {CREW_MEMBERS.length} członków
+              {filtered.length} z {crewMembers.length} członków
             </Typography>
           </Box>
 
@@ -613,7 +1223,7 @@ export default function CrewListPage() {
                       sx={{
                         fontSize: '0.8125rem',
                         color:
-                          member.licenseExpiry === '—'
+                          !member.licenseExpiry
                             ? aeroColors.outline
                             : member.status === 'Wygasła licencja'
                             ? aeroColors.error
@@ -621,7 +1231,7 @@ export default function CrewListPage() {
                         fontFamily: '"Inter", monospace',
                       }}
                     >
-                      {member.licenseExpiry}
+                      {member.licenseExpiry ? formatDate(member.licenseExpiry) : '—'}
                     </Typography>
                   </TableCell>
                   <TableCell sx={TD_SX}>
@@ -635,7 +1245,7 @@ export default function CrewListPage() {
                         fontFamily: '"Inter", monospace',
                       }}
                     >
-                      {member.trainingExpiry}
+                      {formatDate(member.trainingExpiry)}
                     </Typography>
                   </TableCell>
                   <TableCell sx={TD_SX}>
@@ -645,6 +1255,7 @@ export default function CrewListPage() {
                     <Tooltip title="Edytuj" placement="left">
                       <IconButton
                         size="small"
+                        onClick={() => openEdit(member)}
                         sx={{
                           color: aeroColors.outline,
                           borderRadius: 1,
@@ -693,7 +1304,7 @@ export default function CrewListPage() {
           }}
         >
           <Typography sx={{ fontSize: '0.6875rem', color: aeroColors.outline, letterSpacing: '0.08em' }}>
-            Łącznie: {CREW_MEMBERS.length} członków załogi w rejestrze
+            Łącznie: {crewMembers.length} członków załogi w rejestrze
           </Typography>
           <Typography
             sx={{
