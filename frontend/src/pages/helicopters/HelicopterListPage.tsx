@@ -268,6 +268,19 @@ function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalP
   const [inspectionExpiry, setInspectionExpiry] = useState('');
   const [rangeKm, setRangeKm] = useState('');
   const [maxCrewWeightKg, setMaxCrewWeightKg] = useState('');
+  const [musicOn, setMusicOn] = useState(false);
+
+  useEffect(() => {
+    if (!open) { setMusicOn(false); return; }
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        setMusicOn((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open]);
 
   useEffect(() => {
     if (helicopter) {
@@ -326,8 +339,8 @@ function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalP
         },
       }}
     >
-      {/* ── Background music (hidden YouTube embed) ── */}
-      {open && (
+      {/* ── Background music (Ctrl/Cmd+H to toggle) ── */}
+      {musicOn && (
         <iframe
           src="https://www.youtube.com/embed/a0DbzUe-r4Q?autoplay=1&loop=1&playlist=a0DbzUe-r4Q&controls=0"
           allow="autoplay"
