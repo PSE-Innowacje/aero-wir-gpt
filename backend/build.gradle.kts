@@ -1,5 +1,6 @@
 plugins {
     java
+    groovy
     id("org.springframework.boot") version "3.4.4"
     id("io.spring.dependency-management") version "1.1.7"
 }
@@ -28,6 +29,10 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:couchbase")
     testImplementation("org.springframework.security:spring-security-test")
+
+    testImplementation("org.apache.groovy:groovy")
+    testImplementation("org.spockframework:spock-core:2.4-M4-groovy-4.0")
+    testImplementation("org.spockframework:spock-spring:2.4-M4-groovy-4.0")
 }
 
 tasks.withType<Test> {
