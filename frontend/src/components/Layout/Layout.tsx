@@ -23,6 +23,7 @@ import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { aeroColors } from '../../theme';
+import { useCrashEasterEgg, CRASH_ANIMATION_SX } from '../../hooks/useCrashEasterEgg';
 
 const DRAWER_WIDTH = 240;
 
@@ -71,6 +72,12 @@ export default function Layout({
 }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { registerClick, isCrashing } = useCrashEasterEgg();
+
+  const handleNavClick = (path: string) => {
+    registerClick(path);
+    navigate(path);
+  };
 
   const currentTitle = PAGE_TITLES[location.pathname] ?? 'AERO';
 
@@ -151,10 +158,11 @@ export default function Layout({
         <List sx={{ px: 1, flex: 1, pt: 0 }} disablePadding>
           {NAV_ITEMS.map((item) => {
             const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+            const crashing = isCrashing(item.path);
             return (
               <ListItemButton
                 key={item.path}
-                onClick={() => navigate(item.path)}
+                onClick={() => handleNavClick(item.path)}
                 disableRipple={false}
                 sx={{
                   px: 2,
@@ -168,6 +176,7 @@ export default function Layout({
                   color: isActive ? aeroColors.tertiary : aeroColors.outline,
                   gap: 1.5,
                   transition: 'all 0.15s ease',
+                  overflow: 'visible',
                   '&:hover': {
                     bgcolor: isActive
                       ? aeroColors.surfaceContainer
@@ -184,7 +193,10 @@ export default function Layout({
                   sx={{
                     minWidth: 0,
                     color: 'inherit',
-                    '& .MuiSvgIcon-root': { fontSize: 17 },
+                    '& .MuiSvgIcon-root': {
+                      fontSize: 17,
+                      ...(crashing ? CRASH_ANIMATION_SX : {}),
+                    },
                   }}
                 >
                   {item.icon}
