@@ -287,6 +287,15 @@ started automatically, no manual database setup needed.
 
 ---
 
+## Postman Collection
+
+The file `backend/src/test/resources/AERO-API.postman_collection.json` contains an
+importable Postman collection covering all REST endpoints. **Every time a controller
+method is added, removed, or its contract changes (path, method, request/response
+body), update this collection to stay in sync.**
+
+---
+
 ## Branch & Commit Naming
 
 This project follows **Conventional Commits** and uses the SC-AERO ticket number
