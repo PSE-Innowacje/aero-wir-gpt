@@ -368,3 +368,77 @@ Pokazanie działającej aplikacji www z:
 
 - ✅ co najmniej **2 rodzajami użytkowników** — osobą planującą i nadzorującą
 - ✅ co najmniej **lista zleceń** z możliwością edycji przez osobę planującą i zmiany statusu przez osobę nadzorującą
+
+---
+
+## 11. Development Setup (Windows / macOS)
+
+### Prerequisites
+
+- **Java 21** (JDK)
+- **Docker Desktop** (running)
+- **Node.js 18+** (for frontend)
+
+### 1. Start Couchbase (one-time setup)
+
+Run the setup script to create a pre-configured Couchbase container:
+
+```bash
+bash backend/setup-couchbase.sh
+```
+
+This creates a Docker container `aero-couchbase` with:
+- **Couchbase Server 7.6.1** on `localhost:8091`
+- Cluster admin: `admin` / `admin1`
+- Application user: `aero` / `aeropass`
+- Bucket: `aero`
+
+After the initial setup, manage the container with:
+
+```bash
+docker start aero-couchbase   # start
+docker stop aero-couchbase    # stop
+docker rm aero-couchbase      # remove (re-run setup script to recreate)
+```
+
+Couchbase Web Console: http://localhost:8091
+
+### 2. Start the backend
+
+```bash
+./gradlew :backend:bootRun
+```
+
+Backend runs at http://localhost:8080. On first start it seeds 4 default users,
+3 helicopters and 4 crew members.
+
+### 3. Start the frontend
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+Frontend runs at http://localhost:5173 and proxies `/api/**` to the backend.
+
+### Default login accounts
+
+| Email | Password | Role |
+|-------|----------|------|
+| `admin@aero.pl` | `admin` | Administrator |
+| `planista@aero.pl` | `planista` | Planner |
+| `nadzor@aero.pl` | `nadzor` | Supervisor |
+| `pilot@aero.pl` | `pilot` | Pilot |
+
+### Running tests
+
+Integration tests use **Testcontainers** (start a temporary Couchbase container automatically):
+
+```bash
+./gradlew :backend:test
+```
+
+> **Note for Windows users**: If Testcontainers fails with "Could not find a valid
+> Docker environment", this is a known incompatibility between `docker-java` and
+> Docker Desktop 4.67+. Unit tests (Spock specs with mocks) will still pass.
+> For full integration testing, use `bootRun` against the manual Couchbase container
+> set up above.
