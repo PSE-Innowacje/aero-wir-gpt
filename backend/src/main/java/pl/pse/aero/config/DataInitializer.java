@@ -62,6 +62,7 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         List<User> users = List.of(
+                createUser("Super", "User", "super@aero.pl", "super", UserRole.SUPERUSER),
                 createUser("Admin", "Admin", "admin@aero.pl", "admin", UserRole.ADMIN),
                 createUser("Planista", "Planista", "planista@aero.pl", "planista", UserRole.PLANNER),
                 createUser("Nadzor", "Nadzor", "nadzor@aero.pl", "nadzor", UserRole.SUPERVISOR),

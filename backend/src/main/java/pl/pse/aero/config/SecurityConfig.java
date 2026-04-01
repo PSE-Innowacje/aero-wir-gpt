@@ -43,32 +43,32 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/dictionaries/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        // Admin CRUD: ADMIN full access, SUPERVISOR/PILOT read-only, PLANNER denied
+                        // Admin CRUD: SUPERUSER/ADMIN full access, SUPERVISOR/PILOT read-only, PLANNER denied
                         .requestMatchers(HttpMethod.GET, "/api/helicopters/**", "/api/crew-members/**",
                                 "/api/landing-sites/**", "/api/users/**")
-                            .hasAnyRole("ADMIN", "SUPERVISOR", "PILOT")
+                            .hasAnyRole("SUPERUSER", "ADMIN", "SUPERVISOR", "PILOT")
                         .requestMatchers(HttpMethod.POST, "/api/helicopters/**", "/api/crew-members/**",
                                 "/api/landing-sites/**", "/api/users/**")
-                            .hasRole("ADMIN")
+                            .hasAnyRole("SUPERUSER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/helicopters/**", "/api/crew-members/**",
                                 "/api/landing-sites/**", "/api/users/**")
-                            .hasRole("ADMIN")
-                        // Operations: PLANNER/SUPERVISOR full access, ADMIN/PILOT read-only
+                            .hasAnyRole("SUPERUSER", "ADMIN")
+                        // Operations: SUPERUSER/PLANNER/SUPERVISOR full access, ADMIN/PILOT read-only
                         .requestMatchers(HttpMethod.GET, "/api/operations/**")
-                            .hasAnyRole("ADMIN", "PLANNER", "SUPERVISOR", "PILOT")
+                            .hasAnyRole("SUPERUSER", "ADMIN", "PLANNER", "SUPERVISOR", "PILOT")
                         .requestMatchers(HttpMethod.POST, "/api/operations/**")
-                            .hasAnyRole("PLANNER", "SUPERVISOR")
+                            .hasAnyRole("SUPERUSER", "PLANNER", "SUPERVISOR")
                         .requestMatchers(HttpMethod.PUT, "/api/operations/**")
-                            .hasAnyRole("PLANNER", "SUPERVISOR")
-                        // Orders: PILOT full, SUPERVISOR read+edit+status, ADMIN read-only, PLANNER denied
+                            .hasAnyRole("SUPERUSER", "PLANNER", "SUPERVISOR")
+                        // Orders: SUPERUSER/PILOT full, SUPERVISOR read+edit+status, ADMIN read-only, PLANNER denied
                         .requestMatchers(HttpMethod.GET, "/api/orders/**")
-                            .hasAnyRole("ADMIN", "SUPERVISOR", "PILOT")
+                            .hasAnyRole("SUPERUSER", "ADMIN", "SUPERVISOR", "PILOT")
                         .requestMatchers(HttpMethod.POST, "/api/orders")
-                            .hasRole("PILOT")
+                            .hasAnyRole("SUPERUSER", "PILOT")
                         .requestMatchers(HttpMethod.PUT, "/api/orders/**")
-                            .hasAnyRole("PILOT", "SUPERVISOR")
+                            .hasAnyRole("SUPERUSER", "PILOT", "SUPERVISOR")
                         .requestMatchers(HttpMethod.POST, "/api/orders/*/status")
-                            .hasAnyRole("PILOT", "SUPERVISOR")
+                            .hasAnyRole("SUPERUSER", "PILOT", "SUPERVISOR")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
