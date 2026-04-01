@@ -34,7 +34,7 @@ class DataInitializerSpec extends Specification {
         initializer.run()
 
         then:
-        1 * userRepository.saveAll({ it.size() == 4 })
+        1 * userRepository.saveAll({ it.size() == 5 })
         0 * helicopterRepository.saveAll(_)
     }
 
@@ -69,7 +69,7 @@ class DataInitializerSpec extends Specification {
         initializer.run()
 
         then:
-        1 * landingSiteRepository.saveAll({ it.size() == 3 })
+        1 * landingSiteRepository.saveAll({ it.size() == 8 })
     }
 
     def "should skip all seeding when data exists"() {
