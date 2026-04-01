@@ -1,4 +1,6 @@
+import { useLayoutEffect, useRef } from 'react';
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
+import { gsap } from 'gsap';
 import {
   Box,
   Drawer,
@@ -74,9 +76,40 @@ export default function Layout({
   const navigate = useNavigate();
   const { registerClick, isCrashing } = useCrashEasterEgg();
 
+  const contentRef    = useRef<HTMLDivElement>(null);
+  const exitTweenRef  = useRef<gsap.core.Tween | null>(null);
+
+  /* Enter animation — runs after React paints the new page */
+  useLayoutEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    exitTweenRef.current?.kill();
+    const tween = gsap.fromTo(
+      el,
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.32, ease: 'power3.out', clearProps: 'transform' },
+    );
+    return () => { tween.kill(); };
+  }, [location.key]);
+
   const handleNavClick = (path: string) => {
     registerClick(path);
-    navigate(path);
+    if (location.pathname === path) return;
+
+    /* Exit animation — navigate inside onComplete so the new page
+       only mounts after the old one has faded out */
+    exitTweenRef.current?.kill();
+    if (contentRef.current) {
+      exitTweenRef.current = gsap.to(contentRef.current, {
+        opacity: 0,
+        y: -10,
+        duration: 0.18,
+        ease: 'power2.in',
+        onComplete: () => navigate(path),
+      });
+    } else {
+      navigate(path);
+    }
   };
 
   const currentTitle = PAGE_TITLES[location.pathname] ?? 'AERO';
@@ -383,6 +416,7 @@ export default function Layout({
 
         {/* Page content — tactical grid atmosphere matches login page */}
         <Box
+          ref={contentRef}
           component="main"
           sx={{
             flex: 1,
