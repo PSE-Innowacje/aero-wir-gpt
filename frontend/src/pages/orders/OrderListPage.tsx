@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import FlightOrderModal, {
   type FlightOrderData,
   ORDER_STATUS_OPTIONS,
@@ -8,7 +8,9 @@ import FlightOrderModal, {
 import { getOrders, getOrderById, createOrder, updateOrder } from '../../api/orders.api';
 import { getHelicopters } from '../../api/helicopters.api';
 import { getCrewMembers } from '../../api/crew.api';
-import type { OrderListResponse, OrderResponse, HelicopterResponse, CrewMemberResponse, OrderRequest } from '../../api/types';
+import { getLandingSites } from '../../api/landingSites.api';
+import type { OrderListResponse, OrderResponse, HelicopterResponse, CrewMemberResponse, LandingSiteResponse, OrderRequest } from '../../api/types';
+import MapView from '../../components/MapView';
 import {
   Box,
   Typography,
@@ -591,6 +593,8 @@ export default function OrderListPage() {
   const [apiOrders, setApiOrders] = useState<OrderListResponse[]>([]);
   const [helicopterMap, setHelicopterMap] = useState<Map<string, HelicopterResponse>>(new Map());
   const [crewMap, setCrewMap] = useState<Map<string, CrewMemberResponse>>(new Map());
+  const [landingSites, setLandingSites] = useState<LandingSiteResponse[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false, message: '', severity: 'success',
@@ -598,14 +602,16 @@ export default function OrderListPage() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const [ordersData, helicoptersData, crewData] = await Promise.all([
+      const [ordersData, helicoptersData, crewData, sitesData] = await Promise.all([
         getOrders(),
         getHelicopters(),
         getCrewMembers(),
+        getLandingSites(),
       ]);
       setApiOrders(ordersData);
       setHelicopterMap(new Map(helicoptersData.map(h => [h.id, h])));
       setCrewMap(new Map(crewData.map(c => [c.id, c])));
+      setLandingSites(sitesData);
     } catch (err) {
       console.error('Failed to fetch orders:', err);
     }
@@ -667,6 +673,42 @@ export default function OrderListPage() {
   const activeCount   = ORDERS.filter((o) => ['Zaakceptowane', 'Przekazane do akceptacji'].includes(o.status)).length;
   const pendingCount  = ORDERS.filter((o) => o.status === 'Wprowadzone').length;
   const sentCount     = ORDERS.filter((o) => o.status === 'Przekazane do akceptacji').length;
+
+  /* ── Map markers for selected order ─────────────────────────────────── */
+  const handleRowSelect = useCallback(async (apiId: string) => {
+    try {
+      const full = await getOrderById(apiId);
+      setSelectedOrder(full);
+    } catch {
+      /* ignore — global interceptor handles it */
+    }
+  }, []);
+
+  const orderMapMarkers = useMemo(() => {
+    if (!selectedOrder) return [];
+    const markers: Array<{
+      position: [number, number];
+      label?: string;
+      color?: 'blue' | 'red' | 'green';
+    }> = [];
+    const dep = landingSites.find((s) => s.id === selectedOrder.departureSiteId);
+    if (dep) {
+      markers.push({
+        position: [dep.latitude, dep.longitude],
+        label: `Odlot: ${dep.name}`,
+        color: 'green',
+      });
+    }
+    const arr = landingSites.find((s) => s.id === selectedOrder.arrivalSiteId);
+    if (arr) {
+      markers.push({
+        position: [arr.latitude, arr.longitude],
+        label: `Przylot: ${arr.name}`,
+        color: 'red',
+      });
+    }
+    return markers;
+  }, [selectedOrder, landingSites]);
 
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
@@ -850,13 +892,20 @@ export default function OrderListPage() {
                 return (
                   <TableRow
                     key={order.id}
+                    onClick={() => handleRowSelect(order.apiId)}
                     sx={{
                       bgcolor:
-                        idx % 2 === 0
+                        selectedOrder?.id === order.apiId
+                          ? `${aeroColors.primary}0d`
+                          : idx % 2 === 0
                           ? aeroColors.surfaceContainerLowest
                           : aeroColors.surfaceContainerLow,
                       transition: 'background-color 0.15s ease',
+                      cursor: 'pointer',
                       '&:hover': { bgcolor: `${aeroColors.primary}0a` },
+                      ...(selectedOrder?.id === order.apiId && {
+                        borderLeft: `2px solid ${aeroColors.tertiary}`,
+                      }),
                     }}
                   >
                     {/* Nr zlecenia */}
@@ -1098,6 +1147,37 @@ export default function OrderListPage() {
             </IconButton>
           </Box>
         </Box>
+      </Box>
+
+      {/* ── Map: selected order's departure & arrival ── */}
+      <Box sx={{ ...GLASS_CARD, p: 2.5, mb: 2 }}>
+        <Typography sx={{ ...SECTION_LABEL_SX, mb: 2 }}>
+          Mapa — lotnisko startowe i końcowe
+          {selectedOrder && (
+            <Box component="span" sx={{ ml: 1, color: aeroColors.onSurfaceVariant, textTransform: 'none', letterSpacing: 'normal', fontWeight: 400 }}>
+              (zlecenie #{selectedOrder.id.substring(0, 10)})
+            </Box>
+          )}
+        </Typography>
+        {orderMapMarkers.length > 0 ? (
+          <MapView markers={orderMapMarkers} height={320} />
+        ) : (
+          <Box
+            sx={{
+              height: 200,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: aeroColors.surfaceContainerLowest,
+              borderRadius: 2,
+              border: `1px solid ${aeroColors.outlineVariant}30`,
+            }}
+          >
+            <Typography sx={{ fontSize: '0.8125rem', color: aeroColors.outline, fontStyle: 'italic' }}>
+              Kliknij zlecenie w tabeli, aby wyświetlić lotniska na mapie
+            </Typography>
+          </Box>
+        )}
       </Box>
 
       {/* ── Bottom panels ── */}
