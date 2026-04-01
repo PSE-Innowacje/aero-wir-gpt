@@ -13,10 +13,6 @@ import {
   Button,
   IconButton,
   Tooltip,
-  Dialog,
-  TextField,
-  MenuItem,
-  InputAdornment,
   CircularProgress,
 } from '@mui/material';
 import AirplanemodeActiveIcon from '@mui/icons-material/AirplanemodeActive';
@@ -26,10 +22,10 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { aeroColors } from '../../theme';
 import { getHelicopters, createHelicopter, updateHelicopter } from '../../api/helicopters.api';
 import type { HelicopterResponse, HelicopterStatus } from '../../api/types';
+import HelicopterModal, { type Helicopter as ModalHelicopter } from '../../components/modals/HelicopterModal';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
 const GLASS_CARD = {
@@ -67,34 +63,6 @@ const TD_SX = {
   px: 2,
   fontSize: '0.8125rem',
   color: aeroColors.onSurface,
-};
-
-const INPUT_SX = {
-  '& .MuiOutlinedInput-root': {
-    bgcolor: aeroColors.surfaceContainerLowest,
-    '& fieldset': { borderColor: `${aeroColors.outlineVariant}30` },
-    '&:hover fieldset': { borderColor: `${aeroColors.outline}50` },
-    '&.Mui-focused fieldset': { borderColor: `${aeroColors.tertiary}50`, borderWidth: 1 },
-  },
-  '& .MuiInputLabel-root': {
-    fontSize: '0.75rem',
-    color: aeroColors.outline,
-    '&.Mui-focused': { color: aeroColors.tertiary },
-  },
-  '& .MuiOutlinedInput-input': {
-    fontSize: '0.8125rem',
-    color: aeroColors.onSurface,
-    py: 1.25,
-  },
-};
-
-const FIELD_LABEL_SX = {
-  fontSize: '0.625rem',
-  fontWeight: 700,
-  letterSpacing: '0.14em',
-  textTransform: 'uppercase' as const,
-  color: aeroColors.onSurfaceVariant,
-  mb: 0.75,
 };
 
 /* ── Stat card ─────────────────────────────────────────────────────────── */
@@ -182,8 +150,6 @@ const STATUS_CONFIG: Record<HelicopterStatus, { color: string; bg: string; label
   },
 };
 
-const STATUS_OPTIONS: HelicopterStatus[] = ['ACTIVE', 'INACTIVE'];
-
 function StatusBadge({ status }: { status: HelicopterStatus }) {
   const cfg = STATUS_CONFIG[status] ?? {
     color: aeroColors.onSurfaceVariant,
@@ -229,437 +195,27 @@ function StatusBadge({ status }: { status: HelicopterStatus }) {
   );
 }
 
-const HERO_IMG =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuAZxqWR9uO8aCwvOvyQgic2ZcxAAGBPWOvW6UP75Za8lzn5yfNXWmOBu9viOQvZiglIaHBs_blFZSavL5938cXtZXf_PFkyWCkSfzKMBEeu9PHy3ZmUYUvhrXaKd_hB5ADjhL3NQbpiB7LytJdZW8j_bP6wUmtRwwL3Y4QlTDzqJSE8wHMt3kzNa75DvXsD2v907DAoATmVsaLRWel2IIeVKX406nwiSjKqV73ectOOFB8_leSElVYw45zzSjWnd9RwPlyQZXEv77Ns';
-
-/* ── Helicopter Form Modal ────────────────────────────────────────────── */
-interface HelicopterModalProps {
-  open: boolean;
-  onClose: () => void;
-  onSave: (heli: HelicopterResponse) => void;
-  helicopter: HelicopterResponse | null;
+/* ── Status → modal label mapping ────────────────────────────────────── */
+function toModalStatus(status: HelicopterStatus): ModalHelicopter['status'] {
+  return status === 'ACTIVE' ? 'Aktywny' : 'Nieaktywny';
 }
 
-function HelicopterModal({ open, onClose, onSave, helicopter }: HelicopterModalProps) {
-  const isEdit = Boolean(helicopter);
+function toApiStatus(status: string): HelicopterStatus {
+  return status === 'Aktywny' ? 'ACTIVE' : 'INACTIVE';
+}
 
-  const [registration, setRegistration] = useState('');
-  const [type, setType] = useState('');
-  const [status, setStatus] = useState<HelicopterStatus>('ACTIVE');
-  const [inspectionExpiry, setInspectionExpiry] = useState('');
-  const [rangeKm, setRangeKm] = useState('');
-  const [maxCrewWeightKg, setMaxCrewWeightKg] = useState('');
-  const [maxCrewCount, setMaxCrewCount] = useState('');
-  const [description, setDescription] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [musicOn, setMusicOn] = useState(false);
-
-  useEffect(() => {
-    if (!open) { setMusicOn(false); return; }
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'h') {
-        e.preventDefault();
-        setMusicOn((prev) => !prev);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [open]);
-
-  useEffect(() => {
-    if (helicopter) {
-      setRegistration(helicopter.registrationNumber);
-      setType(helicopter.type);
-      setStatus(helicopter.status);
-      setInspectionExpiry(helicopter.inspectionExpiryDate ?? '');
-      setRangeKm(String(helicopter.rangeKm));
-      setMaxCrewWeightKg(String(helicopter.maxCrewWeightKg));
-      setMaxCrewCount(String(helicopter.maxCrewCount));
-      setDescription(helicopter.description ?? '');
-    } else {
-      setRegistration('');
-      setType('');
-      setStatus('ACTIVE');
-      setInspectionExpiry('');
-      setRangeKm('');
-      setMaxCrewWeightKg('');
-      setMaxCrewCount('');
-      setDescription('');
-    }
-  }, [helicopter, open]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const payload = {
-        registrationNumber: registration,
-        type,
-        status,
-        inspectionExpiryDate: inspectionExpiry || undefined,
-        rangeKm: Number(rangeKm) || 0,
-        maxCrewWeightKg: Number(maxCrewWeightKg) || 0,
-        maxCrewCount: Number(maxCrewCount) || 1,
-        description: description || undefined,
-      };
-      const saved = isEdit && helicopter
-        ? await updateHelicopter(helicopter.id, payload)
-        : await createHelicopter(payload);
-      onSave(saved);
-      onClose();
-    } catch (err) {
-      console.error('Failed to save helicopter:', err);
-    } finally {
-      setSaving(false);
-    }
+function toModalHelicopter(h: HelicopterResponse): ModalHelicopter {
+  return {
+    id: h.id as unknown as number,
+    registration: h.registrationNumber,
+    type: h.type,
+    description: h.description ?? undefined,
+    maxCrewCount: h.maxCrewCount,
+    maxCrewWeightKg: h.maxCrewWeightKg,
+    status: toModalStatus(h.status),
+    inspectionExpiry: h.inspectionExpiryDate ?? '',
+    rangeKm: h.rangeKm,
   };
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      TransitionProps={{
-        onExited: () => {
-          // iframe gets unmounted automatically when open=false
-        },
-      }}
-      maxWidth={false}
-      PaperProps={{
-        sx: {
-          width: 480,
-          maxHeight: '90vh',
-          ...GLASS_CARD,
-          bgcolor: aeroColors.surfaceContainer,
-          overflow: 'hidden',
-          m: 2,
-        },
-      }}
-      slotProps={{
-        backdrop: {
-          sx: { bgcolor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' },
-        },
-      }}
-    >
-      {/* ── Background music (Ctrl/Cmd+H to toggle) ── */}
-      {musicOn && (
-        <iframe
-          src="https://www.youtube.com/embed/a0DbzUe-r4Q?autoplay=1&loop=1&playlist=a0DbzUe-r4Q&controls=0"
-          allow="autoplay"
-          style={{ position: 'absolute', width: 0, height: 0, border: 'none', opacity: 0 }}
-          title="background-music"
-        />
-      )}
-
-      {/* ── Hero image ── */}
-      <Box
-        sx={{
-          height: 180,
-          backgroundImage: `url(${HERO_IMG})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          position: 'relative',
-          flexShrink: 0,
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            inset: 0,
-            background:
-              'linear-gradient(to top, rgba(30,32,35,1) 0%, rgba(30,32,35,0.4) 50%, rgba(30,32,35,0.15) 100%)',
-          },
-        }}
-      >
-        {/* Close button */}
-        <IconButton
-          onClick={onClose}
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 2,
-            color: aeroColors.onSurface,
-            bgcolor: 'rgba(0,0,0,0.35)',
-            backdropFilter: 'blur(8px)',
-            '&:hover': { bgcolor: 'rgba(0,0,0,0.55)' },
-            width: 30,
-            height: 30,
-          }}
-        >
-          <CloseOutlinedIcon sx={{ fontSize: 16 }} />
-        </IconButton>
-
-        {/* Title overlay */}
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            px: 3,
-            pb: 2,
-            zIndex: 1,
-          }}
-        >
-          <Typography
-            sx={{
-              fontFamily: '"Space Grotesk", sans-serif',
-              fontWeight: 700,
-              fontSize: '1.125rem',
-              color: aeroColors.onSurface,
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-            }}
-          >
-            {isEdit ? 'Edycja helikoptera' : 'Nowy helikopter'}
-          </Typography>
-          {isEdit && helicopter && (
-            <Typography
-              sx={{
-                ...SECTION_LABEL_SX,
-                fontSize: '0.5625rem',
-                mt: 0.25,
-              }}
-            >
-              ID jednostki: {helicopter.registrationNumber}
-            </Typography>
-          )}
-        </Box>
-      </Box>
-
-      {/* ── Form fields ── */}
-      <Box
-        sx={{
-          px: 3,
-          py: 2.5,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2.5,
-          overflowY: 'auto',
-        }}
-      >
-        {/* Numer rejestracyjny */}
-        <Box>
-          <Typography sx={FIELD_LABEL_SX}>Numer rejestracyjny</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            value={registration}
-            onChange={(e) => setRegistration(e.target.value)}
-            placeholder="np. SP-AER1"
-            sx={INPUT_SX}
-          />
-        </Box>
-
-        {/* Typ helikoptera */}
-        <Box>
-          <Typography sx={FIELD_LABEL_SX}>Typ helikoptera</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            placeholder="np. Airbus H145"
-            sx={INPUT_SX}
-          />
-        </Box>
-
-        {/* Status */}
-        <Box>
-          <Typography sx={FIELD_LABEL_SX}>Status</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            sx={{
-              ...INPUT_SX,
-              '& .MuiSelect-select': {
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              },
-            }}
-            SelectProps={{
-              renderValue: (val) => {
-                const cfg = STATUS_CONFIG[val as HelicopterStatus];
-                return (
-                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
-                    <Box
-                      sx={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        bgcolor: cfg?.color,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Typography
-                      component="span"
-                      sx={{
-                        fontSize: '0.6875rem',
-                        fontWeight: 700,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: cfg?.color,
-                      }}
-                    >
-                      {cfg?.label}
-                    </Typography>
-                  </Box>
-                );
-              },
-            }}
-          >
-            {STATUS_OPTIONS.map((opt) => {
-              const cfg = STATUS_CONFIG[opt];
-              return (
-                <MenuItem key={opt} value={opt}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box
-                      sx={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        bgcolor: cfg.color,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: cfg.color }}>
-                      {cfg.label}
-                    </Typography>
-                  </Box>
-                </MenuItem>
-              );
-            })}
-          </TextField>
-        </Box>
-
-        {/* Zasięg */}
-        <Box>
-          <Typography sx={FIELD_LABEL_SX}>Zasięg</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            type="number"
-            value={rangeKm}
-            onChange={(e) => setRangeKm(e.target.value)}
-            placeholder="np. 650"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <Typography sx={{ fontSize: '0.6875rem', color: aeroColors.outline, fontWeight: 600 }}>
-                    KM
-                  </Typography>
-                </InputAdornment>
-              ),
-            }}
-            sx={INPUT_SX}
-          />
-        </Box>
-
-        {/* Data ważności przeglądu */}
-        <Box>
-          <Typography sx={FIELD_LABEL_SX}>Data ważności przeglądu</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            type="date"
-            value={inspectionExpiry}
-            onChange={(e) => setInspectionExpiry(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            sx={INPUT_SX}
-          />
-        </Box>
-
-        {/* Maksymalny limit wagi */}
-        <Box>
-          <Typography sx={FIELD_LABEL_SX}>Maksymalny limit wagi</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            type="number"
-            value={maxCrewWeightKg}
-            onChange={(e) => setMaxCrewWeightKg(e.target.value)}
-            placeholder="np. 480"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <Typography sx={{ fontSize: '0.6875rem', color: aeroColors.outline, fontWeight: 600 }}>
-                    KG
-                  </Typography>
-                </InputAdornment>
-              ),
-            }}
-            sx={INPUT_SX}
-          />
-        </Box>
-
-        {/* ── Info note ── */}
-        <Box
-          sx={{
-            mt: 0.5,
-            p: 2,
-            borderRadius: 1.5,
-            bgcolor: `${aeroColors.outlineVariant}12`,
-            border: `1px solid ${aeroColors.outlineVariant}20`,
-          }}
-        >
-          <Typography sx={{ fontSize: '0.6875rem', color: aeroColors.outline, lineHeight: 1.6 }}>
-            Każdy serwis i przegląd wymagają aktualizacji daty ważności. Helikoptery muszą mieć
-            ważny przegląd techniczny przy przypisywaniu do zlecenia lotniczego.
-          </Typography>
-        </Box>
-
-        {/* ── Action buttons ── */}
-        <Box sx={{ display: 'flex', gap: 1.5, mt: 0.5 }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={onClose}
-            sx={{
-              color: aeroColors.outline,
-              borderColor: `${aeroColors.outlineVariant}40`,
-              fontFamily: '"Space Grotesk", sans-serif',
-              fontWeight: 700,
-              fontSize: '0.6875rem',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              py: 1.25,
-              borderRadius: 1,
-              '&:hover': {
-                borderColor: aeroColors.outline,
-                bgcolor: `${aeroColors.outline}08`,
-              },
-            }}
-          >
-            Anuluj
-          </Button>
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={handleSave}
-            sx={{
-              background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
-              color: aeroColors.onPrimaryFixed,
-              fontFamily: '"Space Grotesk", sans-serif',
-              fontWeight: 700,
-              fontSize: '0.6875rem',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              py: 1.25,
-              borderRadius: 1,
-              boxShadow: `0 4px 20px ${aeroColors.primaryContainer}60`,
-              '&:hover': {
-                background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
-                opacity: 0.9,
-              },
-            }}
-          >
-            {isEdit ? 'Zapisz zmiany' : 'Dodaj helikopter'}
-          </Button>
-        </Box>
-      </Box>
-    </Dialog>
-  );
 }
 
 /* ── Page ──────────────────────────────────────────────────────────────── */
@@ -698,14 +254,28 @@ export default function HelicopterListPage() {
     setModalOpen(true);
   };
 
-  const handleSave = (heli: HelicopterResponse) => {
-    setHelicopters((prev) => {
-      const exists = prev.find((h) => h.id === heli.id);
-      if (exists) {
-        return prev.map((h) => (h.id === heli.id ? heli : h));
-      }
-      return [...prev, heli];
-    });
+  const handleSave = async (data: ModalHelicopter) => {
+    try {
+      const payload = {
+        registrationNumber: data.registration,
+        type: data.type,
+        status: toApiStatus(data.status),
+        inspectionExpiryDate: data.inspectionExpiry || undefined,
+        rangeKm: data.rangeKm,
+        maxCrewWeightKg: data.maxCrewWeightKg,
+        maxCrewCount: data.maxCrewCount,
+        description: data.description || undefined,
+      };
+      const saved = editingHeli
+        ? await updateHelicopter(editingHeli.id, payload)
+        : await createHelicopter(payload);
+      setHelicopters((prev) => {
+        const exists = prev.find((h) => h.id === saved.id);
+        return exists ? prev.map((h) => (h.id === saved.id ? saved : h)) : [...prev, saved];
+      });
+    } catch (err) {
+      console.error('Failed to save helicopter:', err);
+    }
   };
 
   const statusLabel = (s: HelicopterStatus) => STATUS_CONFIG[s]?.label ?? s;
@@ -754,7 +324,7 @@ export default function HelicopterListPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
-        helicopter={editingHeli}
+        helicopter={editingHeli ? toModalHelicopter(editingHeli) : null}
       />
 
       {/* ── Page header ── */}
