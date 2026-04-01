@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import OperationModal, { type OperationData, type OperationStatus } from '../../components/modals/OperationModal';
+import { useNavigate } from 'react-router-dom';
 import { getOperations } from '../../api/operations.api';
 import type { OperationListResponse } from '../../api/types';
 import {
@@ -28,9 +28,6 @@ import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import RouteOutlinedIcon from '@mui/icons-material/RouteOutlined';
-import AirplanemodeActiveOutlinedIcon from '@mui/icons-material/AirplanemodeActiveOutlined';
-import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined';
-import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
 import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined';
 import KeyboardArrowRightOutlinedIcon from '@mui/icons-material/KeyboardArrowRightOutlined';
 import { aeroColors } from '../../theme';
@@ -307,39 +304,36 @@ function OperationCard({ icon, name, opId, status, actionLabel, accent }: OpCard
   );
 }
 
-/* ── Mock data ─────────────────────────────────────────────────────────── */
-type ActivityType = 'Transport Medyczny' | 'Inspekcja Sieci' | 'Akcja SAR' | 'Dostawa Cargo' | 'Patrol Granicy' | 'Kalibracja Nawigacyjna';
-
-const ACTIVITY_ICONS: Record<ActivityType, React.ReactNode> = {
-  'Transport Medyczny':      <LocalHospitalOutlinedIcon sx={{ fontSize: 18 }} />,
-  'Inspekcja Sieci':         <ElectricalServicesOutlinedIcon sx={{ fontSize: 18 }} />,
-  'Akcja SAR':               <TravelExploreOutlinedIcon sx={{ fontSize: 18 }} />,
-  'Dostawa Cargo':           <Inventory2OutlinedIcon sx={{ fontSize: 18 }} />,
-  'Patrol Granicy':          <RouteOutlinedIcon sx={{ fontSize: 18 }} />,
-  'Kalibracja Nawigacyjna':  <AirplanemodeActiveOutlinedIcon sx={{ fontSize: 18 }} />,
+/* ── Activity display config ───────────────────────────────────────────── */
+const ACTIVITY_ICONS: Record<string, React.ReactNode> = {
+  'VISUAL INSPECTION':       <ElectricalServicesOutlinedIcon sx={{ fontSize: 18 }} />,
+  'SCAN 3D':                 <TravelExploreOutlinedIcon sx={{ fontSize: 18 }} />,
+  'FAULT LOCATION':          <LocalHospitalOutlinedIcon sx={{ fontSize: 18 }} />,
+  'PHOTOS':                  <Inventory2OutlinedIcon sx={{ fontSize: 18 }} />,
+  'PATROL':                  <RouteOutlinedIcon sx={{ fontSize: 18 }} />,
 };
 
-const ACTIVITY_ACCENTS: Record<ActivityType, string> = {
-  'Transport Medyczny':      aeroColors.error,
-  'Inspekcja Sieci':         aeroColors.secondary,
-  'Akcja SAR':               aeroColors.tertiary,
-  'Dostawa Cargo':           aeroColors.primary,
-  'Patrol Granicy':          '#4caf50',
-  'Kalibracja Nawigacyjna':  '#c084fc',
+const ACTIVITY_ACCENTS: Record<string, string> = {
+  'VISUAL INSPECTION':       aeroColors.secondary,
+  'SCAN 3D':                 aeroColors.tertiary,
+  'FAULT LOCATION':          aeroColors.error,
+  'PHOTOS':                  aeroColors.primary,
+  'PATROL':                  '#4caf50',
 };
 
 interface Operation {
   id: number;
+  realId: string;
   opNumber: string;
   orderNumber: string;
-  activity: ActivityType;
+  activity: string;
   dateFrom: string;
   dateTo: string | null;
   plannedDateFrom: string | null;
   plannedDateTo: string | null;
   status: StatusKey;
   helicopter: string;
-  priority: 'Wysoki' | 'Średni' | 'Niski';
+  priority: string;
   routeFrom: string;
   routeTo: string;
   distanceNm: number;
@@ -361,6 +355,7 @@ function fmtDate(iso: string | null | undefined): string | null {
 function toOperation(op: OperationListResponse, idx: number): Operation {
   return {
     id: idx + 1,
+    realId: op.id,
     opNumber: op.id.substring(0, 12),
     orderNumber: op.orderNumber,
     activity: op.activityTypes.map(t => t.replace(/_/g, ' ')).join(', ') || '—',
@@ -389,32 +384,15 @@ type TabKey = 'all' | 'Wprowadzone' | 'Potwierdzone' | 'Zaplanowane' | 'Zrealizo
 //   { op: OPERATIONS[3], actionLabel: 'Potwierdź' },
 // ];
 
-/* ── Edit helpers ──────────────────────────────────────────────────────── */
-const STATUS_MAP: Record<StatusKey, OperationStatus> = {
-  'Wprowadzone':            'SUBMITTED',
-  'Odrzucone':              'REJECTED',
-  'Potwierdzone':           'CONFIRMED',
-  'Zaplanowane':            'SCHEDULED',
-  'Częściowo zrealizowane': 'PARTIALLY_COMPLETED',
-  'Zrealizowane':           'COMPLETED',
-  'Rezygnacja':             'CANCELLED',
-};
-
-/** Convert DD.MM.YYYY → YYYY-MM-DD for date inputs */
-function toDashDate(d: string): string {
-  const [day, month, year] = d.split('.');
-  return `${year}-${month}-${day}`;
-}
 
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function OperationListPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const canEdit = user?.role === 'PLANNER' || user?.role === 'SUPERVISOR' || user?.role === 'SUPERUSER';
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [search, setSearch] = useState('');
   const [apiOps, setApiOps] = useState<OperationListResponse[]>([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingOperation, setEditingOperation] = useState<OperationData | null>(null);
 
   const fetchOperations = useCallback(async () => {
     try {
@@ -462,12 +440,7 @@ export default function OperationListPage() {
   const inProgressCount = OPERATIONS.filter((o) =>
     ['Potwierdzone', 'Zaplanowane', 'Częściowo zrealizowane'].includes(o.status)
   ).length;
-  const planPct = Math.round((completedCount / OPERATIONS.length) * 100);
-
-  const priorityColor = (p: string) =>
-    p === 'Wysoki' ? aeroColors.error :
-    p === 'Średni' ? aeroColors.secondary :
-    aeroColors.outline;
+  const planPct = OPERATIONS.length > 0 ? Math.round((completedCount / OPERATIONS.length) * 100) : 0;
 
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
@@ -504,7 +477,7 @@ export default function OperationListPage() {
           <Button
             variant="contained"
             startIcon={<AddOutlinedIcon />}
-            onClick={() => { setEditingOperation(null); setModalOpen(true); }}
+            onClick={() => navigate('/operations/new')}
             sx={{
               background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
               color: aeroColors.onPrimaryFixed,
@@ -574,12 +547,12 @@ export default function OperationListPage() {
         {FEATURED_OPS.map(({ op, actionLabel }) => (
           <Grid key={op.id} size={{ xs: 12, sm: 6, md: 3 }}>
             <OperationCard
-              icon={ACTIVITY_ICONS[op.activity]}
+              icon={ACTIVITY_ICONS[op.activity] ?? <ElectricalServicesOutlinedIcon sx={{ fontSize: 18 }} />}
               name={op.activity}
               opId={op.opNumber}
               status={op.status}
               actionLabel={actionLabel}
-              accent={ACTIVITY_ACCENTS[op.activity]}
+              accent={ACTIVITY_ACCENTS[op.activity] ?? aeroColors.primary}
             />
           </Grid>
         ))}
@@ -712,8 +685,8 @@ export default function OperationListPage() {
                       </TableCell>
                       <TableCell sx={TD_SX}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ color: ACTIVITY_ACCENTS[op.activity], display: 'flex', flexShrink: 0 }}>
-                            {ACTIVITY_ICONS[op.activity]}
+                          <Box sx={{ color: ACTIVITY_ACCENTS[op.activity] ?? aeroColors.primary, display: 'flex', flexShrink: 0 }}>
+                            {ACTIVITY_ICONS[op.activity] ?? <ElectricalServicesOutlinedIcon sx={{ fontSize: 18 }} />}
                           </Box>
                           <Typography
                             sx={{
@@ -752,19 +725,7 @@ export default function OperationListPage() {
                           <Tooltip title="Edytuj" placement="left">
                             <IconButton
                               size="small"
-                              onClick={() => {
-                                setEditingOperation({
-                                  id:                 String(op.id),
-                                  orderProjectNumber: op.orderNumber,
-                                  shortDescription:   op.activity,
-                                  activityTypes:      [op.activity],
-                                  status:             STATUS_MAP[op.status],
-                                  proposedDateFrom:   toDashDate(op.dateFrom),
-                                  proposedDateTo:     op.dateTo ? toDashDate(op.dateTo) : undefined,
-                                  routeLengthKm:      op.distanceNm,
-                                });
-                                setModalOpen(true);
-                              }}
+                              onClick={() => navigate(`/operations/${op.realId}`)}
                               sx={{
                                 color: aeroColors.outline,
                                 borderRadius: 1,
@@ -842,149 +803,103 @@ export default function OperationListPage() {
               />
 
               <Typography sx={{ ...SECTION_LABEL_SX, mb: 2 }}>
-                Podgląd operacji: {currentSelected?.opNumber}
+                Podgląd operacji
               </Typography>
 
-              {/* Route display */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  mb: 2.5,
-                  bgcolor: aeroColors.surfaceContainerLowest,
-                  borderRadius: 1.5,
-                  px: 2,
-                  py: 1.5,
-                }}
-              >
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography sx={{ ...SECTION_LABEL_SX, fontSize: '0.5625rem', mb: 0.25 }}>Od</Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: '"Space Grotesk", sans-serif',
-                      fontWeight: 700,
-                      fontSize: '1.125rem',
-                      color: aeroColors.tertiary,
-                      letterSpacing: '0.06em',
-                    }}
-                  >
-                    {currentSelected?.routeFrom}
-                  </Typography>
-                </Box>
-
-                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Box sx={{ flex: 1, height: 1, bgcolor: `${aeroColors.outlineVariant}40` }} />
-                  <Box
-                    sx={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      bgcolor: `${aeroColors.tertiary}14`,
-                      border: `1px solid ${aeroColors.tertiary}25`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <AirplanemodeActiveOutlinedIcon sx={{ fontSize: 14, color: aeroColors.tertiary }} />
-                  </Box>
-                  <Box sx={{ flex: 1, height: 1, bgcolor: `${aeroColors.outlineVariant}40` }} />
-                </Box>
-
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography sx={{ ...SECTION_LABEL_SX, fontSize: '0.5625rem', mb: 0.25 }}>Do</Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: '"Space Grotesk", sans-serif',
-                      fontWeight: 700,
-                      fontSize: '1.125rem',
-                      color: aeroColors.primary,
-                      letterSpacing: '0.06em',
-                    }}
-                  >
-                    {currentSelected?.routeTo}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Route metrics */}
-              <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
-                {[
-                  { label: 'Dystans', value: `${currentSelected?.distanceNm} NM`, color: aeroColors.tertiary },
-                  { label: 'Czas lotu', value: `${currentSelected?.flightTime} H`, color: aeroColors.primary },
-                ].map((m) => (
-                  <Grid key={m.label} size={6}>
-                    <Box sx={{ bgcolor: aeroColors.surfaceContainerLowest, borderRadius: 1.5, p: 1.5, textAlign: 'center' }}>
-                      <Typography sx={{ ...SECTION_LABEL_SX, fontSize: '0.5625rem', mb: 0.5 }}>{m.label}</Typography>
-                      <Typography
-                        sx={{
-                          fontFamily: '"Space Grotesk", sans-serif',
-                          fontWeight: 700,
-                          fontSize: '1.25rem',
-                          color: m.color,
-                          lineHeight: 1,
-                        }}
-                      >
-                        {m.value}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-
-              {/* Operation metadata */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {[
-                  {
-                    icon: <AirplanemodeActiveOutlinedIcon sx={{ fontSize: 14 }} />,
-                    label: 'Wymagana maszyna',
-                    value: currentSelected?.helicopter,
-                    color: aeroColors.primary,
-                  },
-                  {
-                    icon: <WbSunnyOutlinedIcon sx={{ fontSize: 14 }} />,
-                    label: 'Prognozowana pogoda',
-                    value: currentSelected?.weather,
-                    color: aeroColors.tertiary,
-                  },
-                  {
-                    icon: <PriorityHighOutlinedIcon sx={{ fontSize: 14 }} />,
-                    label: 'Priorytet',
-                    value: currentSelected?.priority,
-                    color: priorityColor(currentSelected?.priority),
-                  },
-                ].map((row) => (
-                  <Box
-                    key={row.label}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      py: 0.75,
-                      borderBottom: `1px solid ${aeroColors.outlineVariant}14`,
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: aeroColors.outline }}>
-                      {row.icon}
-                      <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline }}>
-                        {row.label}
-                      </Typography>
-                    </Box>
+              {currentSelected ? (
+                <>
+                  {/* Order number + description */}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography
+                      sx={{
+                        fontFamily: '"Space Grotesk", sans-serif',
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                        color: aeroColors.onSurface,
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {currentSelected.orderNumber}
+                    </Typography>
                     <Typography
                       sx={{
                         fontSize: '0.75rem',
-                        fontWeight: 600,
-                        color: row.color,
-                        letterSpacing: '0.04em',
+                        color: aeroColors.onSurfaceVariant,
+                        mt: 0.5,
                       }}
                     >
-                      {row.value}
+                      {currentSelected.activity}
                     </Typography>
                   </Box>
-                ))}
-              </Box>
+
+                  {/* Status */}
+                  <Box sx={{ mb: 2 }}>
+                    <StatusBadge status={currentSelected.status} />
+                  </Box>
+
+                  {/* Dates */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                    {[
+                      { label: 'Proponowany termin', value: currentSelected.dateFrom + (currentSelected.dateTo ? ` — ${currentSelected.dateTo}` : '') },
+                      ...(currentSelected.plannedDateFrom ? [{ label: 'Planowany termin', value: currentSelected.plannedDateFrom + (currentSelected.plannedDateTo ? ` — ${currentSelected.plannedDateTo}` : '') }] : []),
+                    ].map((row) => (
+                      <Box
+                        key={row.label}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          py: 0.75,
+                          borderBottom: `1px solid ${aeroColors.outlineVariant}14`,
+                        }}
+                      >
+                        <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline }}>
+                          {row.label}
+                        </Typography>
+                        <Typography
+                          sx={{ fontSize: '0.75rem', fontWeight: 600, color: aeroColors.primary, letterSpacing: '0.04em' }}
+                        >
+                          {row.value}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+
+                  {/* ID */}
+                  <Typography sx={{ fontSize: '0.625rem', color: aeroColors.outline, fontFamily: 'monospace', letterSpacing: '0.05em' }}>
+                    ID: {currentSelected.realId}
+                  </Typography>
+                </>
+              ) : (
+                <Typography sx={{ fontSize: '0.8125rem', color: aeroColors.outline, fontStyle: 'italic' }}>
+                  Brak operacji do wyświetlenia
+                </Typography>
+              )}
+
+              {/* Open details button */}
+              {currentSelected && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => navigate(`/operations/${currentSelected.realId}`)}
+                  sx={{
+                    mt: 2,
+                    width: '100%',
+                    background: `linear-gradient(135deg, ${aeroColors.tertiary} 0%, ${aeroColors.onTertiaryContainer} 100%)`,
+                    color: '#fff',
+                    fontFamily: '"Space Grotesk", sans-serif',
+                    fontWeight: 700,
+                    fontSize: '0.6875rem',
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    py: 1,
+                    borderRadius: 1,
+                    '&:hover': { opacity: 0.9 },
+                  }}
+                >
+                  Otwórz szczegóły
+                </Button>
+              )}
             </Box>
 
             {/* Weekly stats card */}
@@ -1105,16 +1020,6 @@ export default function OperationListPage() {
           </Box>
         </Grid>
       </Grid>
-
-      <OperationModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSave={(data) => {
-          console.log('Zapisano operację:', data);
-          setModalOpen(false);
-        }}
-        operation={editingOperation}
-      />
 
     </Box>
   );

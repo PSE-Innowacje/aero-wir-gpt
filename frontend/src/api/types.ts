@@ -225,7 +225,8 @@ export interface StatusChangeRequest {
 }
 
 export interface KmlProcessingResult {
-  filePath: string;
+  fileContent: string;
+  fileName: string;
   points: number[][];
   routeLengthKm: number;
 }

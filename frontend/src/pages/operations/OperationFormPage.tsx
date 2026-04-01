@@ -310,7 +310,7 @@ export default function OperationFormPage() {
   const [kmlFileError, setKmlFileError] = useState('');
   const [kmlUploading, setKmlUploading] = useState(false);
   const [kmlPoints, setKmlPoints] = useState<number[][] | null>(null);
-  const [kmlFileName, setKmlFilePath] = useState<string | null>(null);
+  const [kmlFileName, setKmlFileName] = useState<string | null>(null);
   const [routeLengthKm, setRouteLengthKm] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -397,7 +397,7 @@ export default function OperationFormPage() {
         setOperation(op);
         setComments(op.comments ?? []);
         setKmlPoints(op.kmlPoints ?? null);
-        setKmlFilePath(op.kmlFileName ?? null);
+        setKmlFileName(op.kmlFileName ?? null);
         setRouteLengthKm(op.routeLengthKm ?? null);
         reset({
           orderNumber: op.orderNumber,
@@ -427,7 +427,7 @@ export default function OperationFormPage() {
       try {
         const result = await uploadKml(file);
         setKmlPoints(result.points);
-        setKmlFilePath(result.filePath);
+        setKmlFileName(result.fileName);
         setRouteLengthKm(result.routeLengthKm);
         showSuccess(
           `Plik KML przetworzony: ${result.points.length} punktow, ${result.routeLengthKm.toFixed(1)} km`,
