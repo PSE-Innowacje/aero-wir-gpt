@@ -5,10 +5,10 @@ import FlightOrderModal, {
   MOCK_HELICOPTERS,
   MOCK_PILOTS,
 } from '../../components/modals/FlightOrderModal';
-import { getOrders } from '../../api/orders.api';
+import { getOrders, createOrder, updateOrder } from '../../api/orders.api';
 import { getHelicopters } from '../../api/helicopters.api';
 import { getCrewMembers } from '../../api/crew.api';
-import type { OrderListResponse, HelicopterResponse, CrewMemberResponse } from '../../api/types';
+import type { OrderListResponse, HelicopterResponse, CrewMemberResponse, OrderRequest } from '../../api/types';
 import {
   Box,
   Typography,
@@ -25,6 +25,8 @@ import {
   Tooltip,
   Avatar,
   Chip,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import AddTaskOutlinedIcon from '@mui/icons-material/AddTaskOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
@@ -590,6 +592,10 @@ export default function OrderListPage() {
   const [apiOrders, setApiOrders] = useState<OrderListResponse[]>([]);
   const [helicopterMap, setHelicopterMap] = useState<Map<string, HelicopterResponse>>(new Map());
   const [crewMap, setCrewMap] = useState<Map<string, CrewMemberResponse>>(new Map());
+  const [saving, setSaving] = useState(false);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false, message: '', severity: 'success',
+  });
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -607,6 +613,36 @@ export default function OrderListPage() {
   }, []);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  const handleSave = async (data: FlightOrderData) => {
+    const payload: OrderRequest = {
+      plannedDeparture:  data.plannedDeparture,
+      plannedArrival:    data.plannedArrival,
+      helicopterId:      data.helicopterId,
+      crewMemberIds:     data.crewMemberIds,
+      departureSiteId:   data.departureLandingSiteId,
+      arrivalSiteId:     data.arrivalLandingSiteId,
+      operationIds:      data.operationIds,
+      actualDeparture:   data.actualDeparture || undefined,
+      actualArrival:     data.actualArrival   || undefined,
+    };
+    setSaving(true);
+    try {
+      if (data.id) {
+        await updateOrder(data.id, payload);
+      } else {
+        await createOrder(payload);
+      }
+      setModalOpen(false);
+      setEditingOrder(null);
+      await fetchOrders();
+      setSnackbar({ open: true, message: data.id ? 'Zlecenie zostało zaktualizowane.' : 'Zlecenie zostało utworzone.', severity: 'success' });
+    } catch {
+      setSnackbar({ open: true, message: 'Nie udało się zapisać zlecenia. Spróbuj ponownie.', severity: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const ORDERS = apiOrders.map((o, i) => toFlightOrder(o, i, helicopterMap, crewMap));
 
@@ -1077,13 +1113,26 @@ export default function OrderListPage() {
 
       <FlightOrderModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSave={(data) => {
-          console.log('Zapisano zlecenie:', data);
-          setModalOpen(false);
-        }}
+        onClose={() => { if (!saving) { setModalOpen(false); setEditingOrder(null); } }}
+        onSave={handleSave}
         order={editingOrder}
+        saving={saving}
       />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+          sx={{ fontFamily: '"Space Grotesk", sans-serif', fontSize: '0.8125rem' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
     </Box>
   );

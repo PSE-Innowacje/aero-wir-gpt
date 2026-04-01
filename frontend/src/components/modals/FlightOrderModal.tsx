@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,10 +12,16 @@ import {
   Dialog,
   Autocomplete,
   Chip,
+  CircularProgress,
 } from '@mui/material';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import { aeroColors } from '../../theme';
+import { getHelicopters } from '../../api/helicopters.api';
+import { getCrewMembers } from '../../api/crew.api';
+import { getLandingSites } from '../../api/landingSites.api';
+import { getOperations } from '../../api/operations.api';
+import type { HelicopterResponse, CrewMemberResponse, LandingSiteResponse, OperationListResponse } from '../../api/types';
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 export type FlightOrderStatus =
@@ -68,7 +74,6 @@ interface MockCrewMember {
 }
 interface MockHelicopter { id: string; registrationNumber: string; type: string }
 interface MockLandingSite { id: string; name: string }
-interface MockOperation   { id: string; name: string; plannedDate: string }
 
 export const MOCK_CREW_MEMBERS: MockCrewMember[] = [
   { id: 'p1', firstName: 'Jan',       lastName: 'Nowak',       weightKg: 82, role: 'PILOT' },
@@ -94,12 +99,6 @@ export const MOCK_LANDING_SITES: MockLandingSite[] = [
   { id: 'ls4', name: 'Poznań Ławica' },
 ];
 
-const MOCK_OPERATIONS: MockOperation[] = [
-  { id: 'op1', name: 'Inspekcja linii 110kV — sekcja A', plannedDate: '2024-05-20' },
-  { id: 'op2', name: 'Monitoring trasy wschód',           plannedDate: '2024-05-21' },
-  { id: 'op3', name: 'Przegląd pylonów sekcja B',         plannedDate: '2024-05-21' },
-  { id: 'op4', name: 'Inspekcja linii 220kV — Radom',     plannedDate: '2024-05-23' },
-];
 
 /* ── Zod schema ─────────────────────────────────────────────────────────── */
 const STATUS_VALUES = [
@@ -248,6 +247,7 @@ export interface FlightOrderModalProps {
   onClose: () => void;
   onSave: (order: FlightOrderData) => void;
   order: FlightOrderData | null;
+  saving?: boolean;
 }
 
 /* ── Component ──────────────────────────────────────────────────────────── */
@@ -256,6 +256,7 @@ export default function FlightOrderModal({
   onClose,
   onSave,
   order,
+  saving = false,
 }: FlightOrderModalProps) {
   const isEdit = Boolean(order);
 
@@ -269,6 +270,63 @@ export default function FlightOrderModal({
     resolver: zodResolver(flightOrderSchema),
     defaultValues: EMPTY_DEFAULTS,
   });
+
+  /* ── Helicopter list from API ── */
+  const [helicopters, setHelicopters] = useState<HelicopterResponse[]>([]);
+  const [helicoptersLoading, setHelicoptersLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setHelicoptersLoading(true);
+    getHelicopters()
+      .then(setHelicopters)
+      .catch(() => setHelicopters([]))
+      .finally(() => setHelicoptersLoading(false));
+  }, [open]);
+
+  /* ── All crew members from API (pilots derived below) ── */
+  const [allCrewMembers, setAllCrewMembers] = useState<CrewMemberResponse[]>([]);
+  const [crewMembersLoading, setCrewMembersLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setCrewMembersLoading(true);
+    getCrewMembers()
+      .then(setAllCrewMembers)
+      .catch(() => setAllCrewMembers([]))
+      .finally(() => setCrewMembersLoading(false));
+  }, [open]);
+
+  const pilots = useMemo(
+    () => allCrewMembers.filter((m) => m.role === 'PILOT'),
+    [allCrewMembers],
+  );
+
+  /* ── Landing sites from API ── */
+  const [landingSites, setLandingSites] = useState<LandingSiteResponse[]>([]);
+  const [landingSitesLoading, setLandingSitesLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setLandingSitesLoading(true);
+    getLandingSites()
+      .then(setLandingSites)
+      .catch(() => setLandingSites([]))
+      .finally(() => setLandingSitesLoading(false));
+  }, [open]);
+
+  /* ── Operations from API ── */
+  const [operations, setOperations] = useState<OperationListResponse[]>([]);
+  const [operationsLoading, setOperationsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setOperationsLoading(true);
+    getOperations()
+      .then(setOperations)
+      .catch(() => setOperations([]))
+      .finally(() => setOperationsLoading(false));
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -294,18 +352,20 @@ export default function FlightOrderModal({
   }, [order, open, reset]);
 
   /* Crew weight — auto-calculated */
-  const watchedPilotId       = useWatch({ control, name: 'pilotId' });
-  const watchedCrewMemberIds = useWatch({ control, name: 'crewMemberIds' });
-  const watchedStatus        = useWatch({ control, name: 'status' });
+  const watchedPilotId              = useWatch({ control, name: 'pilotId' });
+  const watchedCrewMemberIds        = useWatch({ control, name: 'crewMemberIds' });
+  const watchedStatus               = useWatch({ control, name: 'status' });
+  const watchedDepartureSiteId      = useWatch({ control, name: 'departureLandingSiteId' });
+  const watchedArrivalSiteId        = useWatch({ control, name: 'arrivalLandingSiteId' });
 
   const crewWeightKg = useMemo(() => {
-    const pilot      = MOCK_CREW_MEMBERS.find((m) => m.id === watchedPilotId);
+    const pilot      = pilots.find((m) => m.id === watchedPilotId);
     const pilotKg    = pilot?.weightKg ?? 0;
-    const crewKg     = MOCK_CREW_MEMBERS
+    const crewKg     = allCrewMembers
       .filter((m) => (watchedCrewMemberIds ?? []).includes(m.id))
       .reduce((sum, m) => sum + m.weightKg, 0);
     return pilotKg + crewKg;
-  }, [watchedPilotId, watchedCrewMemberIds]);
+  }, [watchedPilotId, watchedCrewMemberIds, pilots, allCrewMembers]);
 
   const requiresActualTimes =
     watchedStatus === 'PARTIALLY_COMPLETED' || watchedStatus === 'COMPLETED';
@@ -547,11 +607,34 @@ export default function FlightOrderModal({
                 size="small"
                 fullWidth
                 select
+                disabled={helicoptersLoading}
                 error={!!errors.helicopterId}
                 helperText={errors.helicopterId?.message}
                 sx={INPUT_SX}
+                InputProps={helicoptersLoading ? {
+                  endAdornment: (
+                    <CircularProgress
+                      size={14}
+                      sx={{ color: aeroColors.outline, mr: 1, flexShrink: 0 }}
+                    />
+                  ),
+                } : undefined}
               >
-                {MOCK_HELICOPTERS.map((h) => (
+                {helicoptersLoading && (
+                  <MenuItem disabled value="">
+                    <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline, fontStyle: 'italic' }}>
+                      Ładowanie...
+                    </Typography>
+                  </MenuItem>
+                )}
+                {!helicoptersLoading && helicopters.length === 0 && (
+                  <MenuItem disabled value="">
+                    <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline, fontStyle: 'italic' }}>
+                      Brak dostępnych helikopterów
+                    </Typography>
+                  </MenuItem>
+                )}
+                {helicopters.map((h) => (
                   <MenuItem key={h.id} value={h.id}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
                       <Typography
@@ -622,11 +705,34 @@ export default function FlightOrderModal({
                 size="small"
                 fullWidth
                 select
+                disabled={crewMembersLoading}
                 error={!!errors.pilotId}
                 helperText={errors.pilotId?.message}
                 sx={INPUT_SX}
+                InputProps={crewMembersLoading ? {
+                  endAdornment: (
+                    <CircularProgress
+                      size={14}
+                      sx={{ color: aeroColors.outline, mr: 1, flexShrink: 0 }}
+                    />
+                  ),
+                } : undefined}
               >
-                {MOCK_PILOTS.map((p) => (
+                {crewMembersLoading && (
+                  <MenuItem disabled value="">
+                    <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline, fontStyle: 'italic' }}>
+                      Ładowanie...
+                    </Typography>
+                  </MenuItem>
+                )}
+                {!crewMembersLoading && pilots.length === 0 && (
+                  <MenuItem disabled value="">
+                    <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline, fontStyle: 'italic' }}>
+                      Brak dostępnych pilotów
+                    </Typography>
+                  </MenuItem>
+                )}
+                {pilots.map((p) => (
                   <MenuItem key={p.id} value={p.id}>
                     <Typography sx={{ fontSize: '0.75rem', color: aeroColors.onSurface }}>
                       {p.firstName} {p.lastName}
@@ -645,13 +751,16 @@ export default function FlightOrderModal({
             name="crewMemberIds"
             control={control}
             render={({ field }) => {
-              const selected = MOCK_CREW_MEMBERS.filter((m) =>
+              const selected = allCrewMembers.filter((m) =>
                 (field.value ?? []).includes(m.id),
               );
               return (
                 <Autocomplete
                   multiple
-                  options={MOCK_CREW_MEMBERS}
+                  options={allCrewMembers.filter((m) => m.id !== watchedPilotId)}
+                  loading={crewMembersLoading}
+                  loadingText="Ładowanie członków załogi..."
+                  noOptionsText="Brak dostępnych członków załogi"
                   getOptionLabel={(opt) => `${opt.firstName} ${opt.lastName}`}
                   isOptionEqualToValue={(opt, val) => opt.id === val.id}
                   value={selected}
@@ -744,17 +853,33 @@ export default function FlightOrderModal({
                   size="small"
                   fullWidth
                   select
+                  disabled={landingSitesLoading}
                   error={!!errors.departureLandingSiteId}
                   helperText={errors.departureLandingSiteId?.message}
                   sx={INPUT_SX}
+                  InputProps={landingSitesLoading ? {
+                    endAdornment: (
+                      <CircularProgress size={14} sx={{ color: aeroColors.outline, mr: 1, flexShrink: 0 }} />
+                    ),
+                  } : undefined}
                 >
-                  {MOCK_LANDING_SITES.map((ls) => (
-                    <MenuItem key={ls.id} value={ls.id}>
-                      <Typography sx={{ fontSize: '0.75rem', color: aeroColors.onSurface }}>
-                        {ls.name}
-                      </Typography>
+                  {landingSitesLoading && (
+                    <MenuItem disabled value="">
+                      <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline, fontStyle: 'italic' }}>Ładowanie...</Typography>
                     </MenuItem>
-                  ))}
+                  )}
+                  {!landingSitesLoading && landingSites.length === 0 && (
+                    <MenuItem disabled value="">
+                      <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline, fontStyle: 'italic' }}>Brak lądowisk</Typography>
+                    </MenuItem>
+                  )}
+                  {landingSites
+                    .filter((ls) => ls.id !== watchedArrivalSiteId)
+                    .map((ls) => (
+                      <MenuItem key={ls.id} value={ls.id}>
+                        <Typography sx={{ fontSize: '0.75rem', color: aeroColors.onSurface }}>{ls.name}</Typography>
+                      </MenuItem>
+                    ))}
                 </TextField>
               )}
             />
@@ -770,17 +895,33 @@ export default function FlightOrderModal({
                   size="small"
                   fullWidth
                   select
+                  disabled={landingSitesLoading}
                   error={!!errors.arrivalLandingSiteId}
                   helperText={errors.arrivalLandingSiteId?.message}
                   sx={INPUT_SX}
+                  InputProps={landingSitesLoading ? {
+                    endAdornment: (
+                      <CircularProgress size={14} sx={{ color: aeroColors.outline, mr: 1, flexShrink: 0 }} />
+                    ),
+                  } : undefined}
                 >
-                  {MOCK_LANDING_SITES.map((ls) => (
-                    <MenuItem key={ls.id} value={ls.id}>
-                      <Typography sx={{ fontSize: '0.75rem', color: aeroColors.onSurface }}>
-                        {ls.name}
-                      </Typography>
+                  {landingSitesLoading && (
+                    <MenuItem disabled value="">
+                      <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline, fontStyle: 'italic' }}>Ładowanie...</Typography>
                     </MenuItem>
-                  ))}
+                  )}
+                  {!landingSitesLoading && landingSites.length === 0 && (
+                    <MenuItem disabled value="">
+                      <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline, fontStyle: 'italic' }}>Brak lądowisk</Typography>
+                    </MenuItem>
+                  )}
+                  {landingSites
+                    .filter((ls) => ls.id !== watchedDepartureSiteId)
+                    .map((ls) => (
+                      <MenuItem key={ls.id} value={ls.id}>
+                        <Typography sx={{ fontSize: '0.75rem', color: aeroColors.onSurface }}>{ls.name}</Typography>
+                      </MenuItem>
+                    ))}
                 </TextField>
               )}
             />
@@ -796,42 +937,39 @@ export default function FlightOrderModal({
             name="operationIds"
             control={control}
             render={({ field }) => {
-              const selectedOps = MOCK_OPERATIONS.filter((o) =>
+              const selectedOps = operations.filter((o) =>
                 (field.value ?? []).includes(o.id),
               );
               return (
                 <Autocomplete
                   multiple
-                  options={MOCK_OPERATIONS}
-                  getOptionLabel={(opt) => opt.name}
+                  options={operations}
+                  loading={operationsLoading}
+                  loadingText="Ładowanie operacji..."
+                  noOptionsText="Brak dostępnych operacji"
+                  getOptionLabel={(opt) => opt.orderNumber}
                   isOptionEqualToValue={(opt, val) => opt.id === val.id}
                   value={selectedOps}
                   onChange={(_, newValue) => field.onChange(newValue.map((o) => o.id))}
                   renderOption={(props, option) => {
                     const { key, ...optProps } = props as { key: React.Key } & React.HTMLAttributes<HTMLLIElement>;
+                    const dateLabel = option.proposedDateEarliest ?? option.plannedDateEarliest ?? null;
                     return (
                       <Box component="li" key={key} {...optProps} sx={{ py: '6px !important' }}>
                         <Box>
-                          <Typography
-                            sx={{
-                              fontSize: '0.75rem',
-                              color: aeroColors.onSurface,
-                              lineHeight: 1.3,
-                            }}
-                          >
-                            {option.name}
+                          <Typography sx={{ fontSize: '0.75rem', color: aeroColors.onSurface, lineHeight: 1.3 }}>
+                            {option.orderNumber}
+                            {option.activityTypes.length > 0 && (
+                              <Box component="span" sx={{ color: aeroColors.onSurfaceVariant, ml: 0.75 }}>
+                                — {option.activityTypes.join(', ')}
+                              </Box>
+                            )}
                           </Typography>
-                          <Typography
-                            sx={{
-                              fontSize: '0.5625rem',
-                              color: aeroColors.outline,
-                              letterSpacing: '0.08em',
-                              mt: 0.25,
-                              fontFamily: '"Inter", monospace',
-                            }}
-                          >
-                            {option.plannedDate}
-                          </Typography>
+                          {dateLabel && (
+                            <Typography sx={{ fontSize: '0.5625rem', color: aeroColors.outline, letterSpacing: '0.08em', mt: 0.25, fontFamily: '"Inter", monospace' }}>
+                              {dateLabel}
+                            </Typography>
+                          )}
                         </Box>
                       </Box>
                     );
@@ -843,7 +981,7 @@ export default function FlightOrderModal({
                         <Chip
                           key={key}
                           {...tagProps}
-                          label={option.name}
+                          label={option.orderNumber}
                           size="small"
                           sx={{
                             bgcolor: `${aeroColors.primary}14`,
@@ -973,6 +1111,7 @@ export default function FlightOrderModal({
             fullWidth
             variant="outlined"
             type="button"
+            disabled={saving}
             onClick={onClose}
             sx={{
               color: aeroColors.outline,
@@ -996,6 +1135,8 @@ export default function FlightOrderModal({
             fullWidth
             variant="contained"
             type="submit"
+            disabled={saving}
+            startIcon={saving ? <CircularProgress size={14} sx={{ color: 'inherit' }} /> : undefined}
             sx={{
               background: `linear-gradient(135deg, ${aeroColors.tertiary} 0%, ${aeroColors.onTertiaryContainer} 100%)`,
               color: aeroColors.onTertiary,
@@ -1013,7 +1154,7 @@ export default function FlightOrderModal({
               },
             }}
           >
-            {isEdit ? 'Zapisz zmiany' : 'Utwórz zlecenie'}
+            {saving ? 'Zapisywanie...' : isEdit ? 'Zapisz zmiany' : 'Utwórz zlecenie'}
           </Button>
         </Box>
 
