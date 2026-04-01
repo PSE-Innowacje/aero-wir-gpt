@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -22,6 +23,10 @@ import HeightIcon from '@mui/icons-material/Height';
 import LocalGasStationOutlinedIcon from '@mui/icons-material/LocalGasStationOutlined';
 import { aeroColors } from '../../theme';
 import WeatherBanner from '../../components/WeatherBanner';
+import { getOperations } from '../../api/operations.api';
+import { getOrders } from '../../api/orders.api';
+import { getHelicopters } from '../../api/helicopters.api';
+import type { OperationListResponse, OrderListResponse, HelicopterResponse } from '../../api/types';
 
 /* Shared design tokens -------------------------------------------------- */
 const STATUS_GREEN = '#4caf50';
@@ -166,6 +171,48 @@ function StatusIcon({ status }: { status: string }) {
 
 /* Page ------------------------------------------------------------------- */
 export default function DashboardPage() {
+  const [operations, setOperations] = useState<OperationListResponse[]>([]);
+  const [orders, setOrders] = useState<OrderListResponse[]>([]);
+  const [helicopters, setHelicopters] = useState<HelicopterResponse[]>([]);
+
+  useEffect(() => {
+    Promise.all([getOperations(), getOrders(), getHelicopters()])
+      .then(([ops, ords, helis]) => {
+        setOperations(ops);
+        setOrders(ords);
+        setHelicopters(helis);
+      })
+      .catch(console.error);
+  }, []);
+
+  // Stats
+  const activeOpsCount = operations.filter(o =>
+    ['CONFIRMED', 'SCHEDULED'].includes(o.status)).length;
+  const pendingOpsCount = operations.filter(o => o.status === 'SUBMITTED').length;
+  const activeHelis = helicopters.filter(h => h.status === 'ACTIVE').length;
+  const inactiveHelis = helicopters.filter(h => h.status === 'INACTIVE').length;
+  const totalHelis = helicopters.length;
+  const fleetPct = totalHelis > 0 ? Math.round((activeHelis / totalHelis) * 100) : 0;
+
+  // Mission logs from recent orders
+  const missionLogs = [...orders]
+    .sort((a, b) => (b.plannedDeparture ?? '').localeCompare(a.plannedDeparture ?? ''))
+    .slice(0, 6)
+    .map(o => {
+      const dep = o.plannedDeparture ? new Date(o.plannedDeparture) : null;
+      const time = dep ? dep.toTimeString().substring(0, 8) : '—';
+      const isActive = o.status === 'APPROVED';
+      const isPending = ['SUBMITTED', 'SENT_FOR_APPROVAL'].includes(o.status);
+      return {
+        time,
+        callsign: `#${o.id.substring(0, 8).toUpperCase()}`,
+        action: o.statusLabel ?? o.status,
+        status: isActive ? 'W locie' : isPending ? 'Oczekuje' : 'Zakończone',
+        statusColor: isActive ? aeroColors.tertiary : isPending ? aeroColors.secondary : aeroColors.onSurfaceVariant,
+        statusBg: isActive ? `${aeroColors.tertiary}18` : isPending ? `${aeroColors.secondary}18` : `${aeroColors.outlineVariant}40`,
+      };
+    });
+
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
 
@@ -176,16 +223,16 @@ export default function DashboardPage() {
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <StatCard
             label="Aktywne operacje"
-            value="12"
+            value={String(activeOpsCount).padStart(2, '0')}
             icon={<FlightTakeoffIcon sx={{ fontSize: 20 }} />}
             accent={aeroColors.tertiary}
-            sublabel="W trakcie realizacji"
+            sublabel="Potwierdzone i zaplanowane"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <StatCard
             label="Oczekujące"
-            value="04"
+            value={String(pendingOpsCount).padStart(2, '0')}
             icon={<PendingActionsIcon sx={{ fontSize: 20 }} />}
             accent={aeroColors.secondary}
             sublabel="Do zatwierdzenia"
@@ -194,10 +241,10 @@ export default function DashboardPage() {
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <StatCard
             label="Dostępność floty"
-            value="84%"
+            value={`${fleetPct}%`}
             icon={<AirplanemodeActiveIcon sx={{ fontSize: 20 }} />}
             accent={aeroColors.primary}
-            sublabel="3 w rezerwie · 1 w serwisie"
+            sublabel={`${inactiveHelis} w serwisie · ${activeHelis} aktywnych`}
           />
         </Grid>
       </Grid>
@@ -211,9 +258,8 @@ export default function DashboardPage() {
             <Typography sx={{ ...SECTION_LABEL_SX, mb: 2.5 }}>Stan floty</Typography>
 
             {[
-              { label: 'Dostępne', value: 8, pct: 80, color: aeroColors.tertiary },
-              { label: 'W rezerwie', value: 3, pct: 30, color: aeroColors.primary },
-              { label: 'W serwisie', value: 1, pct: 10, color: aeroColors.secondary },
+              { label: 'Dostępne', value: activeHelis, pct: totalHelis > 0 ? Math.round((activeHelis / totalHelis) * 100) : 0, color: aeroColors.tertiary },
+              { label: 'W serwisie', value: inactiveHelis, pct: totalHelis > 0 ? Math.round((inactiveHelis / totalHelis) * 100) : 0, color: aeroColors.secondary },
             ].map((row) => (
               <Box key={row.label} sx={{ mb: 2, '&:last-child': { mb: 0 } }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
@@ -424,7 +470,7 @@ export default function DashboardPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {MISSION_LOG.map((row, idx) => (
+              {(missionLogs.length > 0 ? missionLogs : MISSION_LOG).map((row, idx) => (
                 <TableRow
                   key={idx}
                   sx={{

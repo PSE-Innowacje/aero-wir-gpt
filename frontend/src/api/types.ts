@@ -199,6 +199,7 @@ export interface OperationListResponse {
   plannedDateLatest?: string | null;
   status: OperationStatus;
   statusLabel: string;
+  routeLengthKm: number;
 }
 
 export interface OperationRequest {

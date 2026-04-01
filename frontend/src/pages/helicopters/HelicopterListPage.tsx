@@ -24,7 +24,8 @@ import AddIcon from '@mui/icons-material/Add';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { aeroColors } from '../../theme';
 import { getHelicopters, createHelicopter, updateHelicopter } from '../../api/helicopters.api';
-import type { HelicopterResponse, HelicopterStatus } from '../../api/types';
+import { getOrders } from '../../api/orders.api';
+import type { HelicopterResponse, HelicopterStatus, OrderListResponse } from '../../api/types';
 import { useAuth } from '../../contexts/AuthContext';
 import HelicopterModal, { type Helicopter as ModalHelicopter } from '../../components/modals/HelicopterModal';
 
@@ -230,11 +231,17 @@ export default function HelicopterListPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingHeli, setEditingHeli] = useState<HelicopterResponse | null>(null);
 
+  const [approvedOrders, setApprovedOrders] = useState<OrderListResponse[]>([]);
+
   const fetchHelicopters = useCallback(async () => {
     try {
       setError(null);
-      const data = await getHelicopters();
-      setHelicopters(data);
+      const [heliData, ordersData] = await Promise.all([
+        getHelicopters(),
+        getOrders('APPROVED'),
+      ]);
+      setHelicopters(heliData);
+      setApprovedOrders(ordersData);
     } catch (err) {
       console.error('Failed to fetch helicopters:', err);
       setError('Nie udało się pobrać listy helikopterów.');
@@ -246,6 +253,9 @@ export default function HelicopterListPage() {
   useEffect(() => {
     fetchHelicopters();
   }, [fetchHelicopters]);
+
+  // Count unique helicopters that are currently in approved (active) flight orders
+  const inFlightCount = new Set(approvedOrders.map(o => o.helicopterId)).size;
 
   const openAdd = () => {
     setEditingHeli(null);
@@ -405,7 +415,7 @@ export default function HelicopterListPage() {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             label="W powietrzu"
-            value="02"
+            value={String(inFlightCount).padStart(2, '0')}
             icon={<FlightTakeoffIcon sx={{ fontSize: 20 }} />}
             accent={aeroColors.tertiary}
             sublabel="Aktywnych lotów"

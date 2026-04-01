@@ -269,6 +269,7 @@ export default function FlightOrderModal({
     handleSubmit,
     control,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<FlightOrderFormValues>({
     resolver: zodResolver(flightOrderSchema),
@@ -283,7 +284,7 @@ export default function FlightOrderModal({
     if (!open) return;
     setHelicoptersLoading(true);
     getHelicopters()
-      .then(setHelicopters)
+      .then(all => setHelicopters(all.filter(h => h.status === 'ACTIVE')))
       .catch(() => setHelicopters([]))
       .finally(() => setHelicoptersLoading(false));
   }, [open]);
@@ -373,6 +374,15 @@ export default function FlightOrderModal({
 
   const requiresActualTimes =
     watchedStatus === 'PARTIALLY_COMPLETED' || watchedStatus === 'COMPLETED';
+
+  /* ── Auto-calculate route length from selected operations ── */
+  const watchedOperationIds = useWatch({ control, name: 'operationIds' });
+
+  useEffect(() => {
+    const selectedOps = operations.filter(op => (watchedOperationIds ?? []).includes(op.id));
+    const totalKm = selectedOps.reduce((sum, op) => sum + (op.routeLengthKm ?? 0), 0);
+    setValue('estimatedRouteLengthKm', totalKm > 0 ? totalKm : '' as unknown as number);
+  }, [watchedOperationIds, operations, setValue]);
 
   /* ── Live flight-rule warnings (mirrors backend 5 rules) ── */
   const watchedHelicopterId = useWatch({ control, name: 'helicopterId' });

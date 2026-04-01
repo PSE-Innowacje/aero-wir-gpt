@@ -698,6 +698,9 @@ export default function OrderListPage() {
   const activeCount   = ORDERS.filter((o) => ['Zaakceptowane', 'Przekazane do akceptacji'].includes(o.status)).length;
   const pendingCount  = ORDERS.filter((o) => o.status === 'Wprowadzone').length;
   const sentCount     = ORDERS.filter((o) => o.status === 'Przekazane do akceptacji').length;
+  const totalHelis    = helicopterMap.size;
+  const activeHelis   = [...helicopterMap.values()].filter(h => h.status === 'ACTIVE').length;
+  const fleetPct      = totalHelis > 0 ? Math.round((activeHelis / totalHelis) * 100) : 0;
 
   /* ── Map markers for selected order ─────────────────────────────────── */
   const handleRowSelect = useCallback(async (apiId: string) => {
@@ -803,8 +806,7 @@ export default function OrderListPage() {
           <StatCard
             label="Aktywne misje"
             value={String(activeCount).padStart(2, '0')}
-            sublabel="Optymalnie"
-            delta="+2 dzisiaj"
+            sublabel="Zaakceptowane i przekazane"
             icon={<FlightTakeoffIcon sx={{ fontSize: 20 }} />}
             accent={aeroColors.tertiary}
           />
@@ -830,8 +832,8 @@ export default function OrderListPage() {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             label="Dostępność floty"
-            value="94%"
-            sublabel="Optymalnie"
+            value={`${fleetPct}%`}
+            sublabel={`${activeHelis} z ${totalHelis} aktywnych`}
             icon={<AirplanemodeActiveOutlinedIcon sx={{ fontSize: 20 }} />}
             accent="#4caf50"
           />

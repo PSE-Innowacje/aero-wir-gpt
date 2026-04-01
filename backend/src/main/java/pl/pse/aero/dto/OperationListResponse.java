@@ -26,6 +26,7 @@ public class OperationListResponse {
     private LocalDate plannedDateLatest;
     private OperationStatus status;
     private String statusLabel;
+    private int routeLengthKm;
 
     public static OperationListResponse from(FlightOperation op) {
         return OperationListResponse.builder()
@@ -38,6 +39,7 @@ public class OperationListResponse {
                 .plannedDateLatest(op.getPlannedDateLatest())
                 .status(op.getStatus())
                 .statusLabel(op.getStatus().getLabel())
+                .routeLengthKm(op.getRouteLengthKm())
                 .build();
     }
 }
