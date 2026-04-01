@@ -20,12 +20,18 @@ class DataInitializerSpec extends Specification {
             userRepository, helicopterRepository, crewMemberRepository,
             landingSiteRepository, flightOperationRepository, kmlService, passwordEncoder)
 
+    def setup() {
+        // linkAllUsersToCrewMembers calls findAll on both repos
+        userRepository.findAll() >> []
+        crewMemberRepository.findAll() >> []
+        crewMemberRepository.save(_) >> { CrewMember c -> c }
+    }
+
     def "should seed users when empty and skip others"() {
         given:
         userRepository.count() >> 0L
         helicopterRepository.count() >> 1L
         crewMemberRepository.count() >> 1L
-        crewMemberRepository.findByRole(CrewRole.PILOT) >> []
         landingSiteRepository.count() >> 1L
         flightOperationRepository.count() >> 1L
         passwordEncoder.encode(_) >> "hash"
@@ -43,7 +49,6 @@ class DataInitializerSpec extends Specification {
         userRepository.count() >> 1L
         helicopterRepository.count() >> 0L
         crewMemberRepository.count() >> 1L
-        crewMemberRepository.findByRole(CrewRole.PILOT) >> []
         landingSiteRepository.count() >> 1L
         flightOperationRepository.count() >> 1L
         passwordEncoder.encode(_) >> "hash"
@@ -52,7 +57,7 @@ class DataInitializerSpec extends Specification {
         initializer.run()
 
         then:
-        1 * helicopterRepository.saveAll({ it.size() == 3 })
+        1 * helicopterRepository.saveAll({ it.size() == 8 })
     }
 
     def "should seed landing sites when empty"() {
@@ -60,7 +65,6 @@ class DataInitializerSpec extends Specification {
         userRepository.count() >> 1L
         helicopterRepository.count() >> 1L
         crewMemberRepository.count() >> 1L
-        crewMemberRepository.findByRole(CrewRole.PILOT) >> []
         landingSiteRepository.count() >> 0L
         flightOperationRepository.count() >> 1L
         passwordEncoder.encode(_) >> "hash"
@@ -77,7 +81,6 @@ class DataInitializerSpec extends Specification {
         userRepository.count() >> 1L
         helicopterRepository.count() >> 1L
         crewMemberRepository.count() >> 1L
-        crewMemberRepository.findByRole(CrewRole.PILOT) >> []
         landingSiteRepository.count() >> 1L
         flightOperationRepository.count() >> 1L
 

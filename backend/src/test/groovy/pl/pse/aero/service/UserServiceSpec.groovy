@@ -1,17 +1,24 @@
 package pl.pse.aero.service
 
 import org.springframework.security.crypto.password.PasswordEncoder
+import pl.pse.aero.domain.CrewMember
 import pl.pse.aero.domain.User
 import pl.pse.aero.domain.UserRole
 import pl.pse.aero.dto.UserRequest
+import pl.pse.aero.repository.CrewMemberRepository
 import pl.pse.aero.repository.UserRepository
 import spock.lang.Specification
 
 class UserServiceSpec extends Specification {
 
     UserRepository userRepository = Mock()
+    CrewMemberRepository crewMemberRepository = Mock()
     PasswordEncoder passwordEncoder = Mock()
-    UserService service = new UserService(userRepository, passwordEncoder)
+    UserService service = new UserService(userRepository, crewMemberRepository, passwordEncoder)
+
+    def setup() {
+        crewMemberRepository.save(_) >> { CrewMember c -> c.id = "auto-crew-id"; c }
+    }
 
     def "findAll should return users sorted by email"() {
         given:

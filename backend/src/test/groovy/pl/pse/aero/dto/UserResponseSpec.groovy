@@ -29,7 +29,7 @@ class UserResponseSpec extends Specification {
         response.role == UserRole.PILOT
     }
 
-    def "should not expose passwordHash or crewMemberId"() {
+    def "should expose crewMemberId but not passwordHash"() {
         given:
         def user = User.builder()
                 .id("u1")
@@ -44,6 +44,6 @@ class UserResponseSpec extends Specification {
 
         then:
         !response.hasProperty("passwordHash")
-        !response.hasProperty("crewMemberId")
+        response.crewMemberId == "c1"
     }
 }
