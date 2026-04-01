@@ -185,6 +185,31 @@ public class DataInitializer implements CommandLineRunner {
                         .name("Lotnisko Radom (EPRA)")
                         .latitude(51.389)
                         .longitude(21.213)
+                        .build(),
+                LandingSite.builder()
+                        .name("Lotnisko Wrocław (EPWR)")
+                        .latitude(51.103)
+                        .longitude(16.886)
+                        .build(),
+                LandingSite.builder()
+                        .name("Lotnisko Gdańsk (EPGD)")
+                        .latitude(54.378)
+                        .longitude(18.466)
+                        .build(),
+                LandingSite.builder()
+                        .name("Lotnisko Kraków-Balice (EPKK)")
+                        .latitude(50.078)
+                        .longitude(19.785)
+                        .build(),
+                LandingSite.builder()
+                        .name("Lotnisko Katowice-Pyrzowice (EPKT)")
+                        .latitude(50.474)
+                        .longitude(19.080)
+                        .build(),
+                LandingSite.builder()
+                        .name("Lotnisko Poznań-Ławica (EPPO)")
+                        .latitude(52.421)
+                        .longitude(16.826)
                         .build()
         );
 
