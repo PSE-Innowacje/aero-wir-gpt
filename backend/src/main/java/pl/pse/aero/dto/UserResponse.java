@@ -18,6 +18,7 @@ public class UserResponse {
     private String firstName;
     private String lastName;
     private UserRole role;
+    private String crewMemberId;
 
     public static UserResponse from(User user) {
         return UserResponse.builder()
@@ -26,6 +27,7 @@ public class UserResponse {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .role(user.getRole())
+                .crewMemberId(user.getCrewMemberId())
                 .build();
     }
 }

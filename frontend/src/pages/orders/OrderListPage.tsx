@@ -5,10 +5,10 @@ import FlightOrderModal, {
   MOCK_HELICOPTERS,
   MOCK_PILOTS,
 } from '../../components/modals/FlightOrderModal';
-import { getOrders, createOrder, updateOrder } from '../../api/orders.api';
+import { getOrders, getOrderById, createOrder, updateOrder } from '../../api/orders.api';
 import { getHelicopters } from '../../api/helicopters.api';
 import { getCrewMembers } from '../../api/crew.api';
-import type { OrderListResponse, HelicopterResponse, CrewMemberResponse, OrderRequest } from '../../api/types';
+import type { OrderListResponse, OrderResponse, HelicopterResponse, CrewMemberResponse, OrderRequest } from '../../api/types';
 import {
   Box,
   Typography,
@@ -294,6 +294,7 @@ function RowAction({ icon, label, color, onClick }: RowActionProps) {
 /* ── Mock data (replaced by API) ──────────────────────────────────────── */
 interface FlightOrder {
   id: number;
+  apiId: string;
   orderNumber: string;
   departureDate: string;
   departureTime: string;
@@ -321,6 +322,7 @@ function toFlightOrder(
   const departure = o.plannedDeparture ? new Date(o.plannedDeparture) : null;
   return {
     id: idx + 1,
+    apiId: o.id,
     orderNumber: `#${o.id.substring(0, 10)}`,
     departureDate: departure ? departure.toISOString().split('T')[0] : '—',
     departureTime: departure ? departure.toTimeString().substring(0, 5) : '—',
@@ -369,25 +371,22 @@ const STATUS_PL_TO_EN = Object.fromEntries(
   ORDER_STATUS_OPTIONS.map((o) => [o.label, o.value]),
 ) as Record<string, FlightOrderData['status']>;
 
-/* ── Convert a list-row FlightOrder to a FlightOrderData for the modal ── */
-function orderToFlightOrderData(order: FlightOrder): FlightOrderData {
-  const heli = MOCK_HELICOPTERS.find((h) => h.registrationNumber === order.helicopterReg);
-  const pilot = MOCK_PILOTS.find(
-    (p) => p.firstName === order.pilotFirst && p.lastName === order.pilotLast,
-  );
-
+/* ── Convert a full API OrderResponse to FlightOrderData for the modal ── */
+function apiOrderToFlightOrderData(o: OrderResponse): FlightOrderData {
   return {
-    id:                     String(order.id),
-    plannedDeparture:       `${order.departureDate}T${order.departureTime}`,
-    plannedArrival:         `${order.departureDate}T${order.departureTime}`,
-    pilotId:                pilot?.id ?? '',
-    status:                 STATUS_PL_TO_EN[order.status] ?? 'SUBMITTED',
-    helicopterId:           heli?.id ?? '',
-    crewMemberIds:          [],
-    departureLandingSiteId: '',
-    arrivalLandingSiteId:   '',
-    operationIds:           [],
-    estimatedRouteLengthKm: order.estimatedKm,
+    id:                     o.id,
+    plannedDeparture:       o.plannedDeparture ?? '',
+    plannedArrival:         o.plannedArrival ?? '',
+    pilotId:                o.pilotId ?? '',
+    status:                 (o.status as FlightOrderData['status']) ?? 'SUBMITTED',
+    helicopterId:           o.helicopterId ?? '',
+    crewMemberIds:          o.crewMemberIds ?? [],
+    departureLandingSiteId: o.departureSiteId ?? '',
+    arrivalLandingSiteId:   o.arrivalSiteId ?? '',
+    operationIds:           o.operationIds ?? [],
+    estimatedRouteLengthKm: o.estimatedRouteLengthKm ?? 0,
+    actualDeparture:        o.actualDeparture ?? undefined,
+    actualArrival:          o.actualArrival ?? undefined,
   };
 }
 
@@ -984,7 +983,7 @@ export default function OrderListPage() {
                               icon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
                               label="Edytuj"
                               color={aeroColors.tertiary}
-                              onClick={() => { setEditingOrder(orderToFlightOrderData(order)); setModalOpen(true); }}
+                              onClick={async () => { try { const full = await getOrderById(order.apiId); setEditingOrder(apiOrderToFlightOrderData(full)); setModalOpen(true); } catch { setSnackbar({ open: true, message: 'Nie udało się pobrać zlecenia.', severity: 'error' }); } }}
                             />
                             <RowAction icon={<SendOutlinedIcon sx={{ fontSize: 14 }} />} label="Wyślij do akceptacji" color={aeroColors.secondary} />
                           </>
@@ -1003,7 +1002,7 @@ export default function OrderListPage() {
                             icon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
                             label="Podgląd"
                             color={aeroColors.outline}
-                            onClick={() => { setEditingOrder(orderToFlightOrderData(order)); setModalOpen(true); }}
+                            onClick={async () => { try { const full = await getOrderById(order.apiId); setEditingOrder(apiOrderToFlightOrderData(full)); setModalOpen(true); } catch { setSnackbar({ open: true, message: 'Nie udało się pobrać zlecenia.', severity: 'error' }); } }}
                           />
                         )}
                       </Box>
@@ -1117,6 +1116,7 @@ export default function OrderListPage() {
         onSave={handleSave}
         order={editingOrder}
         saving={saving}
+        currentUserCrewMemberId={user?.crewMemberId}
       />
 
       <Snackbar

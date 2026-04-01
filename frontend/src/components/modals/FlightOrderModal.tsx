@@ -250,6 +250,7 @@ export interface FlightOrderModalProps {
   onSave: (order: FlightOrderData) => void;
   order: FlightOrderData | null;
   saving?: boolean;
+  currentUserCrewMemberId?: string;
 }
 
 /* ── Component ──────────────────────────────────────────────────────────── */
@@ -259,6 +260,7 @@ export default function FlightOrderModal({
   onSave,
   order,
   saving = false,
+  currentUserCrewMemberId,
 }: FlightOrderModalProps) {
   const isEdit = Boolean(order);
 
@@ -324,7 +326,7 @@ export default function FlightOrderModal({
   useEffect(() => {
     if (!open) return;
     setOperationsLoading(true);
-    getOperations()
+    getOperations('CONFIRMED')
       .then(setOperations)
       .catch(() => setOperations([]))
       .finally(() => setOperationsLoading(false));
@@ -348,7 +350,7 @@ export default function FlightOrderModal({
               actualDeparture:        order.actualDeparture ?? '',
               actualArrival:          order.actualArrival ?? '',
             }
-          : EMPTY_DEFAULTS,
+          : { ...EMPTY_DEFAULTS, pilotId: currentUserCrewMemberId ?? '' },
       );
     }
   }, [order, open, reset]);
@@ -550,13 +552,13 @@ export default function FlightOrderModal({
         <SectionDivider label="Identyfikacja" />
 
         <Box sx={{ display: 'flex', gap: 1.5 }}>
-          {/* Nr zlecenia — read-only autonumber */}
-          <Box sx={{ flex: 1 }}>
+          {/* Nr zlecenia — only shown in edit mode */}
+          {isEdit && <Box sx={{ flex: 1 }}>
             <Typography sx={FIELD_LABEL_SX}>Nr zlecenia</Typography>
             <TextField
               size="small"
               fullWidth
-              value={isEdit ? order?.id ?? 'Autonumer' : 'Autonumer'}
+              value={order?.id ?? ''}
               disabled
               sx={{
                 ...INPUT_SX,
@@ -570,10 +572,10 @@ export default function FlightOrderModal({
                 },
               }}
             />
-          </Box>
+          </Box>}
 
-          {/* Status */}
-          <Box sx={{ flex: 1.5 }}>
+          {/* Status — only visible in edit mode */}
+          {isEdit && <Box sx={{ flex: 1.5 }}>
             <Typography sx={FIELD_LABEL_SX}>Status</Typography>
             <Controller
               name="status"
@@ -642,7 +644,7 @@ export default function FlightOrderModal({
                 );
               }}
             />
-          </Box>
+          </Box>}
         </Box>
 
         {/* Helikopter */}
@@ -1108,8 +1110,8 @@ export default function FlightOrderModal({
           />
         </Box>
 
-        {/* ─── Realizacja ────────────────────────────────────────────────── */}
-        <SectionDivider label="Realizacja" />
+        {/* ─── Realizacja — only visible in edit mode ─────────────────── */}
+        {isEdit && <><SectionDivider label="Realizacja" />
 
         {requiresActualTimes && (
           <Box
@@ -1186,6 +1188,8 @@ export default function FlightOrderModal({
             />
           </Box>
         </Box>
+
+        </>}
 
         {/* Info note */}
         <Box
@@ -1271,7 +1275,7 @@ export default function FlightOrderModal({
             fullWidth
             variant="contained"
             type="submit"
-            disabled={saving}
+            disabled={saving || flightWarnings.length > 0}
             startIcon={saving ? <CircularProgress size={14} sx={{ color: 'inherit' }} /> : undefined}
             sx={{
               background: `linear-gradient(135deg, ${aeroColors.tertiary} 0%, ${aeroColors.onTertiaryContainer} 100%)`,

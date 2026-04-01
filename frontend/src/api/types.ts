@@ -28,6 +28,7 @@ export interface UserResponse {
   firstName: string;
   lastName: string;
   role: UserRole;
+  crewMemberId?: string;
 }
 
 /**
