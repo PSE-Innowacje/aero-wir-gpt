@@ -14,15 +14,18 @@ export class ApiHelper {
   ) {}
 
   private loggedIn = false;
+  private static lastLoggedInUser: string | null = null;
 
   async ensureLoggedIn(): Promise<void> {
-    if (this.loggedIn) return;
+    // Re-login if a different user was last logged in on this shared context
+    if (this.loggedIn && ApiHelper.lastLoggedInUser === this.userKey) return;
     const user = USERS[this.userKey];
     const res = await this.request.post(`${API_BASE}/auth/login`, {
       data: { email: user.email, password: user.password },
     });
     expect(res.status()).toBe(200);
     this.loggedIn = true;
+    ApiHelper.lastLoggedInUser = this.userKey;
   }
 
   async get(path: string) {

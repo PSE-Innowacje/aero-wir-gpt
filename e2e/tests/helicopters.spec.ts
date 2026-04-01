@@ -104,7 +104,7 @@ test.describe('Helicopters Page (UI)', () => {
     await dialog.getByRole('button', { name: /zapisz zmiany/i }).click();
 
     // Edited helicopter should appear
-    await expect(page.getByText('SP-EDITED')).toBeVisible();
+    await expect(page.getByText('SP-EDITED', { exact: true })).toBeVisible();
   });
 
   test('should close modal with cancel button', async ({ page }) => {
