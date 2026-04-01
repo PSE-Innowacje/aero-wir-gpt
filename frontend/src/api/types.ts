@@ -168,7 +168,7 @@ export interface OperationResponse {
   id: string;
   orderNumber: string;
   shortDescription: string;
-  kmlFilePath?: string | null;
+  kmlFileName?: string | null;
   kmlPoints?: number[][] | null;
   proposedDateEarliest?: string | null;
   proposedDateLatest?: string | null;
@@ -211,7 +211,7 @@ export interface OperationRequest {
   plannedDateLatest?: string;
   contacts?: string[];
   postCompletionNotes?: string;
-  kmlFilePath?: string;
+  kmlFileName?: string;
   kmlPoints?: number[][];
   routeLengthKm?: number;
 }
