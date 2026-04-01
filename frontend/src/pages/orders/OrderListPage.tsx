@@ -5,7 +5,7 @@ import FlightOrderModal, {
   MOCK_HELICOPTERS,
   MOCK_PILOTS,
 } from '../../components/modals/FlightOrderModal';
-import { getOrders, getOrderById, createOrder, updateOrder } from '../../api/orders.api';
+import { getOrders, getOrderById, createOrder, updateOrder, changeOrderStatus } from '../../api/orders.api';
 import { getHelicopters } from '../../api/helicopters.api';
 import { getCrewMembers } from '../../api/crew.api';
 import type { OrderListResponse, OrderResponse, HelicopterResponse, CrewMemberResponse, OrderRequest } from '../../api/types';
@@ -643,6 +643,16 @@ export default function OrderListPage() {
     }
   };
 
+  const handleStatusChange = async (orderId: string, action: string, successMsg: string) => {
+    try {
+      await changeOrderStatus(orderId, { action });
+      await fetchOrders();
+      setSnackbar({ open: true, message: successMsg, severity: 'success' });
+    } catch {
+      setSnackbar({ open: true, message: 'Nie udało się zmienić statusu zlecenia.', severity: 'error' });
+    }
+  };
+
   const ORDERS = apiOrders.map((o, i) => toFlightOrder(o, i, helicopterMap, crewMap));
 
   const filtered = ORDERS.filter((o) => {
@@ -977,6 +987,7 @@ export default function OrderListPage() {
                     {/* Actions */}
                     <TableCell sx={{ ...TD_SX, textAlign: 'right' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.25 }}>
+                        {/* Wprowadzone: Edytuj + Wyślij do akceptacji */}
                         {canEdit && order.status === 'Wprowadzone' && (
                           <>
                             <RowAction
@@ -985,17 +996,59 @@ export default function OrderListPage() {
                               color={aeroColors.tertiary}
                               onClick={async () => { try { const full = await getOrderById(order.apiId); setEditingOrder(apiOrderToFlightOrderData(full)); setModalOpen(true); } catch { setSnackbar({ open: true, message: 'Nie udało się pobrać zlecenia.', severity: 'error' }); } }}
                             />
-                            <RowAction icon={<SendOutlinedIcon sx={{ fontSize: 14 }} />} label="Wyślij do akceptacji" color={aeroColors.secondary} />
+                            <RowAction
+                              icon={<SendOutlinedIcon sx={{ fontSize: 14 }} />}
+                              label="Wyślij do akceptacji"
+                              color={aeroColors.secondary}
+                              onClick={() => handleStatusChange(order.apiId, 'submitForApproval', 'Zlecenie przekazane do akceptacji.')}
+                            />
                           </>
                         )}
+                        {/* Przekazane do akceptacji: Zaakceptuj + Odrzuć */}
                         {canEdit && order.status === 'Przekazane do akceptacji' && (
                           <>
-                            <RowAction icon={<CheckOutlinedIcon sx={{ fontSize: 14 }} />} label="Zaakceptuj" color="#4caf50" />
-                            <RowAction icon={<CloseOutlinedIcon sx={{ fontSize: 14 }} />} label="Odrzuć" color={aeroColors.error} />
+                            <RowAction
+                              icon={<CheckOutlinedIcon sx={{ fontSize: 14 }} />}
+                              label="Zaakceptuj"
+                              color="#4caf50"
+                              onClick={() => handleStatusChange(order.apiId, 'approve', 'Zlecenie zaakceptowane.')}
+                            />
+                            <RowAction
+                              icon={<CloseOutlinedIcon sx={{ fontSize: 14 }} />}
+                              label="Odrzuć"
+                              color={aeroColors.error}
+                              onClick={() => handleStatusChange(order.apiId, 'reject', 'Zlecenie odrzucone.')}
+                            />
                           </>
                         )}
+                        {/* Zaakceptowane: 3 rozliczanie buttons per PRD 6.6.f */}
                         {canEdit && order.status === 'Zaakceptowane' && (
-                          <RowAction icon={<PlayArrowOutlinedIcon sx={{ fontSize: 14 }} />} label="Realizacja" color={aeroColors.tertiary} />
+                          <>
+                            <RowAction
+                              icon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
+                              label="Edytuj"
+                              color={aeroColors.tertiary}
+                              onClick={async () => { try { const full = await getOrderById(order.apiId); setEditingOrder(apiOrderToFlightOrderData(full)); setModalOpen(true); } catch { setSnackbar({ open: true, message: 'Nie udało się pobrać zlecenia.', severity: 'error' }); } }}
+                            />
+                            <RowAction
+                              icon={<CheckOutlinedIcon sx={{ fontSize: 14 }} />}
+                              label="Zrealizowane w całości"
+                              color="#4caf50"
+                              onClick={() => handleStatusChange(order.apiId, 'complete', 'Zlecenie zrealizowane w całości.')}
+                            />
+                            <RowAction
+                              icon={<PlayArrowOutlinedIcon sx={{ fontSize: 14 }} />}
+                              label="Zrealizowane w części"
+                              color={aeroColors.secondary}
+                              onClick={() => handleStatusChange(order.apiId, 'partialComplete', 'Zlecenie zrealizowane w części.')}
+                            />
+                            <RowAction
+                              icon={<CloseOutlinedIcon sx={{ fontSize: 14 }} />}
+                              label="Nie zrealizowane"
+                              color={aeroColors.error}
+                              onClick={() => handleStatusChange(order.apiId, 'notCompleted', 'Zlecenie oznaczone jako niezrealizowane.')}
+                            />
+                          </>
                         )}
                         {!['Wprowadzone', 'Przekazane do akceptacji', 'Zaakceptowane'].includes(order.status) && (
                           <RowAction
