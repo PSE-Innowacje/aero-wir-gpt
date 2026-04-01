@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import FlightOrderModal, {
   type FlightOrderData,
   ORDER_STATUS_OPTIONS,
   MOCK_HELICOPTERS,
   MOCK_PILOTS,
 } from '../../components/modals/FlightOrderModal';
+import { getOrders } from '../../api/orders.api';
+import { getHelicopters } from '../../api/helicopters.api';
+import { getCrewMembers } from '../../api/crew.api';
+import type { OrderListResponse, HelicopterResponse, CrewMemberResponse } from '../../api/types';
 import {
   Box,
   Typography,
@@ -284,7 +288,7 @@ function RowAction({ icon, label, color, onClick }: RowActionProps) {
   );
 }
 
-/* ── Mock data ─────────────────────────────────────────────────────────── */
+/* ── Mock data (replaced by API) ──────────────────────────────────────── */
 interface FlightOrder {
   id: number;
   orderNumber: string;
@@ -299,112 +303,33 @@ interface FlightOrder {
   status: OrderStatusKey;
 }
 
-const ORDERS: FlightOrder[] = [
-  {
-    id: 1,
-    orderNumber: '#FL-2024-001',
-    departureDate: '2024-05-20',
-    departureTime: '08:30',
-    helicopter: 'Airbus H160',
-    helicopterReg: 'SP-AER',
-    pilotFirst: 'Jan',
-    pilotLast: 'Nowak',
-    estimatedKm: 342,
-    crewCount: 3,
-    status: 'Wprowadzone',
-  },
-  {
-    id: 2,
-    orderNumber: '#FL-2024-002',
-    departureDate: '2024-05-20',
-    departureTime: '11:15',
-    helicopter: 'Bell 429',
-    helicopterReg: 'SP-HLP',
-    pilotFirst: 'Anna',
-    pilotLast: 'Kowalczyk',
-    estimatedKm: 198,
-    crewCount: 2,
-    status: 'Przekazane do akceptacji',
-  },
-  {
-    id: 3,
-    orderNumber: '#FL-2024-003',
-    departureDate: '2024-05-21',
-    departureTime: '06:00',
-    helicopter: 'Eurocopter EC135',
-    helicopterReg: 'SP-LPR',
-    pilotFirst: 'Marek',
-    pilotLast: 'Zieliński',
-    estimatedKm: 87,
-    crewCount: 2,
-    status: 'Zaakceptowane',
-  },
-  {
-    id: 4,
-    orderNumber: '#FL-2024-004',
-    departureDate: '2024-05-21',
-    departureTime: '14:45',
-    helicopter: 'Airbus H145',
-    helicopterReg: 'SP-TAC',
-    pilotFirst: 'Tomasz',
-    pilotLast: 'Adamski',
-    estimatedKm: 255,
-    crewCount: 4,
-    status: 'Zaakceptowane',
-  },
-  {
-    id: 5,
-    orderNumber: '#FL-2024-005',
-    departureDate: '2024-05-22',
-    departureTime: '09:00',
-    helicopter: 'AW139',
-    helicopterReg: 'SP-NXB',
-    pilotFirst: 'Piotr',
-    pilotLast: 'Wróbel',
-    estimatedKm: 412,
-    crewCount: 3,
-    status: 'Zrealizowane w całości',
-  },
-  {
-    id: 6,
-    orderNumber: '#FL-2024-006',
-    departureDate: '2024-05-22',
-    departureTime: '15:30',
-    helicopter: 'Bell 407',
-    helicopterReg: 'SP-HBL',
-    pilotFirst: 'Katarzyna',
-    pilotLast: 'Malinowska',
-    estimatedKm: 130,
-    crewCount: 2,
-    status: 'Odrzucone',
-  },
-  {
-    id: 7,
-    orderNumber: '#FL-2024-007',
-    departureDate: '2024-05-23',
-    departureTime: '07:45',
-    helicopter: 'Airbus H135',
-    helicopterReg: 'SP-HCK',
-    pilotFirst: 'Robert',
-    pilotLast: 'Kowalski',
-    estimatedKm: 176,
-    crewCount: 3,
-    status: 'Wprowadzone',
-  },
-  {
-    id: 8,
-    orderNumber: '#FL-2024-008',
-    departureDate: '2024-05-23',
-    departureTime: '12:00',
-    helicopter: 'Bell 429',
-    helicopterReg: 'SP-HLP',
-    pilotFirst: 'Ewa',
-    pilotLast: 'Jabłońska',
-    estimatedKm: 220,
-    crewCount: 2,
-    status: 'Nie zrealizowane',
-  },
-];
+// TODO: UI CHANGES 2026-04-01 — Mock data replaced with API calls
+// const ORDERS: FlightOrder[] = [ ... 8 mock orders removed ... ];
+
+/** Adapter: map API OrderListResponse to the UI FlightOrder shape */
+function toFlightOrder(
+  o: OrderListResponse,
+  idx: number,
+  helicopterMap: Map<string, HelicopterResponse>,
+  crewMap: Map<string, CrewMemberResponse>,
+): FlightOrder {
+  const heli = helicopterMap.get(o.helicopterId);
+  const pilot = crewMap.get(o.pilotId);
+  const departure = o.plannedDeparture ? new Date(o.plannedDeparture) : null;
+  return {
+    id: idx + 1,
+    orderNumber: `#${o.id.substring(0, 10)}`,
+    departureDate: departure ? departure.toISOString().split('T')[0] : '—',
+    departureTime: departure ? departure.toTimeString().substring(0, 5) : '—',
+    helicopter: heli?.type ?? '—',
+    helicopterReg: heli?.registrationNumber ?? '—',
+    pilotFirst: pilot?.firstName ?? '—',
+    pilotLast: pilot?.lastName ?? '',
+    estimatedKm: 0,
+    crewCount: 0,
+    status: (o.statusLabel ?? 'Wprowadzone') as OrderStatusKey,
+  };
+}
 
 type FilterKey =
   | 'all'
@@ -657,6 +582,29 @@ export default function OrderListPage() {
   const [page, setPage] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<FlightOrderData | null>(null);
+
+  const [apiOrders, setApiOrders] = useState<OrderListResponse[]>([]);
+  const [helicopterMap, setHelicopterMap] = useState<Map<string, HelicopterResponse>>(new Map());
+  const [crewMap, setCrewMap] = useState<Map<string, CrewMemberResponse>>(new Map());
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      const [ordersData, helicoptersData, crewData] = await Promise.all([
+        getOrders(),
+        getHelicopters(),
+        getCrewMembers(),
+      ]);
+      setApiOrders(ordersData);
+      setHelicopterMap(new Map(helicoptersData.map(h => [h.id, h])));
+      setCrewMap(new Map(crewData.map(c => [c.id, c])));
+    } catch (err) {
+      console.error('Failed to fetch orders:', err);
+    }
+  }, []);
+
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  const ORDERS = apiOrders.map((o, i) => toFlightOrder(o, i, helicopterMap, crewMap));
 
   const filtered = ORDERS.filter((o) => {
     const matchesFilter = activeFilter === 'all' || o.status === activeFilter;

@@ -132,6 +132,156 @@ export interface LandingSiteRequest {
   longitude: number;
 }
 
+// ── Operations ───────────────────────────────────────────────────────
+
+export type OperationStatus =
+  | 'SUBMITTED'
+  | 'REJECTED'
+  | 'CONFIRMED'
+  | 'SCHEDULED'
+  | 'PARTIALLY_COMPLETED'
+  | 'COMPLETED'
+  | 'CANCELLED';
+
+export type ActivityType =
+  | 'VISUAL_INSPECTION'
+  | 'SCAN_3D'
+  | 'FAULT_LOCATION'
+  | 'PHOTOS'
+  | 'PATROL';
+
+export interface OperationComment {
+  content: string;
+  authorEmail: string;
+  createdAt: string;
+}
+
+export interface OperationChangeHistory {
+  fieldName: string;
+  oldValue: string;
+  newValue: string;
+  changedByEmail: string;
+  changedAt: string;
+}
+
+export interface OperationResponse {
+  id: string;
+  orderNumber: string;
+  shortDescription: string;
+  kmlFilePath?: string | null;
+  kmlPoints?: number[][] | null;
+  proposedDateEarliest?: string | null;
+  proposedDateLatest?: string | null;
+  additionalInfo?: string | null;
+  routeLengthKm: number;
+  plannedDateEarliest?: string | null;
+  plannedDateLatest?: string | null;
+  status: OperationStatus;
+  statusLabel: string;
+  createdByEmail?: string | null;
+  postCompletionNotes?: string | null;
+  activityTypes: ActivityType[];
+  contacts: string[];
+  comments: OperationComment[];
+  changeHistory: OperationChangeHistory[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OperationListResponse {
+  id: string;
+  orderNumber: string;
+  activityTypes: ActivityType[];
+  proposedDateEarliest?: string | null;
+  proposedDateLatest?: string | null;
+  plannedDateEarliest?: string | null;
+  plannedDateLatest?: string | null;
+  status: OperationStatus;
+  statusLabel: string;
+}
+
+export interface OperationRequest {
+  orderNumber: string;
+  shortDescription: string;
+  activityTypes: ActivityType[];
+  proposedDateEarliest?: string;
+  proposedDateLatest?: string;
+  additionalInfo?: string;
+  plannedDateEarliest?: string;
+  plannedDateLatest?: string;
+  contacts?: string[];
+  postCompletionNotes?: string;
+  kmlFilePath?: string;
+  kmlPoints?: number[][];
+  routeLengthKm?: number;
+}
+
+export interface CommentRequest {
+  content: string;
+}
+
+export interface StatusChangeRequest {
+  action: string;
+}
+
+export interface KmlProcessingResult {
+  filePath: string;
+  points: number[][];
+  routeLengthKm: number;
+}
+
+// ── Orders ───────────────────────────────────────────────────────────
+
+export type OrderStatus =
+  | 'SUBMITTED'
+  | 'SENT_FOR_APPROVAL'
+  | 'REJECTED'
+  | 'APPROVED'
+  | 'PARTIALLY_COMPLETED'
+  | 'COMPLETED'
+  | 'NOT_COMPLETED';
+
+export interface OrderResponse {
+  id: string;
+  plannedDeparture: string;
+  plannedArrival: string;
+  pilotId: string;
+  status: OrderStatus;
+  statusLabel: string;
+  helicopterId: string;
+  crewMemberIds: string[];
+  crewWeightKg: number;
+  departureSiteId: string;
+  arrivalSiteId: string;
+  operationIds: string[];
+  estimatedRouteLengthKm: number;
+  actualDeparture?: string | null;
+  actualArrival?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderListResponse {
+  id: string;
+  plannedDeparture: string;
+  helicopterId: string;
+  pilotId: string;
+  status: OrderStatus;
+  statusLabel: string;
+}
+
+export interface OrderRequest {
+  plannedDeparture: string;
+  plannedArrival: string;
+  helicopterId: string;
+  crewMemberIds?: string[];
+  departureSiteId: string;
+  arrivalSiteId: string;
+  operationIds?: string[];
+  actualDeparture?: string;
+  actualArrival?: string;
+}
+
 // ── Dictionaries ──────────────────────────────────────────────────────────
 
 /**
