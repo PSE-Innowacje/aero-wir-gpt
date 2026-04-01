@@ -1,5 +1,6 @@
 import 'leaflet/dist/leaflet.css';
 import { useState } from 'react';
+import LandingSiteModal, { type LandingSiteData } from '../../components/modals/LandingSiteModal';
 import {
   Box,
   Typography,
@@ -188,6 +189,8 @@ export default function LandingSiteListPage() {
   const [newName, setNewName] = useState('');
   const [newLat, setNewLat] = useState('');
   const [newLng, setNewLng] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingSite, setEditingSite] = useState<LandingSiteData | null>(null);
 
   const filtered = LANDING_SITES.filter((s) => {
     const q = search.toLowerCase();
@@ -258,6 +261,7 @@ export default function LandingSiteListPage() {
         <Button
           variant="contained"
           startIcon={<AddLocationAltOutlinedIcon />}
+          onClick={() => { setEditingSite(null); setModalOpen(true); }}
           sx={{
             background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
             color: aeroColors.onPrimaryFixed,
@@ -737,6 +741,17 @@ export default function LandingSiteListPage() {
           </MapContainer>
         </Box>
       </Box>
+
+      <LandingSiteModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={(data) => {
+          console.log('Zapisano lądowisko:', data);
+          setModalOpen(false);
+        }}
+        site={editingSite}
+      />
+
     </Box>
   );
 }
