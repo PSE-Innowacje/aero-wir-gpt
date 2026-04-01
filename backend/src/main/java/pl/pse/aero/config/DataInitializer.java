@@ -156,6 +156,76 @@ public class DataInitializer implements CommandLineRunner {
                         .weightKg(90)
                         .role(CrewRole.OBSERVER)
                         .trainingExpiryDate(LocalDate.of(2026, 8, 15))
+                        .build(),
+                // Pilot with expired license — triggers validation warning
+                CrewMember.builder()
+                        .firstName("Tomasz")
+                        .lastName("Wójcik")
+                        .email("tomasz.wojcik@aero.pl")
+                        .weightKg(75)
+                        .role(CrewRole.PILOT)
+                        .pilotLicenseNumber("PL-2023-003")
+                        .licenseExpiryDate(LocalDate.of(2025, 12, 31))
+                        .trainingExpiryDate(LocalDate.of(2025, 6, 30))
+                        .build(),
+                // Observer with expired training — triggers validation warning
+                CrewMember.builder()
+                        .firstName("Katarzyna")
+                        .lastName("Dąbrowska")
+                        .email("katarzyna.dabrowska@aero.pl")
+                        .weightKg(58)
+                        .role(CrewRole.OBSERVER)
+                        .trainingExpiryDate(LocalDate.of(2025, 3, 15))
+                        .build(),
+                // Observer with training expiring soon
+                CrewMember.builder()
+                        .firstName("Michał")
+                        .lastName("Lewandowski")
+                        .email("michal.lewandowski@aero.pl")
+                        .weightKg(88)
+                        .role(CrewRole.OBSERVER)
+                        .trainingExpiryDate(LocalDate.of(2026, 5, 1))
+                        .build(),
+                // Very heavy crew members — will exceed max weight on most helicopters
+                CrewMember.builder()
+                        .firstName("Benek")
+                        .lastName("Gruby")
+                        .email("benek.gruby@aero.pl")
+                        .weightKg(200)
+                        .role(CrewRole.OBSERVER)
+                        .trainingExpiryDate(LocalDate.of(2027, 12, 31))
+                        .build(),
+                CrewMember.builder()
+                        .firstName("Benissimo")
+                        .lastName("Gruby")
+                        .email("benissimo.gruby@aero.pl")
+                        .weightKg(200)
+                        .role(CrewRole.OBSERVER)
+                        .trainingExpiryDate(LocalDate.of(2027, 12, 31))
+                        .build(),
+                CrewMember.builder()
+                        .firstName("Ben")
+                        .lastName("Gruby")
+                        .email("ben.gruby@aero.pl")
+                        .weightKg(200)
+                        .role(CrewRole.OBSERVER)
+                        .trainingExpiryDate(LocalDate.of(2027, 12, 31))
+                        .build(),
+                CrewMember.builder()
+                        .firstName("Benoit")
+                        .lastName("Gruby")
+                        .email("benoit.gruby@aero.pl")
+                        .weightKg(200)
+                        .role(CrewRole.OBSERVER)
+                        .trainingExpiryDate(LocalDate.of(2027, 12, 31))
+                        .build(),
+                CrewMember.builder()
+                        .firstName("Benten")
+                        .lastName("Gruby")
+                        .email("benten.gruby@aero.pl")
+                        .weightKg(200)
+                        .role(CrewRole.OBSERVER)
+                        .trainingExpiryDate(LocalDate.of(2027, 12, 31))
                         .build()
         );
 
