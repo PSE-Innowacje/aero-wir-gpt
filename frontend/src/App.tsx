@@ -1,4 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import 'dayjs/locale/pl';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -16,6 +19,7 @@ import OrderFormPage from './pages/orders/OrderFormPage';
 
 function App() {
   return (
+    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pl">
     <BrowserRouter>
       <AuthProvider>
         <NotificationProvider>
@@ -45,6 +49,7 @@ function App() {
         </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
+    </LocalizationProvider>
   );
 }
 

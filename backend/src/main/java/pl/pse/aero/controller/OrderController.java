@@ -35,8 +35,7 @@ public class OrderController {
     @GetMapping
     public ResponseEntity<List<OrderListResponse>> list(
             @RequestParam(required = false) OrderStatus status) {
-        OrderStatus filter = status != null ? status : OrderStatus.SENT_FOR_APPROVAL;
-        List<OrderListResponse> orders = orderService.findAll(filter).stream()
+        List<OrderListResponse> orders = orderService.findAll(status).stream()
                 .map(OrderListResponse::from)
                 .toList();
         return ResponseEntity.ok(orders);
@@ -88,6 +87,7 @@ public class OrderController {
         return FlightOrder.builder()
                 .plannedDeparture(request.getPlannedDeparture())
                 .plannedArrival(request.getPlannedArrival())
+                .pilotId(request.getPilotId())
                 .helicopterId(request.getHelicopterId())
                 .crewMemberIds(request.getCrewMemberIds() != null ? request.getCrewMemberIds() : new ArrayList<>())
                 .departureSiteId(request.getDepartureSiteId())

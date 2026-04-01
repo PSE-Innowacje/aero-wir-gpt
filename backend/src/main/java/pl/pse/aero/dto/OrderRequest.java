@@ -22,6 +22,8 @@ public class OrderRequest {
     @NotNull
     private LocalDateTime plannedArrival;
 
+    private String pilotId;
+
     @NotBlank
     private String helicopterId;
 

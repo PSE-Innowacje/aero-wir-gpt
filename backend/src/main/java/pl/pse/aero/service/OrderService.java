@@ -54,16 +54,22 @@ public class OrderService {
     }
 
     public FlightOrder create(FlightOrder order, String currentUserEmail) {
-        User currentUser = userRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new NoSuchElementException("User not found: " + currentUserEmail));
+        // Auto-fill pilot from logged-in user's crew member, if not already set
+        if (order.getPilotId() == null || order.getPilotId().isBlank()) {
+            User currentUser = userRepository.findByEmail(currentUserEmail)
+                    .orElseThrow(() -> new NoSuchElementException("User not found: " + currentUserEmail));
 
-        if (currentUser.getCrewMemberId() == null) {
-            throw new IllegalStateException(
-                    "User " + currentUserEmail + " has no linked crew member. Cannot create flight order.");
+            if (currentUser.getCrewMemberId() == null) {
+                throw new IllegalStateException(
+                        "User " + currentUserEmail + " has no linked crew member. Select a pilot manually or link a crew member to your account.");
+            }
+            order.setPilotId(currentUser.getCrewMemberId());
         }
-        order.setPilotId(currentUser.getCrewMemberId());
 
-        validateOperations(order.getOperationIds());
+        // Skip operation validation if none selected (allow orders without operations)
+        if (order.getOperationIds() != null && !order.getOperationIds().isEmpty()) {
+            validateOperations(order.getOperationIds());
+        }
 
         order.setCrewWeightKg(calculateCrewWeight(order.getPilotId(), order.getCrewMemberIds()));
         order.setEstimatedRouteLengthKm(calculateRouteLength(order.getOperationIds()));
@@ -71,7 +77,9 @@ public class OrderService {
         validateFlightRules(order);
 
         // Cascade: schedule linked operations
-        scheduleOperations(order.getOperationIds());
+        if (order.getOperationIds() != null && !order.getOperationIds().isEmpty()) {
+            scheduleOperations(order.getOperationIds());
+        }
 
         order.setStatus(OrderStatus.SUBMITTED);
         order.prePersist();

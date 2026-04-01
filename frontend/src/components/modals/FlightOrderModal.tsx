@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import dayjs from 'dayjs';
 import {
   Box,
   Typography,
@@ -370,6 +372,54 @@ export default function FlightOrderModal({
   const requiresActualTimes =
     watchedStatus === 'PARTIALLY_COMPLETED' || watchedStatus === 'COMPLETED';
 
+  /* ── Live flight-rule warnings (mirrors backend 5 rules) ── */
+  const watchedHelicopterId = useWatch({ control, name: 'helicopterId' });
+  const watchedDeparture    = useWatch({ control, name: 'plannedDeparture' });
+  const watchedRouteKm      = useWatch({ control, name: 'estimatedRouteLengthKm' });
+
+  const flightWarnings = useMemo(() => {
+    const warnings: string[] = [];
+    const selectedHeli = helicopters.find(h => h.id === watchedHelicopterId);
+    const selectedPilot = allCrewMembers.find(m => m.id === watchedPilotId);
+    const flightDate = watchedDeparture ? watchedDeparture.split('T')[0] : null;
+
+    if (!flightDate || !selectedHeli) return warnings;
+
+    // Rule 1: Helicopter inspection
+    if (selectedHeli.inspectionExpiryDate && selectedHeli.inspectionExpiryDate < flightDate) {
+      warnings.push(`Przegląd helikoptera wygasa przed datą lotu (${selectedHeli.inspectionExpiryDate})`);
+    }
+
+    // Rule 2: Pilot license
+    if (selectedPilot?.licenseExpiryDate && selectedPilot.licenseExpiryDate < flightDate) {
+      warnings.push(`Licencja pilota wygasa przed datą lotu (${selectedPilot.licenseExpiryDate})`);
+    }
+
+    // Rule 3: Training — pilot + crew
+    if (selectedPilot?.trainingExpiryDate && selectedPilot.trainingExpiryDate < flightDate) {
+      warnings.push(`Szkolenie ${selectedPilot.firstName} ${selectedPilot.lastName} wygasa przed datą lotu`);
+    }
+    for (const memberId of (watchedCrewMemberIds ?? [])) {
+      const member = allCrewMembers.find(m => m.id === memberId);
+      if (member?.trainingExpiryDate && member.trainingExpiryDate < flightDate) {
+        warnings.push(`Szkolenie ${member.firstName} ${member.lastName} wygasa przed datą lotu`);
+      }
+    }
+
+    // Rule 4: Crew weight
+    if (selectedHeli.maxCrewWeightKg && crewWeightKg > selectedHeli.maxCrewWeightKg) {
+      warnings.push(`Waga załogi (${crewWeightKg} kg) przekracza udźwig helikoptera (${selectedHeli.maxCrewWeightKg} kg)`);
+    }
+
+    // Rule 5: Route vs range
+    const routeKm = Number(watchedRouteKm) || 0;
+    if (selectedHeli.rangeKm && routeKm > selectedHeli.rangeKm) {
+      warnings.push(`Szacowana trasa (${routeKm} km) przekracza zasięg helikoptera (${selectedHeli.rangeKm} km)`);
+    }
+
+    return warnings;
+  }, [watchedHelicopterId, watchedPilotId, watchedCrewMemberIds, watchedDeparture, watchedRouteKm, crewWeightKg, helicopters, allCrewMembers]);
+
   const onSubmit = (values: FlightOrderFormValues) => {
     onSave({
       id:                     order?.id,
@@ -666,26 +716,50 @@ export default function FlightOrderModal({
         <Box sx={{ display: 'flex', gap: 1.5 }}>
           <Box sx={{ flex: 1 }}>
             <Typography sx={FIELD_LABEL_SX}>Planowany start</Typography>
-            <TextField
-              size="small"
-              fullWidth
-              type="datetime-local"
-              error={!!errors.plannedDeparture}
-              helperText={errors.plannedDeparture?.message}
-              sx={DATETIME_SX}
-              {...register('plannedDeparture')}
+            <Controller
+              control={control}
+              name="plannedDeparture"
+              render={({ field }) => (
+                <DateTimePicker
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(v) => field.onChange(v ? v.format('YYYY-MM-DDTHH:mm:ss') : '')}
+                  ampm={false}
+                  format="DD.MM.YYYY HH:mm"
+                  slotProps={{
+                    textField: {
+                      size: 'small',
+                      fullWidth: true,
+                      error: !!errors.plannedDeparture,
+                      helperText: errors.plannedDeparture?.message,
+                      sx: DATETIME_SX,
+                    },
+                  }}
+                />
+              )}
             />
           </Box>
           <Box sx={{ flex: 1 }}>
             <Typography sx={FIELD_LABEL_SX}>Planowane lądowanie</Typography>
-            <TextField
-              size="small"
-              fullWidth
-              type="datetime-local"
-              error={!!errors.plannedArrival}
-              helperText={errors.plannedArrival?.message}
-              sx={DATETIME_SX}
-              {...register('plannedArrival')}
+            <Controller
+              control={control}
+              name="plannedArrival"
+              render={({ field }) => (
+                <DateTimePicker
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(v) => field.onChange(v ? v.format('YYYY-MM-DDTHH:mm:ss') : '')}
+                  ampm={false}
+                  format="DD.MM.YYYY HH:mm"
+                  slotProps={{
+                    textField: {
+                      size: 'small',
+                      fullWidth: true,
+                      error: !!errors.plannedArrival,
+                      helperText: errors.plannedArrival?.message,
+                      sx: DATETIME_SX,
+                    },
+                  }}
+                />
+              )}
             />
           </Box>
         </Box>
@@ -1060,14 +1134,26 @@ export default function FlightOrderModal({
                 <Box component="span" sx={{ color: aeroColors.secondary, ml: 0.5 }}>*</Box>
               )}
             </Typography>
-            <TextField
-              size="small"
-              fullWidth
-              type="datetime-local"
-              error={!!errors.actualDeparture}
-              helperText={errors.actualDeparture?.message}
-              sx={DATETIME_SX}
-              {...register('actualDeparture')}
+            <Controller
+              control={control}
+              name="actualDeparture"
+              render={({ field }) => (
+                <DateTimePicker
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(v) => field.onChange(v ? v.format('YYYY-MM-DDTHH:mm:ss') : '')}
+                  ampm={false}
+                  format="DD.MM.YYYY HH:mm"
+                  slotProps={{
+                    textField: {
+                      size: 'small',
+                      fullWidth: true,
+                      error: !!errors.actualDeparture,
+                      helperText: errors.actualDeparture?.message,
+                      sx: DATETIME_SX,
+                    },
+                  }}
+                />
+              )}
             />
           </Box>
           <Box sx={{ flex: 1 }}>
@@ -1077,14 +1163,26 @@ export default function FlightOrderModal({
                 <Box component="span" sx={{ color: aeroColors.secondary, ml: 0.5 }}>*</Box>
               )}
             </Typography>
-            <TextField
-              size="small"
-              fullWidth
-              type="datetime-local"
-              error={!!errors.actualArrival}
-              helperText={errors.actualArrival?.message}
-              sx={DATETIME_SX}
-              {...register('actualArrival')}
+            <Controller
+              control={control}
+              name="actualArrival"
+              render={({ field }) => (
+                <DateTimePicker
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(v) => field.onChange(v ? v.format('YYYY-MM-DDTHH:mm:ss') : '')}
+                  ampm={false}
+                  format="DD.MM.YYYY HH:mm"
+                  slotProps={{
+                    textField: {
+                      size: 'small',
+                      fullWidth: true,
+                      error: !!errors.actualArrival,
+                      helperText: errors.actualArrival?.message,
+                      sx: DATETIME_SX,
+                    },
+                  }}
+                />
+              )}
             />
           </Box>
         </Box>
@@ -1104,6 +1202,44 @@ export default function FlightOrderModal({
             obliczana na bieżąco na podstawie pilota i wybranych członków.
           </Typography>
         </Box>
+
+        {/* ── Flight-rule warnings ── */}
+        {flightWarnings.length > 0 && (
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: 1,
+              bgcolor: `${aeroColors.error}12`,
+              border: `1px solid ${aeroColors.error}40`,
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: '0.625rem',
+                fontWeight: 700,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: aeroColors.error,
+                mb: 0.75,
+              }}
+            >
+              Ostrzeżenia walidacji
+            </Typography>
+            {flightWarnings.map((w, i) => (
+              <Typography
+                key={i}
+                sx={{
+                  fontSize: '0.75rem',
+                  color: aeroColors.error,
+                  lineHeight: 1.6,
+                  '&::before': { content: '"⚠ "' },
+                }}
+              >
+                {w}
+              </Typography>
+            ))}
+          </Box>
+        )}
 
         {/* Action buttons */}
         <Box sx={{ display: 'flex', gap: 1.5, mt: 0.25 }}>

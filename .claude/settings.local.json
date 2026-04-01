@@ -28,9 +28,16 @@
       "Bash(./gradlew :backend:test 2>&1)",
       "Bash(./gradlew :backend:compileJava)",
       "Bash(./gradlew :backend:test)",
-      "Bash(npm init:*)",
-      "Bash(npm install:*)",
-      "Bash(*)"
+      "Bash(./gradlew :backend:test --tests \"pl.pse.aero.service.OperationServiceSpec.findAll with null filter should return all operations\")",
+      "Bash(ls /Users/marecki/projects/hackathon/aero-wir-gpt/sc-docs/tasks/backend/*.md)",
+      "Bash(grep -r \"autoNumber\\\\|auto_number\\\\|sequenceCounter\" /Users/marecki/projects/hackathon/aero-wir-gpt/backend --include=*.java)",
+      "Bash(ls sc-docs/tasks/backend/*.md)",
+      "Bash(ls sc-docs/tasks/frontend/*.md)",
+      "Bash(fi)",
+      "Bash(find frontend/src/pages -name *.tsx)",
+      "Bash(find frontend/src/components -name *.tsx)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)"
     ]
   }
 }
