@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -10,11 +11,14 @@ import {
   TableHead,
   TableRow,
   LinearProgress,
+  Skeleton,
 } from '@mui/material';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import AirplanemodeActiveIcon from '@mui/icons-material/AirplanemodeActive';
 import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
+import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined';
+import ThunderstormOutlinedIcon from '@mui/icons-material/ThunderstormOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
@@ -41,6 +45,69 @@ const SECTION_LABEL_SX = {
   textTransform: 'uppercase' as const,
   color: aeroColors.outline,
 };
+
+/* Weather helpers -------------------------------------------------------- */
+interface WeatherData {
+  temperature: number;
+  windSpeedKt: number;
+  windDir: string;
+  weatherCode: number;
+}
+
+const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const;
+function degToCompass(deg: number): string {
+  return COMPASS[Math.round(deg / 45) % 8];
+}
+
+function weatherCondition(code: number): { label: string; sublabel: string; color: string } {
+  if (code === 0)        return { label: 'Zielone światło', sublabel: 'Bezchmurnie — warunki VFR optymalne',      color: '#4caf50' };
+  if (code <= 3)         return { label: 'Zielone światło', sublabel: 'Niewielkie zachmurzenie — warunki VFR',    color: '#4caf50' };
+  if (code <= 48)        return { label: 'Zachmurzenie / mgła', sublabel: 'Ograniczona widoczność — sprawdź METAR', color: '#ff9800' };
+  if (code <= 67)        return { label: 'Opady deszczu',   sublabel: 'Warunki IFR — lot wymaga weryfikacji',     color: '#ef5350' };
+  if (code <= 77)        return { label: 'Opady śniegu',    sublabel: 'Warunki zimowe — lot wymaga weryfikacji',   color: '#ef5350' };
+  if (code <= 82)        return { label: 'Przelotne deszcze', sublabel: 'Niestabilna aura — sprawdź METAR',       color: '#ff9800' };
+  return                        { label: 'Burza / ryzyko',  sublabel: 'Warunki NOGO — lot wstrzymany',            color: '#ef5350' };
+}
+
+function WeatherIcon({ code, color }: { code: number; color: string }) {
+  const sx = { fontSize: 16, color };
+  if (code === 0 || code === 1) return <WbSunnyOutlinedIcon sx={sx} />;
+  if (code >= 95)               return <ThunderstormOutlinedIcon sx={sx} />;
+  return                               <CloudOutlinedIcon sx={sx} />;
+}
+
+function useWeather(): { data: WeatherData | null; loading: boolean; error: boolean } {
+  const [data, setData] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const url =
+      'https://api.open-meteo.com/v1/forecast' +
+      '?latitude=52.23&longitude=21.01' +
+      '&current=temperature_2m,wind_speed_10m,wind_direction_10m,weather_code' +
+      '&wind_speed_unit=kn&timezone=Europe%2FWarsaw';
+
+    fetch(url)
+      .then((r) => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then((json) => {
+        const c = json.current;
+        setData({
+          temperature: Math.round(c.temperature_2m),
+          windSpeedKt: Math.round(c.wind_speed_10m),
+          windDir: degToCompass(c.wind_direction_10m),
+          weatherCode: c.weather_code,
+        });
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { data, loading, error };
+}
 
 /* Sub-components --------------------------------------------------------- */
 interface StatCardProps {
@@ -166,6 +233,12 @@ function StatusIcon({ status }: { status: string }) {
 
 /* Page ------------------------------------------------------------------- */
 export default function DashboardPage() {
+  const weather = useWeather();
+
+  const condition = weather.data
+    ? weatherCondition(weather.data.weatherCode)
+    : { label: 'Zielone światło', sublabel: 'Ładowanie danych pogodowych…', color: STATUS_GREEN };
+
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
 
@@ -178,7 +251,8 @@ export default function DashboardPage() {
           display: 'flex',
           alignItems: 'center',
           gap: 2,
-          border: `1px solid ${STATUS_GREEN}25`,
+          border: `1px solid ${condition.color}25`,
+          transition: 'border-color 0.4s ease',
         }}
       >
         <Box
@@ -186,12 +260,13 @@ export default function DashboardPage() {
             width: 36,
             height: 36,
             borderRadius: '50%',
-            bgcolor: `${STATUS_GREEN}14`,
-            border: `1px solid ${STATUS_GREEN}30`,
+            bgcolor: `${condition.color}14`,
+            border: `1px solid ${condition.color}30`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
+            transition: 'all 0.4s ease',
           }}
         >
           <Box
@@ -199,8 +274,9 @@ export default function DashboardPage() {
               width: 11,
               height: 11,
               borderRadius: '50%',
-              bgcolor: STATUS_GREEN,
-              boxShadow: `0 0 10px ${STATUS_GREEN}cc`,
+              bgcolor: condition.color,
+              boxShadow: `0 0 10px ${condition.color}cc`,
+              transition: 'all 0.4s ease',
             }}
           />
         </Box>
@@ -211,21 +287,35 @@ export default function DashboardPage() {
               fontWeight: 700,
               fontSize: '0.8125rem',
               letterSpacing: '0.12em',
-              color: STATUS_GREEN,
+              color: condition.color,
               textTransform: 'uppercase',
+              transition: 'color 0.4s ease',
             }}
           >
-            Zielone światło
+            {condition.label}
           </Typography>
           <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline, mt: 0.25 }}>
-            Wszystkie systemy telemetryczne sprawne
+            {condition.sublabel}
           </Typography>
         </Box>
         <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <CloudOutlinedIcon sx={{ fontSize: 16, color: aeroColors.outline }} />
-          <Typography sx={{ fontSize: '0.75rem', color: aeroColors.onSurfaceVariant }}>
-            8°C &nbsp;·&nbsp; Wiatr NW 12kt
-          </Typography>
+          {weather.loading ? (
+            <Skeleton variant="text" width={120} sx={{ bgcolor: `${aeroColors.outline}20` }} />
+          ) : weather.error || !weather.data ? (
+            <>
+              <CloudOutlinedIcon sx={{ fontSize: 16, color: aeroColors.outline }} />
+              <Typography sx={{ fontSize: '0.75rem', color: aeroColors.onSurfaceVariant }}>
+                Brak danych pogodowych
+              </Typography>
+            </>
+          ) : (
+            <>
+              <WeatherIcon code={weather.data.weatherCode} color={aeroColors.outline} />
+              <Typography sx={{ fontSize: '0.75rem', color: aeroColors.onSurfaceVariant }}>
+                {weather.data.temperature}°C &nbsp;·&nbsp; Wiatr {weather.data.windDir} {weather.data.windSpeedKt}kt
+              </Typography>
+            </>
+          )}
         </Box>
       </Box>
 
