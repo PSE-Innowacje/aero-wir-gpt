@@ -8,32 +8,25 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.core.mapping.Document;
-import org.springframework.data.couchbase.core.mapping.Field;
-import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
-import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document
+@Document(collection = "landing_site")
 public class LandingSite {
 
     @Id
-    @GeneratedValue(strategy = GenerationStrategy.UNIQUE)
     private String id;
 
-    @Field
     @NotBlank
     @Size(max = 200)
     private String name;
 
-    @Field
     @NotNull
     private Double latitude;
 
-    @Field
     @NotNull
     private Double longitude;
 }

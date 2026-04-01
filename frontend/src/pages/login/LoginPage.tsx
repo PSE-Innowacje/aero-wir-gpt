@@ -7,22 +7,34 @@ import {
   Button,
   InputAdornment,
   Link,
+  Alert,
 } from '@mui/material';
 import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import SecurityIcon from '@mui/icons-material/Security';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { aeroColors } from '../../theme';
+import { login } from '../../api/auth.api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: connect to POST /api/auth/login
-    navigate('/dashboard');
+    setError('');
+    setLoading(true);
+    try {
+      await login({ email, password });
+      navigate('/dashboard');
+    } catch {
+      setError('Nieprawidłowy email lub hasło.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -294,12 +306,20 @@ export default function LoginPage() {
               </Typography>
             </Box>
 
+            {/* Error message */}
+            {error && (
+              <Alert severity="error" sx={{ bgcolor: 'rgba(255,180,171,0.12)', color: aeroColors.error }}>
+                {error}
+              </Alert>
+            )}
+
             {/* Submit */}
             <Button
               type="submit"
               variant="contained"
               fullWidth
               size="large"
+              disabled={loading}
               endIcon={<ChevronRightIcon />}
               sx={{
                 py: 1.75,

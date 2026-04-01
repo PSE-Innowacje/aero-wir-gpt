@@ -56,10 +56,11 @@
 					"script": {
 						"type": "text/javascript",
 						"exec": [
-							"// Generate a unique test email once per run",
+							"// Generate unique identifiers once per run",
 							"if (!pm.collectionVariables.get('testEmail')) {",
 							"    const ts = Date.now();",
 							"    pm.collectionVariables.set('testEmail', 'flow-' + ts + '@aero.pl');",
+							"    pm.collectionVariables.set('testHeliReg', 'SP-F' + (ts % 100000));",
 							"}"
 						]
 					}
@@ -199,7 +200,7 @@
 									"});",
 									"var json = pm.response.json();",
 									"pm.test('Helicopter fields match', function () {",
-									"    pm.expect(json.registrationNumber).to.eql('SP-TST');",
+									"    pm.expect(json.registrationNumber).to.eql(pm.collectionVariables.get('testHeliReg'));",
 									"    pm.expect(json.status).to.eql('ACTIVE');",
 									"    pm.expect(json.rangeKm).to.eql(500);",
 									"});",
@@ -213,7 +214,7 @@
 						"header": [{ "key": "Content-Type", "value": "application/json" }],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"registrationNumber\": \"SP-TST\",\n    \"type\": \"EC135\",\n    \"description\": \"Test helicopter\",\n    \"maxCrewCount\": 4,\n    \"maxCrewWeightKg\": 400,\n    \"status\": \"ACTIVE\",\n    \"inspectionExpiryDate\": \"2027-12-31\",\n    \"rangeKm\": 500\n}"
+							"raw": "{\n    \"registrationNumber\": \"{{testHeliReg}}\",\n    \"type\": \"EC135\",\n    \"description\": \"Test helicopter\",\n    \"maxCrewCount\": 4,\n    \"maxCrewWeightKg\": 400,\n    \"status\": \"ACTIVE\",\n    \"inspectionExpiryDate\": \"2027-12-31\",\n    \"rangeKm\": 500\n}"
 						},
 						"url": { "raw": "{{baseUrl}}/api/helicopters", "host": ["{{baseUrl}}"], "path": ["api","helicopters"] }
 					}
@@ -230,7 +231,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"pm.test('Returns correct helicopter', function () {",
-									"    pm.expect(pm.response.json().registrationNumber).to.eql('SP-TST');",
+									"    pm.expect(pm.response.json().registrationNumber).to.eql(pm.collectionVariables.get('testHeliReg'));",
 									"});"
 								]
 							}
@@ -265,13 +266,13 @@
 						"header": [{ "key": "Content-Type", "value": "application/json" }],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"registrationNumber\": \"SP-TST\",\n    \"type\": \"EC135\",\n    \"description\": \"Updated by flow\",\n    \"maxCrewCount\": 4,\n    \"maxCrewWeightKg\": 400,\n    \"status\": \"ACTIVE\",\n    \"inspectionExpiryDate\": \"2027-12-31\",\n    \"rangeKm\": 500\n}"
+							"raw": "{\n    \"registrationNumber\": \"{{testHeliReg}}\",\n    \"type\": \"EC135\",\n    \"description\": \"Updated by flow\",\n    \"maxCrewCount\": 4,\n    \"maxCrewWeightKg\": 400,\n    \"status\": \"ACTIVE\",\n    \"inspectionExpiryDate\": \"2027-12-31\",\n    \"rangeKm\": 500\n}"
 						},
 						"url": { "raw": "{{baseUrl}}/api/helicopters/{{helicopterId}}", "host": ["{{baseUrl}}"], "path": ["api","helicopters","{{helicopterId}}"] }
 					}
 				},
 				{
-					"name": "8. List helicopters → includes SP-TST",
+					"name": "8. List helicopters → includes test helicopter",
 					"event": [
 						{
 							"listen": "test",
@@ -287,7 +288,7 @@
 									"});",
 									"pm.test('SP-TST is in the list', function () {",
 									"    var regs = pm.response.json().map(h => h.registrationNumber);",
-									"    pm.expect(regs).to.include('SP-TST');",
+									"    pm.expect(regs).to.include(pm.collectionVariables.get('testHeliReg'));",
 									"});"
 								]
 							}
@@ -544,6 +545,7 @@
 								"exec": [
 									"pm.collectionVariables.set('jsessionid', '');",
 									"pm.collectionVariables.set('testEmail', '');",
+									"pm.collectionVariables.set('testHeliReg', '');",
 									"pm.collectionVariables.set('helicopterId', '');",
 									"pm.collectionVariables.set('landingSiteId', '');",
 									"pm.test('Variables cleaned up', function () {",
@@ -1109,6 +1111,56 @@
 						}
 					}
 				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{ "name": "List Users", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api","users"] }, "description": "Returns all users. Requires ADMIN, SUPERVISOR, or PILOT role." } },
+				{ "name": "Get User by ID", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api","users","{{userId}}"] } } },
+				{ "name": "Create User", "event": [{"listen":"test","script":{"type":"text/javascript","exec":["if(pm.response.code===201){pm.collectionVariables.set('userId',pm.response.json().id);}"]}}], "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode": "raw", "raw": "{\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\",\n    \"email\": \"testuser@aero.pl\",\n    \"password\": \"test123\",\n    \"role\": \"PLANNER\"\n}" }, "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api","users"] }, "description": "Creates a new user. Requires ADMIN role." } },
+				{ "name": "Update User", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode": "raw", "raw": "{\n    \"firstName\": \"Updated\",\n    \"lastName\": \"User\",\n    \"email\": \"testuser@aero.pl\",\n    \"role\": \"SUPERVISOR\"\n}" }, "url": { "raw": "{{baseUrl}}/api/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api","users","{{userId}}"] } } }
+			]
+		},
+		{
+			"name": "Crew Members",
+			"item": [
+				{ "name": "List Crew Members", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/crew-members", "host": ["{{baseUrl}}"], "path": ["api","crew-members"] } } },
+				{ "name": "Get Crew Member by ID", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/crew-members/{{crewMemberId}}", "host": ["{{baseUrl}}"], "path": ["api","crew-members","{{crewMemberId}}"] } } },
+				{ "name": "Create Crew Member", "event": [{"listen":"test","script":{"type":"text/javascript","exec":["if(pm.response.code===201){pm.collectionVariables.set('crewMemberId',pm.response.json().id);}"]}}], "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode": "raw", "raw": "{\n    \"firstName\": \"Test\",\n    \"lastName\": \"Observer\",\n    \"email\": \"observer@aero.pl\",\n    \"weightKg\": 75,\n    \"role\": \"OBSERVER\",\n    \"trainingExpiryDate\": \"2027-12-31\"\n}" }, "url": { "raw": "{{baseUrl}}/api/crew-members", "host": ["{{baseUrl}}"], "path": ["api","crew-members"] }, "description": "PILOT role requires pilotLicenseNumber and licenseExpiryDate." }, "response": [{"name":"Observer","originalRequest":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n    \"firstName\": \"Test\",\n    \"lastName\": \"Observer\",\n    \"email\": \"observer@aero.pl\",\n    \"weightKg\": 75,\n    \"role\": \"OBSERVER\",\n    \"trainingExpiryDate\": \"2027-12-31\"\n}"},"url":{"raw":"{{baseUrl}}/api/crew-members","host":["{{baseUrl}}"],"path":["api","crew-members"]}},"status":"Created","code":201,"_postman_previewlanguage":"json","header":[{"key":"Content-Type","value":"application/json"}],"body":"{}"},{"name":"Pilot (with license)","originalRequest":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n    \"firstName\": \"Test\",\n    \"lastName\": \"Pilot\",\n    \"email\": \"testpilot@aero.pl\",\n    \"weightKg\": 80,\n    \"role\": \"PILOT\",\n    \"pilotLicenseNumber\": \"PL-TEST-001\",\n    \"licenseExpiryDate\": \"2028-06-30\",\n    \"trainingExpiryDate\": \"2027-12-31\"\n}"},"url":{"raw":"{{baseUrl}}/api/crew-members","host":["{{baseUrl}}"],"path":["api","crew-members"]}},"status":"Created","code":201,"_postman_previewlanguage":"json","header":[{"key":"Content-Type","value":"application/json"}],"body":"{}"}] },
+				{ "name": "Update Crew Member", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode": "raw", "raw": "{\n    \"firstName\": \"Updated\",\n    \"lastName\": \"Observer\",\n    \"email\": \"observer@aero.pl\",\n    \"weightKg\": 80,\n    \"role\": \"OBSERVER\",\n    \"trainingExpiryDate\": \"2028-06-30\"\n}" }, "url": { "raw": "{{baseUrl}}/api/crew-members/{{crewMemberId}}", "host": ["{{baseUrl}}"], "path": ["api","crew-members","{{crewMemberId}}"] } } }
+			]
+		},
+		{
+			"name": "Dictionaries",
+			"item": [
+				{ "name": "Activity Types", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/dictionaries/activity-types", "host": ["{{baseUrl}}"], "path": ["api","dictionaries","activity-types"] }, "description": "Public. Returns all activity types." } },
+				{ "name": "Crew Roles", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/dictionaries/crew-roles", "host": ["{{baseUrl}}"], "path": ["api","dictionaries","crew-roles"] }, "description": "Public. Returns PILOT, OBSERVER." } },
+				{ "name": "Operation Statuses", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/dictionaries/operation-statuses", "host": ["{{baseUrl}}"], "path": ["api","dictionaries","operation-statuses"] }, "description": "Public. Returns 7 operation statuses." } },
+				{ "name": "Order Statuses", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/dictionaries/order-statuses", "host": ["{{baseUrl}}"], "path": ["api","dictionaries","order-statuses"] }, "description": "Public. Returns 7 order statuses." } }
+			]
+		},
+		{
+			"name": "Operations",
+			"item": [
+				{ "name": "List Operations", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/operations", "host": ["{{baseUrl}}"], "path": ["api","operations"] }, "description": "Returns operations filtered by status. Add ?status=SUBMITTED to filter." } },
+				{ "name": "Get Operation by ID", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/operations/{{operationId}}", "host": ["{{baseUrl}}"], "path": ["api","operations","{{operationId}}"] } } },
+				{ "name": "Create Operation", "event": [{"listen":"test","script":{"type":"text/javascript","exec":["if(pm.response.code===201){pm.collectionVariables.set('operationId',pm.response.json().id);}"]}}], "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode": "raw", "raw": "{\n    \"orderNumber\": \"DE-25-99001\",\n    \"shortDescription\": \"Inspekcja linii testowej\",\n    \"activityTypes\": [\"VISUAL_INSPECTION\", \"PHOTOS\"],\n    \"proposedDateEarliest\": \"2027-01-15\",\n    \"proposedDateLatest\": \"2027-03-30\",\n    \"contacts\": [\"planista@aero.pl\"]\n}" }, "url": { "raw": "{{baseUrl}}/api/operations", "host": ["{{baseUrl}}"], "path": ["api","operations"] }, "description": "Creates a flight operation. Requires PLANNER or SUPERVISOR." } },
+				{ "name": "Update Operation", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode": "raw", "raw": "{\n    \"orderNumber\": \"DE-25-99001\",\n    \"shortDescription\": \"Inspekcja zaktualizowana\",\n    \"activityTypes\": [\"VISUAL_INSPECTION\", \"SCAN_3D\"],\n    \"proposedDateEarliest\": \"2027-02-01\",\n    \"proposedDateLatest\": \"2027-04-30\"\n}" }, "url": { "raw": "{{baseUrl}}/api/operations/{{operationId}}", "host": ["{{baseUrl}}"], "path": ["api","operations","{{operationId}}"] } } },
+				{ "name": "Change Operation Status", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode": "raw", "raw": "{\n    \"action\": \"confirm\"\n}" }, "url": { "raw": "{{baseUrl}}/api/operations/{{operationId}}/status", "host": ["{{baseUrl}}"], "path": ["api","operations","{{operationId}}","status"] }, "description": "Actions: confirm (SUPERVISOR), reject (SUPERVISOR), cancel (PLANNER)." }, "response": [{"name":"Confirm","originalRequest":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"action\":\"confirm\"}"},"url":{"raw":"{{baseUrl}}/api/operations/{{operationId}}/status","host":["{{baseUrl}}"],"path":["api","operations","{{operationId}}","status"]}},"status":"OK","code":200,"_postman_previewlanguage":"json","header":[{"key":"Content-Type","value":"application/json"}],"body":"{}"},{"name":"Reject","originalRequest":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"action\":\"reject\"}"},"url":{"raw":"{{baseUrl}}/api/operations/{{operationId}}/status","host":["{{baseUrl}}"],"path":["api","operations","{{operationId}}","status"]}},"status":"OK","code":200,"_postman_previewlanguage":"json","header":[{"key":"Content-Type","value":"application/json"}],"body":"{}"},{"name":"Cancel","originalRequest":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"action\":\"cancel\"}"},"url":{"raw":"{{baseUrl}}/api/operations/{{operationId}}/status","host":["{{baseUrl}}"],"path":["api","operations","{{operationId}}","status"]}},"status":"OK","code":200,"_postman_previewlanguage":"json","header":[{"key":"Content-Type","value":"application/json"}],"body":"{}"}] },
+				{ "name": "Add Comment", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode": "raw", "raw": "{\n    \"content\": \"Komentarz testowy.\"\n}" }, "url": { "raw": "{{baseUrl}}/api/operations/{{operationId}}/comments", "host": ["{{baseUrl}}"], "path": ["api","operations","{{operationId}}","comments"] } } },
+				{ "name": "Upload KML", "request": { "method": "POST", "header": [], "body": { "mode": "formdata", "formdata": [{"key":"file","type":"file","src":""}] }, "url": { "raw": "{{baseUrl}}/api/operations/upload-kml", "host": ["{{baseUrl}}"], "path": ["api","operations","upload-kml"] }, "description": "Upload and parse a KML file." } },
+				{ "name": "Download KML", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/operations/{{operationId}}/kml", "host": ["{{baseUrl}}"], "path": ["api","operations","{{operationId}}","kml"] } } }
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{ "name": "List Orders", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api","orders"] } } },
+				{ "name": "Get Order by ID", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["api","orders","{{orderId}}"] } } },
+				{ "name": "Create Order", "event": [{"listen":"test","script":{"type":"text/javascript","exec":["if(pm.response.code===201){pm.collectionVariables.set('orderId',pm.response.json().id);}"]}}], "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode": "raw", "raw": "{\n    \"plannedDeparture\": \"2027-03-01T08:00:00\",\n    \"plannedArrival\": \"2027-03-01T12:00:00\",\n    \"pilotId\": \"{{crewMemberId}}\",\n    \"helicopterId\": \"{{helicopterId}}\",\n    \"departureSiteId\": \"{{landingSiteId}}\",\n    \"arrivalSiteId\": \"{{landingSiteId}}\",\n    \"operationIds\": [\"{{operationId}}\"],\n    \"crewMemberIds\": []\n}" }, "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api","orders"] }, "description": "Creates a flight order. Validates crew weight, range, inspections, licenses." } },
+				{ "name": "Update Order", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode": "raw", "raw": "{\n    \"plannedDeparture\": \"2027-03-01T09:00:00\",\n    \"plannedArrival\": \"2027-03-01T13:00:00\",\n    \"pilotId\": \"{{crewMemberId}}\",\n    \"helicopterId\": \"{{helicopterId}}\",\n    \"departureSiteId\": \"{{landingSiteId}}\",\n    \"arrivalSiteId\": \"{{landingSiteId}}\",\n    \"operationIds\": [\"{{operationId}}\"],\n    \"crewMemberIds\": []\n}" }, "url": { "raw": "{{baseUrl}}/api/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["api","orders","{{orderId}}"] } } },
+				{ "name": "Change Order Status", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode": "raw", "raw": "{\n    \"action\": \"approve\"\n}" }, "url": { "raw": "{{baseUrl}}/api/orders/{{orderId}}/status", "host": ["{{baseUrl}}"], "path": ["api","orders","{{orderId}}","status"] }, "description": "Actions: sendForApproval, approve, reject, complete, partialComplete, notComplete." }, "response": [{"name":"Send for Approval","originalRequest":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"action\":\"sendForApproval\"}"},"url":{"raw":"{{baseUrl}}/api/orders/{{orderId}}/status","host":["{{baseUrl}}"],"path":["api","orders","{{orderId}}","status"]}},"status":"OK","code":200,"_postman_previewlanguage":"json","header":[{"key":"Content-Type","value":"application/json"}],"body":"{}"},{"name":"Approve","originalRequest":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"action\":\"approve\"}"},"url":{"raw":"{{baseUrl}}/api/orders/{{orderId}}/status","host":["{{baseUrl}}"],"path":["api","orders","{{orderId}}","status"]}},"status":"OK","code":200,"_postman_previewlanguage":"json","header":[{"key":"Content-Type","value":"application/json"}],"body":"{}"},{"name":"Reject","originalRequest":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"action\":\"reject\"}"},"url":{"raw":"{{baseUrl}}/api/orders/{{orderId}}/status","host":["{{baseUrl}}"],"path":["api","orders","{{orderId}}","status"]}},"status":"OK","code":200,"_postman_previewlanguage":"json","header":[{"key":"Content-Type","value":"application/json"}],"body":"{}"}] }
 			]
 		}
 	]

@@ -1,12 +1,7 @@
 spring:
-  couchbase:
-    connection-string: couchbase://localhost
-    username: aero
-    password: aeropass
   data:
-    couchbase:
-      bucket-name: aero
-      auto-index: true
+    mongodb:
+      uri: mongodb://localhost:27017/aero
   servlet:
     multipart:
       max-file-size: 10MB

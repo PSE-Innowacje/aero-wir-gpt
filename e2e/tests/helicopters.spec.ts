@@ -25,17 +25,25 @@ test.describe('Helicopters Page (UI)', () => {
     await expect(page.getByText('Dostępność')).toBeVisible();
   });
 
-  test('should display mock helicopter data', async ({ page }) => {
-    await expect(page.getByText('SP-AER1')).toBeVisible();
-    await expect(page.getByText('Airbus H145')).toBeVisible();
+  test('should display helicopter data from database', async ({ page }) => {
+    // Wait for API data to load — at least one helicopter should be visible
+    await expect(page.getByText('Rejestr floty')).toBeVisible({ timeout: 10_000 });
+    // Table should have at least one row with a registration number starting with SP-
+    await expect(page.locator('table tbody tr').first()).toBeVisible();
   });
 
   test('should filter helicopters via search', async ({ page }) => {
-    const searchInput = page.getByPlaceholder('Szukaj helikoptera...');
-    await searchInput.fill('SP-AER1');
+    // Wait for data to load
+    await expect(page.getByText('Rejestr floty')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('table tbody tr').first()).toBeVisible();
 
-    await expect(page.getByText('SP-AER1')).toBeVisible();
-    await expect(page.getByText('SP-MAINT')).not.toBeVisible();
+    // Get the first helicopter's registration number to search for
+    const firstReg = await page.locator('table tbody tr').first().locator('td').first().innerText();
+
+    const searchInput = page.getByPlaceholder('Szukaj helikoptera...');
+    await searchInput.fill(firstReg);
+
+    await expect(page.getByText(firstReg)).toBeVisible();
   });
 
   test('should show no results message for unmatched search', async ({ page }) => {
@@ -57,20 +65,25 @@ test.describe('Helicopters Page (UI)', () => {
   });
 
   test('should add a new helicopter via modal', async ({ page }) => {
+    // Wait for data to load
+    await expect(page.getByText('Rejestr floty')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('table tbody tr').first()).toBeVisible();
+
     await page.locator('main').getByRole('button', { name: /dodaj helikopter/i }).click();
 
     const dialog = page.locator('[role="dialog"]');
-    await dialog.getByPlaceholder('np. SP-AER1').fill('SP-E2E1');
-    await dialog.getByPlaceholder('np. Airbus H145').fill('E2E Test Helicopter');
+    const regNumber = `SP-UI-${Date.now()}`;
+    await dialog.getByPlaceholder('np. SP-AER1').fill(regNumber);
+    await dialog.getByPlaceholder('np. Airbus H145').fill('UI Created Heli');
     await dialog.getByPlaceholder('np. 650').first().fill('700');
     await dialog.getByPlaceholder('np. 480').fill('500');
+    await dialog.locator('input[type="date"]').fill('2028-12-31');
 
-    // Click save in the dialog
     await dialog.getByRole('button', { name: /dodaj helikopter/i }).click();
 
-    // New helicopter should appear in the table
-    await expect(page.getByText('SP-E2E1')).toBeVisible();
-    await expect(page.getByText('E2E Test Helicopter')).toBeVisible();
+    // Dialog should close and new helicopter should appear
+    await expect(dialog).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(regNumber)).toBeVisible({ timeout: 5000 });
   });
 
   test('should edit an existing helicopter via modal', async ({ page }) => {

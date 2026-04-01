@@ -12,7 +12,7 @@ import pl.pse.aero.domain.FlightOrder;
 import pl.pse.aero.domain.OrderStatus;
 import pl.pse.aero.domain.UserRole;
 import pl.pse.aero.dto.*;
-import pl.pse.aero.repository.UserRepository;
+import pl.pse.aero.service.AuthenticationHelper;
 import pl.pse.aero.service.OrderService;
 
 import java.util.ArrayList;
@@ -24,11 +24,11 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
-    private final UserRepository userRepository;
+    private final AuthenticationHelper authHelper;
 
-    public OrderController(OrderService orderService, UserRepository userRepository) {
+    public OrderController(OrderService orderService, AuthenticationHelper authHelper) {
         this.orderService = orderService;
-        this.userRepository = userRepository;
+        this.authHelper = authHelper;
     }
 
     @Operation(summary = "List orders", description = "Default filter: SENT_FOR_APPROVAL, sorted by plannedDeparture ASC")
@@ -99,9 +99,6 @@ public class OrderController {
     }
 
     private UserRole resolveRole(Authentication authentication) {
-        if (authentication == null) return null;
-        return userRepository.findByEmail(authentication.getName())
-                .map(u -> u.getRole())
-                .orElse(null);
+        return authHelper.resolveRole(authentication);
     }
 }

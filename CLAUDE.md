@@ -32,8 +32,8 @@ integrations. A single Spring Boot backend serves a React SPA.
 | HTTP client | Axios |
 | Map | react-leaflet + Leaflet (OpenStreetMap tiles) |
 | Backend | Java 21, Spring Boot 3.x |
-| Persistence | Spring Data Couchbase, Couchbase Server 7.6 |
-| Testing DB | Testcontainers (CouchbaseContainer) — no Docker Compose |
+| Persistence | Spring Data MongoDB, MongoDB 7 |
+| Testing DB | Testcontainers (MongoDBContainer) — no Docker Compose |
 | Auth | Session-based (JSESSIONID cookie), Spring Security |
 | Build | Gradle (Kotlin DSL), backend only; frontend runs via npm |
 
@@ -50,8 +50,8 @@ aero-wir-gpt/
 │       ├── config/                   # SecurityConfig, CORS, DataInitializer
 │       ├── controller/               # Thin REST controllers
 │       ├── dto/                      # Request/Response objects
-│       ├── domain/                   # Couchbase documents (@Document) + enums
-│       ├── repository/               # Spring Data Couchbase interfaces
+│       ├── domain/                   # MongoDB documents (@Document) + enums
+│       ├── repository/               # Spring Data MongoDB interfaces
 │       └── service/                  # Business logic, state machines, KML parsing
 ├── frontend/                         # Vite + React 18 + TypeScript
 │   ├── package.json
@@ -84,20 +84,20 @@ aero-wir-gpt/
 ### System Topology
 
 ```
-Browser (SPA)               Spring Boot              Couchbase
-React + TS + MUI  ←HTTPS→  REST API :8080  ←SDK→    :8091-8096
+Browser (SPA)               Spring Boot              MongoDB
+React + TS + MUI  ←HTTPS→  REST API :8080  ←driver→  :27017
 ```
 
 ### Backend — Layered Structure
 
 ```
 Controller → Service → Repository → Database
-  (DTO)      (Document)  (Couchbase)  (Couchbase)
+  (DTO)      (Document)  (MongoDB)    (MongoDB)
 ```
 
 - **Controllers** — handle HTTP only; validate request DTOs; call services; return response DTOs. No business logic.
 - **Services** — own all business rules: status transitions, role-based field restrictions, validation checks (crew weight, helicopter range, license dates), KML processing.
-- **Repositories** — Spring Data Couchbase interfaces; custom N1QL only for complex filtered queries.
+- **Repositories** — Spring Data MongoDB interfaces; derived query methods for filtered queries.
 
 ### Authentication & Authorization
 
@@ -129,9 +129,10 @@ Helicopters ──── Flight Orders ──── Crew Members
                   KML Points (embedded field)
 ```
 
-All documents stored in the `aero` bucket. Relationships use ID references (not foreign
-keys). Embedded sub-documents (comments, history) are used where data is always accessed
-together with the parent.
+All documents stored in the `aero` MongoDB database. Relationships use ID references
+(not foreign keys). Embedded sub-documents (comments, history) are used where data is
+always accessed together with the parent. Unique indexes enforce constraints on
+`User.email`, `Helicopter.registrationNumber`, and `CrewMember.email`.
 
 **User ↔ CrewMember**: Separate documents. Users have login credentials and roles.
 CrewMembers are flight personnel (weight, training dates, etc.). Linked via an explicit
@@ -234,7 +235,7 @@ Every entity follows the pattern:
 | # | Decision | Choice |
 |---|----------|--------|
 | 1 | User ↔ CrewMember link | Explicit nullable reference: `user.crewMemberId → crew_member.id` |
-| 2 | Database | Couchbase Server 7.6 (local install; Testcontainers for integration testing) |
+| 2 | Database | MongoDB 7 (Docker container; Testcontainers for integration testing) |
 | 3 | UI language | Polish UI, English codebase (enums, variables, API fields) |
 | 4 | Java version | Java 21 |
 | 5 | Crew roles | Fixed enum: `PILOT`, `OBSERVER` |
@@ -250,7 +251,7 @@ Every entity follows the pattern:
 
 | Phase | Focus | MVP? |
 |-------|-------|------|
-| 0 | Scaffolding — monorepo, deps, Couchbase, proxy | Setup |
+| 0 | Scaffolding — monorepo, deps, MongoDB, proxy | Setup |
 | 1 | Auth + App Shell — login, session, sidebar, role routing | Foundation |
 | 2 | Admin CRUD — helicopters, crew, landing sites, users | Supporting data |
 | 3 | Flight Operations — KML, status workflow, map, comments | **MVP milestone** |
@@ -264,9 +265,12 @@ display, and supervisors can approve/reject them.
 
 ## Running the Project
 
-**Prerequisites**: Couchbase Server 7.6+ running locally with bucket `aero` (user: `aero`, password: `aeropass`).
+**Prerequisites**: MongoDB 7+ running locally on port 27017 (database: `aero`).
 
 ```bash
+# 0. Start MongoDB (one-time setup)
+bash backend/setup-mongodb.sh
+
 # 1. Start backend (from repo root)
 ./gradlew :backend:bootRun
 
@@ -276,9 +280,9 @@ cd frontend && npm run dev
 
 - Backend: http://localhost:8080
 - Frontend: http://localhost:5173 (proxies `/api/**` to backend)
-- Couchbase: localhost:8091 (Web UI) — bucket: `aero`, user: `aero`, password: `aeropass`
+- MongoDB: localhost:27017, database: `aero`
 
-**Testing**: Integration tests use Testcontainers — a `CouchbaseContainer` is
+**Testing**: Integration tests use Testcontainers — a `MongoDBContainer` is
 started automatically, no manual database setup needed.
 
 ```bash
