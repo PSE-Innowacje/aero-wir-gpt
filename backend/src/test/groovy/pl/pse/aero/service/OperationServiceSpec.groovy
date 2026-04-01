@@ -48,8 +48,8 @@ class OperationServiceSpec extends Specification {
                 .shortDescription("Test op")
                 .build()
         def kmlFile = new MockMultipartFile("file", "route.kml", "application/xml", "data".bytes)
-        def kmlResult = new KmlProcessingResult("/path/route.kml", [[52.0d, 20.0d] as double[]], 100)
-        kmlService.saveAndParse(kmlFile) >> kmlResult
+        def kmlResult = new KmlProcessingResult("data".bytes, "route.kml", [[52.0d, 20.0d] as double[]], 100)
+        kmlService.parseAndValidate(kmlFile) >> kmlResult
         repository.save(_) >> { FlightOperation o -> o }
 
         when:
@@ -58,7 +58,7 @@ class OperationServiceSpec extends Specification {
         then:
         result.status == OperationStatus.SUBMITTED
         result.createdByEmail == "planista@aero.pl"
-        result.kmlFilePath == "/path/route.kml"
+        result.kmlFileName == "route.kml"
         result.routeLengthKm == 100
         result.kmlPoints.size() == 1
         result.createdAt != null
@@ -77,8 +77,8 @@ class OperationServiceSpec extends Specification {
 
         then:
         result.status == OperationStatus.SUBMITTED
-        result.kmlFilePath == null
-        0 * kmlService.saveAndParse(_)
+        result.kmlFileContent == null
+        0 * kmlService.parseAndValidate(_)
     }
 
     def "update as PLANNER should apply allowed fields only"() {

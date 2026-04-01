@@ -5,16 +5,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.stereotype.Component;
 import pl.pse.aero.domain.*;
 import pl.pse.aero.dto.KmlProcessingResult;
 import pl.pse.aero.repository.*;
 import pl.pse.aero.service.KmlService;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -271,9 +268,9 @@ public class DataInitializer implements CommandLineRunner {
         try {
             ClassPathResource resource = new ClassPathResource(kmlResourcePath);
             byte[] content = resource.getInputStream().readAllBytes();
-            MultipartFile mockFile = new InMemoryMultipartFile(resource.getFilename(), content);
-            KmlProcessingResult kmlResult = kmlService.saveAndParse(mockFile);
-            op.setKmlFilePath(kmlResult.filePath());
+            KmlProcessingResult kmlResult = kmlService.parseAndValidate(content, resource.getFilename());
+            op.setKmlFileContent(kmlResult.fileContent());
+            op.setKmlFileName(kmlResult.fileName());
             op.setKmlPoints(kmlResult.points());
             op.setRouteLengthKm(kmlResult.routeLengthKm());
         } catch (IOException e) {
@@ -310,16 +307,4 @@ public class DataInitializer implements CommandLineRunner {
                 .build();
     }
 
-    private record InMemoryMultipartFile(String filename, byte[] content) implements MultipartFile {
-        @Override public String getName() { return "file"; }
-        @Override public String getOriginalFilename() { return filename; }
-        @Override public String getContentType() { return "application/xml"; }
-        @Override public boolean isEmpty() { return content.length == 0; }
-        @Override public long getSize() { return content.length; }
-        @Override public byte[] getBytes() { return content; }
-        @Override public InputStream getInputStream() { return new java.io.ByteArrayInputStream(content); }
-        @Override public void transferTo(File dest) throws IOException {
-            java.nio.file.Files.write(dest.toPath(), content);
-        }
-    }
 }

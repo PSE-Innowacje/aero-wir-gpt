@@ -34,8 +34,9 @@ public class FlightOperation {
     @Size(max = 100)
     private String shortDescription;
 
-    @Size(max = 500)
-    private String kmlFilePath;
+    private byte[] kmlFileContent;
+
+    private String kmlFileName;
 
     private List<double[]> kmlPoints;
 

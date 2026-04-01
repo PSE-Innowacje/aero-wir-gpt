@@ -1,6 +1,5 @@
 package pl.pse.aero.service;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.w3c.dom.Document;
@@ -9,14 +8,11 @@ import pl.pse.aero.dto.KmlProcessingResult;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class KmlService {
@@ -28,35 +24,28 @@ public class KmlService {
     private static final double MAX_LNG = 24.2;
     private static final double EARTH_RADIUS_KM = 6371.0;
 
-    private final String uploadDir;
-
-    public KmlService(@Value("${app.upload-dir}") String uploadDir) {
-        this.uploadDir = uploadDir;
-    }
-
-    public KmlProcessingResult saveAndParse(MultipartFile file) {
-        String filePath = saveFile(file);
-        List<double[]> points = parseKml(file);
-        validatePoints(points);
-        int routeLengthKm = calculateRouteLength(points);
-        return new KmlProcessingResult(filePath, points, routeLengthKm);
-    }
-
-    String saveFile(MultipartFile file) {
+    public KmlProcessingResult parseAndValidate(MultipartFile file) {
         try {
-            Path dir = Paths.get(uploadDir);
-            Files.createDirectories(dir);
-            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            Path target = dir.resolve(filename);
-            file.transferTo(target);
-            return target.toString();
+            byte[] content = file.getBytes();
+            String fileName = file.getOriginalFilename();
+            List<double[]> points = parseKml(content);
+            validatePoints(points);
+            int routeLengthKm = calculateRouteLength(points);
+            return new KmlProcessingResult(content, fileName, points, routeLengthKm);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save KML file: " + e.getMessage(), e);
+            throw new IllegalArgumentException("Failed to read KML file: " + e.getMessage(), e);
         }
     }
 
-    List<double[]> parseKml(MultipartFile file) {
-        try (InputStream is = file.getInputStream()) {
+    public KmlProcessingResult parseAndValidate(byte[] content, String fileName) {
+        List<double[]> points = parseKml(content);
+        validatePoints(points);
+        int routeLengthKm = calculateRouteLength(points);
+        return new KmlProcessingResult(content, fileName, points, routeLengthKm);
+    }
+
+    List<double[]> parseKml(byte[] content) {
+        try (InputStream is = new ByteArrayInputStream(content)) {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             DocumentBuilder builder = factory.newDocumentBuilder();

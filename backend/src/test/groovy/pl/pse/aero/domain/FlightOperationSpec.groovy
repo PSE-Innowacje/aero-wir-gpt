@@ -13,7 +13,8 @@ class FlightOperationSpec extends Specification {
                 .id("op1")
                 .orderNumber("DE-25-12020")
                 .shortDescription("Inspekcja linii 400kV")
-                .kmlFilePath("/uploads/kml/uuid_route.kml")
+                .kmlFileContent("kml data".bytes)
+                .kmlFileName("route.kml")
                 .kmlPoints([[52.0d, 20.0d] as double[], [52.1d, 20.1d] as double[]])
                 .proposedDateEarliest(LocalDate.of(2026, 5, 1))
                 .proposedDateLatest(LocalDate.of(2026, 9, 30))
@@ -109,7 +110,8 @@ class FlightOperationSpec extends Specification {
         op.plannedDateLatest == null
         op.additionalInfo == null
         op.postCompletionNotes == null
-        op.kmlFilePath == null
+        op.kmlFileContent == null
+        op.kmlFileName == null
         op.kmlPoints == null
     }
 }

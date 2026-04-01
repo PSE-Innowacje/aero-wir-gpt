@@ -43,7 +43,8 @@ public class OperationRequest {
     @Size(max = 500)
     private String postCompletionNotes;
 
-    private String kmlFilePath;
+    private byte[] kmlFileContent;
+    private String kmlFileName;
     private List<double[]> kmlPoints;
     private Integer routeLengthKm;
 }
