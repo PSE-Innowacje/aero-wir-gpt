@@ -332,6 +332,8 @@ interface Operation {
   activity: ActivityType;
   dateFrom: string;
   dateTo: string | null;
+  plannedDateFrom: string | null;
+  plannedDateTo: string | null;
   status: StatusKey;
   helicopter: string;
   priority: 'Wysoki' | 'Średni' | 'Niski';
@@ -350,6 +352,8 @@ const OPERATIONS: Operation[] = [
     activity: 'Transport Medyczny',
     dateFrom: '14.10.2024',
     dateTo: '15.10.2024',
+    plannedDateFrom: '14.10.2024',
+    plannedDateTo: '15.10.2024',
     status: 'Zaplanowane',
     helicopter: 'EC135 (SP-HXP)',
     priority: 'Wysoki',
@@ -366,6 +370,8 @@ const OPERATIONS: Operation[] = [
     activity: 'Inspekcja Sieci',
     dateFrom: '16.10.2024',
     dateTo: '17.10.2024',
+    plannedDateFrom: '18.10.2024',
+    plannedDateTo: '19.10.2024',
     status: 'Potwierdzone',
     helicopter: 'AS350 (SP-SKY)',
     priority: 'Średni',
@@ -382,6 +388,8 @@ const OPERATIONS: Operation[] = [
     activity: 'Akcja SAR',
     dateFrom: '18.10.2024',
     dateTo: null,
+    plannedDateFrom: null,
+    plannedDateTo: null,
     status: 'Wprowadzone',
     helicopter: '—',
     priority: 'Wysoki',
@@ -398,6 +406,8 @@ const OPERATIONS: Operation[] = [
     activity: 'Dostawa Cargo',
     dateFrom: '20.10.2024',
     dateTo: '22.10.2024',
+    plannedDateFrom: null,
+    plannedDateTo: null,
     status: 'Wprowadzone',
     helicopter: '—',
     priority: 'Niski',
@@ -414,6 +424,8 @@ const OPERATIONS: Operation[] = [
     activity: 'Patrol Granicy',
     dateFrom: '10.10.2024',
     dateTo: '10.10.2024',
+    plannedDateFrom: '10.10.2024',
+    plannedDateTo: '10.10.2024',
     status: 'Zrealizowane',
     helicopter: 'AW139 (SP-NXB)',
     priority: 'Średni',
@@ -430,6 +442,8 @@ const OPERATIONS: Operation[] = [
     activity: 'Kalibracja Nawigacyjna',
     dateFrom: '12.10.2024',
     dateTo: '13.10.2024',
+    plannedDateFrom: '13.10.2024',
+    plannedDateTo: '14.10.2024',
     status: 'Częściowo zrealizowane',
     helicopter: 'Bell 407 (SP-HBL)',
     priority: 'Niski',
@@ -446,6 +460,8 @@ const OPERATIONS: Operation[] = [
     activity: 'Transport Medyczny',
     dateFrom: '11.10.2024',
     dateTo: '11.10.2024',
+    plannedDateFrom: null,
+    plannedDateTo: null,
     status: 'Rezygnacja',
     helicopter: '—',
     priority: 'Wysoki',
@@ -707,11 +723,12 @@ export default function OperationListPage() {
               <Table size="small" sx={{ tableLayout: 'fixed' }}>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ ...TH_SX, width: '16%' }}>Nr operacji</TableCell>
-                    <TableCell sx={{ ...TH_SX, width: '16%' }}>Nr zlecenia</TableCell>
-                    <TableCell sx={{ ...TH_SX, width: '22%' }}>Rodzaj czynności</TableCell>
-                    <TableCell sx={{ ...TH_SX, width: '22%' }}>Proponowane daty</TableCell>
-                    <TableCell sx={{ ...TH_SX, width: '16%' }}>Status</TableCell>
+                    <TableCell sx={{ ...TH_SX, width: '13%' }}>Nr operacji</TableCell>
+                    <TableCell sx={{ ...TH_SX, width: '13%' }}>Nr zlecenia</TableCell>
+                    <TableCell sx={{ ...TH_SX, width: '18%' }}>Rodzaj czynności</TableCell>
+                    <TableCell sx={{ ...TH_SX, width: '17%' }}>Proponowane daty</TableCell>
+                    <TableCell sx={{ ...TH_SX, width: '17%' }}>Planowane daty</TableCell>
+                    <TableCell sx={{ ...TH_SX, width: '14%' }}>Status</TableCell>
                     <TableCell sx={{ ...TH_SX, width: '8%', textAlign: 'right' }}>Akcje</TableCell>
                   </TableRow>
                 </TableHead>
@@ -786,6 +803,17 @@ export default function OperationListPage() {
                         </Typography>
                       </TableCell>
                       <TableCell sx={TD_SX}>
+                        {op.plannedDateFrom ? (
+                          <Typography sx={{ fontSize: '0.8125rem', color: aeroColors.onSurface, fontFamily: '"Inter", monospace' }}>
+                            {op.plannedDateFrom}{op.plannedDateTo && op.plannedDateTo !== op.plannedDateFrom ? ` – ${op.plannedDateTo}` : ''}
+                          </Typography>
+                        ) : (
+                          <Typography sx={{ fontSize: '0.75rem', color: `${aeroColors.outline}60`, fontStyle: 'italic' }}>
+                            —
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell sx={TD_SX}>
                         <StatusBadge status={op.status} />
                       </TableCell>
                       <TableCell sx={{ ...TD_SX, textAlign: 'right' }}>
@@ -821,7 +849,7 @@ export default function OperationListPage() {
                   {filtered.length === 0 && (
                     <TableRow>
                       <TableCell
-                        colSpan={6}
+                        colSpan={7}
                         sx={{ ...TD_SX, textAlign: 'center', py: 5, color: aeroColors.outline }}
                       >
                         Brak operacji spełniających kryteria.
