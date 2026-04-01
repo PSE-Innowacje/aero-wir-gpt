@@ -45,6 +45,7 @@ import SatelliteAltOutlinedIcon from '@mui/icons-material/SatelliteAltOutlined';
 import ChevronLeftOutlinedIcon from '@mui/icons-material/ChevronLeftOutlined';
 import ChevronRightOutlinedIcon from '@mui/icons-material/ChevronRightOutlined';
 import { aeroColors } from '../../theme';
+import { useAuth } from '../../contexts/AuthContext';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
 const GLASS_CARD = {
@@ -577,6 +578,9 @@ function NotificationsPanel() {
 
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function OrderListPage() {
+  const { user } = useAuth();
+  const canCreate = user?.role === 'PILOT';
+  const canEdit = user?.role === 'PILOT' || user?.role === 'SUPERVISOR';
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -663,30 +667,32 @@ export default function OrderListPage() {
             Zarządzanie bieżącymi operacjami i zatwierdzanie planów lotów.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddTaskOutlinedIcon />}
-          onClick={() => { setEditingOrder(null); setModalOpen(true); }}
-          sx={{
-            background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
-            color: aeroColors.onPrimaryFixed,
-            fontFamily: '"Space Grotesk", sans-serif',
-            fontWeight: 700,
-            fontSize: '0.6875rem',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            px: 2.5,
-            py: 1,
-            borderRadius: 1,
-            boxShadow: `0 4px 20px ${aeroColors.primaryContainer}60`,
-            '&:hover': {
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<AddTaskOutlinedIcon />}
+            onClick={() => { setEditingOrder(null); setModalOpen(true); }}
+            sx={{
               background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
-              opacity: 0.9,
-            },
-          }}
-        >
-          Nowe zlecenie na lot
-        </Button>
+              color: aeroColors.onPrimaryFixed,
+              fontFamily: '"Space Grotesk", sans-serif',
+              fontWeight: 700,
+              fontSize: '0.6875rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              px: 2.5,
+              py: 1,
+              borderRadius: 1,
+              boxShadow: `0 4px 20px ${aeroColors.primaryContainer}60`,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
+                opacity: 0.9,
+              },
+            }}
+          >
+            Nowe zlecenie na lot
+          </Button>
+        )}
       </Box>
 
       {/* ── Stat cards ── */}
@@ -936,7 +942,7 @@ export default function OrderListPage() {
                     {/* Actions */}
                     <TableCell sx={{ ...TD_SX, textAlign: 'right' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.25 }}>
-                        {order.status === 'Wprowadzone' && (
+                        {canEdit && order.status === 'Wprowadzone' && (
                           <>
                             <RowAction
                               icon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
@@ -947,13 +953,13 @@ export default function OrderListPage() {
                             <RowAction icon={<SendOutlinedIcon sx={{ fontSize: 14 }} />} label="Wyślij do akceptacji" color={aeroColors.secondary} />
                           </>
                         )}
-                        {order.status === 'Przekazane do akceptacji' && (
+                        {canEdit && order.status === 'Przekazane do akceptacji' && (
                           <>
                             <RowAction icon={<CheckOutlinedIcon sx={{ fontSize: 14 }} />} label="Zaakceptuj" color="#4caf50" />
                             <RowAction icon={<CloseOutlinedIcon sx={{ fontSize: 14 }} />} label="Odrzuć" color={aeroColors.error} />
                           </>
                         )}
-                        {order.status === 'Zaakceptowane' && (
+                        {canEdit && order.status === 'Zaakceptowane' && (
                           <RowAction icon={<PlayArrowOutlinedIcon sx={{ fontSize: 14 }} />} label="Realizacja" color={aeroColors.tertiary} />
                         )}
                         {!['Wprowadzone', 'Przekazane do akceptacji', 'Zaakceptowane'].includes(order.status) && (

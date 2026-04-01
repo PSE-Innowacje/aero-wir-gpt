@@ -32,6 +32,7 @@ import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined';
 import { aeroColors } from '../../theme';
+import { useAuth } from '../../contexts/AuthContext';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
 const GLASS_CARD = {
@@ -339,36 +340,40 @@ function UserCard({ initials, name, uid, email, loginId, role, status, onEdit, o
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <StatusBadge status={status} />
         <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <Tooltip title="Edytuj" placement="top">
-            <IconButton
-              size="small"
-              onClick={onEdit}
-              sx={{
-                width: 28,
-                height: 28,
-                color: aeroColors.outline,
-                borderRadius: 1,
-                '&:hover': { color: aeroColors.tertiary, bgcolor: `${aeroColors.tertiary}12` },
-              }}
-            >
-              <EditOutlinedIcon sx={{ fontSize: 14 }} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Uprawnienia" placement="top">
-            <IconButton
-              size="small"
-              onClick={onPermissions}
-              sx={{
-                width: 28,
-                height: 28,
-                color: aeroColors.outline,
-                borderRadius: 1,
-                '&:hover': { color: roleCfg.color, bgcolor: `${roleCfg.color}12` },
-              }}
-            >
-              <ManageAccountsOutlinedIcon sx={{ fontSize: 14 }} />
-            </IconButton>
-          </Tooltip>
+          {onEdit && (
+            <Tooltip title="Edytuj" placement="top">
+              <IconButton
+                size="small"
+                onClick={onEdit}
+                sx={{
+                  width: 28,
+                  height: 28,
+                  color: aeroColors.outline,
+                  borderRadius: 1,
+                  '&:hover': { color: aeroColors.tertiary, bgcolor: `${aeroColors.tertiary}12` },
+                }}
+              >
+                <EditOutlinedIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </Tooltip>
+          )}
+          {onPermissions && (
+            <Tooltip title="Uprawnienia" placement="top">
+              <IconButton
+                size="small"
+                onClick={onPermissions}
+                sx={{
+                  width: 28,
+                  height: 28,
+                  color: aeroColors.outline,
+                  borderRadius: 1,
+                  '&:hover': { color: roleCfg.color, bgcolor: `${roleCfg.color}12` },
+                }}
+              >
+                <ManageAccountsOutlinedIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       </Box>
     </Box>
@@ -420,6 +425,8 @@ const STATUS_FILTERS: Array<{ key: string; label: string }> = [
 
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function UserListPage() {
+  const { user: currentUser } = useAuth();
+  const canEdit = currentUser?.role === 'ADMIN';
   const [apiUsers, setApiUsers] = useState<UserResponse[]>([]);
   const users = apiUsers.map(toUserRow);
 
@@ -520,30 +527,32 @@ export default function UserListPage() {
             Użytkownicy Systemu
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<PersonAddOutlinedIcon />}
-          onClick={() => { setEditingUser(null); setModalOpen(true); }}
-          sx={{
-            background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
-            color: aeroColors.onPrimaryFixed,
-            fontFamily: '"Space Grotesk", sans-serif',
-            fontWeight: 700,
-            fontSize: '0.6875rem',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            px: 2.5,
-            py: 1,
-            borderRadius: 1,
-            boxShadow: `0 4px 20px ${aeroColors.primaryContainer}60`,
-            '&:hover': {
+        {canEdit && (
+          <Button
+            variant="contained"
+            startIcon={<PersonAddOutlinedIcon />}
+            onClick={() => { setEditingUser(null); setModalOpen(true); }}
+            sx={{
               background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
-              opacity: 0.9,
-            },
-          }}
-        >
-          Dodaj użytkownika
-        </Button>
+              color: aeroColors.onPrimaryFixed,
+              fontFamily: '"Space Grotesk", sans-serif',
+              fontWeight: 700,
+              fontSize: '0.6875rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              px: 2.5,
+              py: 1,
+              borderRadius: 1,
+              boxShadow: `0 4px 20px ${aeroColors.primaryContainer}60`,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
+                opacity: 0.9,
+              },
+            }}
+          >
+            Dodaj użytkownika
+          </Button>
+        )}
       </Box>
 
       {/* ── Stat cards ── */}
@@ -603,8 +612,8 @@ export default function UserListPage() {
                 loginId={u.loginId}
                 role={u.role}
                 status={u.status}
-                onEdit={openEdit}
-                onPermissions={openEdit}
+                onEdit={canEdit ? openEdit : undefined}
+                onPermissions={canEdit ? openEdit : undefined}
               />
             </Grid>
           );
@@ -848,44 +857,48 @@ export default function UserListPage() {
                     </TableCell>
                     <TableCell sx={{ ...TD_SX, textAlign: 'right' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-                        <Tooltip title="Edytuj" placement="left">
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              setEditingUser({ id: String(user.id), firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role });
-                              setModalOpen(true);
-                            }}
-                            sx={{
-                              color: aeroColors.outline,
-                              borderRadius: 1,
-                              '&:hover': {
-                                color: aeroColors.tertiary,
-                                bgcolor: `${aeroColors.tertiary}12`,
-                              },
-                            }}
-                          >
-                            <EditOutlinedIcon sx={{ fontSize: 15 }} />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Uprawnienia" placement="left">
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              setEditingUser({ id: String(user.id), firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role });
-                              setModalOpen(true);
-                            }}
-                            sx={{
-                              color: aeroColors.outline,
-                              borderRadius: 1,
-                              '&:hover': {
-                                color: roleCfg.color,
-                                bgcolor: `${roleCfg.color}12`,
-                              },
-                            }}
-                          >
-                            <ShieldOutlinedIcon sx={{ fontSize: 15 }} />
-                          </IconButton>
-                        </Tooltip>
+                        {canEdit && (
+                          <Tooltip title="Edytuj" placement="left">
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setEditingUser({ id: String(user.id), firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role });
+                                setModalOpen(true);
+                              }}
+                              sx={{
+                                color: aeroColors.outline,
+                                borderRadius: 1,
+                                '&:hover': {
+                                  color: aeroColors.tertiary,
+                                  bgcolor: `${aeroColors.tertiary}12`,
+                                },
+                              }}
+                            >
+                              <EditOutlinedIcon sx={{ fontSize: 15 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {canEdit && (
+                          <Tooltip title="Uprawnienia" placement="left">
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setEditingUser({ id: String(user.id), firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role });
+                                setModalOpen(true);
+                              }}
+                              sx={{
+                                color: aeroColors.outline,
+                                borderRadius: 1,
+                                '&:hover': {
+                                  color: roleCfg.color,
+                                  bgcolor: `${roleCfg.color}12`,
+                                },
+                              }}
+                            >
+                              <ShieldOutlinedIcon sx={{ fontSize: 15 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </Box>
                     </TableCell>
                   </TableRow>

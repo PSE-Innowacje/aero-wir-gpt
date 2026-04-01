@@ -55,6 +55,22 @@ docker rm aero-mongodb         # remove (re-run setup script to recreate)
 docker exec -it aero-mongodb mongosh aero   # shell
 ```
 
+### MongoDB GUI (optional)
+
+**Mongo Express** (web-based, runs in Docker):
+
+```bash
+docker run -d --name aero-mongo-express \
+  --link aero-mongodb:mongo \
+  -p 8081:8081 \
+  -e ME_CONFIG_MONGODB_SERVER=mongo \
+  mongo-express
+```
+
+Then open http://localhost:8081 to browse collections, edit documents, and run queries.
+
+**MongoDB Compass** (desktop app): download from https://www.mongodb.com/products/compass, connect to `mongodb://localhost:27017`.
+
 ### URLs
 
 | Service | URL |
@@ -63,6 +79,7 @@ docker exec -it aero-mongodb mongosh aero   # shell
 | Backend API | http://localhost:8080 |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
 | MongoDB | localhost:27017 (database: `aero`) |
+| Mongo Express (optional) | http://localhost:8081 |
 
 ### Default Accounts
 

@@ -34,6 +34,7 @@ import { z } from 'zod';
 import { aeroColors } from '../../theme';
 import { getCrewMembers, createCrewMember, updateCrewMember } from '../../api/crew.api';
 import type { CrewMemberResponse, CrewRole } from '../../api/types';
+import { useAuth } from '../../contexts/AuthContext';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
 const GLASS_CARD = {
@@ -955,6 +956,8 @@ const CARD_ACCENT_PALETTE = [aeroColors.primary, aeroColors.tertiary, aeroColors
 
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function CrewListPage() {
+  const { user } = useAuth();
+  const canEdit = user?.role === 'ADMIN';
   const [search, setSearch] = useState('');
   const [crewMembers, setCrewMembers] = useState<CrewMemberResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1079,6 +1082,7 @@ export default function CrewListPage() {
             Członkowie Załogi
           </Typography>
         </Box>
+        {canEdit && (
         <Button
           variant="contained"
           startIcon={<PersonAddOutlinedIcon />}
@@ -1103,6 +1107,7 @@ export default function CrewListPage() {
         >
           Dodaj członka załogi
         </Button>
+        )}
       </Box>
 
       {/* ── Stat cards ── */}
@@ -1347,6 +1352,7 @@ export default function CrewListPage() {
                     <StatusBadge status={computeStatus(member)} />
                   </TableCell>
                   <TableCell sx={{ ...TD_SX, textAlign: 'right' }}>
+                    {canEdit && (
                     <Tooltip title="Edytuj" placement="left">
                       <IconButton
                         size="small"
@@ -1363,6 +1369,7 @@ export default function CrewListPage() {
                         <EditOutlinedIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     </Tooltip>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

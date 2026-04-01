@@ -34,6 +34,7 @@ import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
 import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined';
 import KeyboardArrowRightOutlinedIcon from '@mui/icons-material/KeyboardArrowRightOutlined';
 import { aeroColors } from '../../theme';
+import { useAuth } from '../../contexts/AuthContext';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
 const GLASS_CARD = {
@@ -407,6 +408,8 @@ function toDashDate(d: string): string {
 
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function OperationListPage() {
+  const { user } = useAuth();
+  const canEdit = user?.role === 'PLANNER' || user?.role === 'SUPERVISOR';
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [search, setSearch] = useState('');
   const [apiOps, setApiOps] = useState<OperationListResponse[]>([]);
@@ -497,30 +500,32 @@ export default function OperationListPage() {
             Lista Operacji Lotniczych
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddOutlinedIcon />}
-          onClick={() => { setEditingOperation(null); setModalOpen(true); }}
-          sx={{
-            background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
-            color: aeroColors.onPrimaryFixed,
-            fontFamily: '"Space Grotesk", sans-serif',
-            fontWeight: 700,
-            fontSize: '0.6875rem',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            px: 2.5,
-            py: 1,
-            borderRadius: 1,
-            boxShadow: `0 4px 20px ${aeroColors.primaryContainer}60`,
-            '&:hover': {
+        {canEdit && (
+          <Button
+            variant="contained"
+            startIcon={<AddOutlinedIcon />}
+            onClick={() => { setEditingOperation(null); setModalOpen(true); }}
+            sx={{
               background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
-              opacity: 0.9,
-            },
-          }}
-        >
-          Nowa operacja
-        </Button>
+              color: aeroColors.onPrimaryFixed,
+              fontFamily: '"Space Grotesk", sans-serif',
+              fontWeight: 700,
+              fontSize: '0.6875rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              px: 2.5,
+              py: 1,
+              borderRadius: 1,
+              boxShadow: `0 4px 20px ${aeroColors.primaryContainer}60`,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
+                opacity: 0.9,
+              },
+            }}
+          >
+            Nowa operacja
+          </Button>
+        )}
       </Box>
 
       {/* ── Status tabs ── */}
@@ -743,31 +748,33 @@ export default function OperationListPage() {
                         <StatusBadge status={op.status} />
                       </TableCell>
                       <TableCell sx={{ ...TD_SX, textAlign: 'right' }}>
-                        <Tooltip title="Edytuj" placement="left">
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              setEditingOperation({
-                                id:                 String(op.id),
-                                orderProjectNumber: op.orderNumber,
-                                shortDescription:   op.activity,
-                                activityTypes:      [op.activity],
-                                status:             STATUS_MAP[op.status],
-                                proposedDateFrom:   toDashDate(op.dateFrom),
-                                proposedDateTo:     op.dateTo ? toDashDate(op.dateTo) : undefined,
-                                routeLengthKm:      op.distanceNm,
-                              });
-                              setModalOpen(true);
-                            }}
-                            sx={{
-                              color: aeroColors.outline,
-                              borderRadius: 1,
-                              '&:hover': { color: aeroColors.tertiary, bgcolor: `${aeroColors.tertiary}12` },
-                            }}
-                          >
-                            <EditOutlinedIcon sx={{ fontSize: 15 }} />
-                          </IconButton>
-                        </Tooltip>
+                        {canEdit && (
+                          <Tooltip title="Edytuj" placement="left">
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setEditingOperation({
+                                  id:                 String(op.id),
+                                  orderProjectNumber: op.orderNumber,
+                                  shortDescription:   op.activity,
+                                  activityTypes:      [op.activity],
+                                  status:             STATUS_MAP[op.status],
+                                  proposedDateFrom:   toDashDate(op.dateFrom),
+                                  proposedDateTo:     op.dateTo ? toDashDate(op.dateTo) : undefined,
+                                  routeLengthKm:      op.distanceNm,
+                                });
+                                setModalOpen(true);
+                              }}
+                              sx={{
+                                color: aeroColors.outline,
+                                borderRadius: 1,
+                                '&:hover': { color: aeroColors.tertiary, bgcolor: `${aeroColors.tertiary}12` },
+                              }}
+                            >
+                              <EditOutlinedIcon sx={{ fontSize: 15 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
