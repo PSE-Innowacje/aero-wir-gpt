@@ -581,8 +581,8 @@ function NotificationsPanel() {
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function OrderListPage() {
   const { user } = useAuth();
-  const canCreate = user?.role === 'PILOT';
-  const canEdit = user?.role === 'PILOT' || user?.role === 'SUPERVISOR';
+  const canCreate = user?.role === 'PILOT' || user?.role === 'SUPERUSER';
+  const canEdit = user?.role === 'PILOT' || user?.role === 'SUPERVISOR' || user?.role === 'SUPERUSER';
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);

@@ -222,7 +222,7 @@ function toModalHelicopter(h: HelicopterResponse): ModalHelicopter {
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function HelicopterListPage() {
   const { user } = useAuth();
-  const canEdit = user?.role === 'ADMIN';
+  const canEdit = user?.role === 'ADMIN' || user?.role === 'SUPERUSER';
   const [search, setSearch] = useState('');
   const [helicopters, setHelicopters] = useState<HelicopterResponse[]>([]);
   const [loading, setLoading] = useState(true);

@@ -50,7 +50,7 @@ export const ROLE_CONFIG: Record<UserRole, { label: string; color: string; bg: s
   },
 };
 
-export const ROLE_OPTIONS: UserRole[] = ['ADMIN', 'PLANNER', 'SUPERVISOR', 'PILOT'];
+export const ROLE_OPTIONS: UserRole[] = ['SUPERUSER', 'ADMIN', 'PLANNER', 'SUPERVISOR', 'PILOT'];
 
 /* ── Zod schema ─────────────────────────────────────────────────────────── */
 const userSchema = z.object({
@@ -67,7 +67,7 @@ const userSchema = z.object({
     .min(1, 'Pole wymagane')
     .max(100, 'Maks. 100 znaków')
     .email('Nieprawidłowy adres email'),
-  role: z.enum(['ADMIN', 'PLANNER', 'SUPERVISOR', 'PILOT'] as const),
+  role: z.enum(['SUPERUSER', 'ADMIN', 'PLANNER', 'SUPERVISOR', 'PILOT'] as const),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;

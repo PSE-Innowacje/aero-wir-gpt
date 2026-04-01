@@ -957,7 +957,7 @@ const CARD_ACCENT_PALETTE = [aeroColors.primary, aeroColors.tertiary, aeroColors
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function CrewListPage() {
   const { user } = useAuth();
-  const canEdit = user?.role === 'ADMIN';
+  const canEdit = user?.role === 'ADMIN' || user?.role === 'SUPERUSER';
   const [search, setSearch] = useState('');
   const [crewMembers, setCrewMembers] = useState<CrewMemberResponse[]>([]);
   const [loading, setLoading] = useState(true);

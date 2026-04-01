@@ -170,7 +170,7 @@ function toSiteRow(site: LandingSiteResponse) {
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function LandingSiteListPage() {
   const { user } = useAuth();
-  const canEdit = user?.role === 'ADMIN';
+  const canEdit = user?.role === 'ADMIN' || user?.role === 'SUPERUSER';
   const [search, setSearch] = useState('');
   const [newName, setNewName] = useState('');
   const [newLat, setNewLat] = useState('');
