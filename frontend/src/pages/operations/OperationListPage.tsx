@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import OperationModal, { type OperationData } from '../../components/modals/OperationModal';
+import OperationModal, { type OperationData, type OperationStatus } from '../../components/modals/OperationModal';
 import {
   Box,
   Typography,
@@ -466,6 +466,23 @@ const FEATURED_OPS = [
   { op: OPERATIONS[3], actionLabel: 'Potwierdź' },
 ];
 
+/* ── Edit helpers ──────────────────────────────────────────────────────── */
+const STATUS_MAP: Record<StatusKey, OperationStatus> = {
+  'Wprowadzone':            'SUBMITTED',
+  'Odrzucone':              'REJECTED',
+  'Potwierdzone':           'CONFIRMED',
+  'Zaplanowane':            'SCHEDULED',
+  'Częściowo zrealizowane': 'PARTIALLY_COMPLETED',
+  'Zrealizowane':           'COMPLETED',
+  'Rezygnacja':             'CANCELLED',
+};
+
+/** Convert DD.MM.YYYY → YYYY-MM-DD for date inputs */
+function toDashDate(d: string): string {
+  const [day, month, year] = d.split('.');
+  return `${year}-${month}-${day}`;
+}
+
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function OperationListPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('all');
@@ -775,6 +792,19 @@ export default function OperationListPage() {
                         <Tooltip title="Edytuj" placement="left">
                           <IconButton
                             size="small"
+                            onClick={() => {
+                              setEditingOperation({
+                                id:                 String(op.id),
+                                orderProjectNumber: op.orderNumber,
+                                shortDescription:   op.activity,
+                                activityTypes:      [op.activity],
+                                status:             STATUS_MAP[op.status],
+                                proposedDateFrom:   toDashDate(op.dateFrom),
+                                proposedDateTo:     op.dateTo ? toDashDate(op.dateTo) : undefined,
+                                routeLengthKm:      op.distanceNm,
+                              });
+                              setModalOpen(true);
+                            }}
                             sx={{
                               color: aeroColors.outline,
                               borderRadius: 1,

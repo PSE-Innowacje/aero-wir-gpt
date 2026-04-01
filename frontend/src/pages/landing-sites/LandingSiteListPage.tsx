@@ -500,6 +500,10 @@ export default function LandingSiteListPage() {
                       <Tooltip title="Edytuj" placement="left">
                         <IconButton
                           size="small"
+                          onClick={() => {
+                            setEditingSite({ id: String(site.id), name: site.name, latitude: site.lat, longitude: site.lng });
+                            setModalOpen(true);
+                          }}
                           sx={{
                             color: aeroColors.outline,
                             borderRadius: 1,
