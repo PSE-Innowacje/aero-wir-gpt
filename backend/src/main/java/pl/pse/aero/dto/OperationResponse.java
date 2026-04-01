@@ -19,7 +19,7 @@ public class OperationResponse {
     private String id;
     private String orderNumber;
     private String shortDescription;
-    private String kmlFilePath;
+    private String kmlFileName;
     private List<double[]> kmlPoints;
     private LocalDate proposedDateEarliest;
     private LocalDate proposedDateLatest;
@@ -43,7 +43,7 @@ public class OperationResponse {
                 .id(op.getId())
                 .orderNumber(op.getOrderNumber())
                 .shortDescription(op.getShortDescription())
-                .kmlFilePath(op.getKmlFilePath())
+                .kmlFileName(op.getKmlFileName())
                 .kmlPoints(op.getKmlPoints())
                 .proposedDateEarliest(op.getProposedDateEarliest())
                 .proposedDateLatest(op.getProposedDateLatest())

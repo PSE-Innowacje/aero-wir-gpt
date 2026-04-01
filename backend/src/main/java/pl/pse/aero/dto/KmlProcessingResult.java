@@ -3,7 +3,8 @@ package pl.pse.aero.dto;
 import java.util.List;
 
 public record KmlProcessingResult(
-        String filePath,
+        byte[] fileContent,
+        String fileName,
         List<double[]> points,
         int routeLengthKm
 ) {}

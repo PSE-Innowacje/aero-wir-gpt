@@ -43,8 +43,9 @@ public class OperationService {
         operation.setCreatedByEmail(currentUserEmail);
 
         if (kmlFile != null && !kmlFile.isEmpty()) {
-            KmlProcessingResult kmlResult = kmlService.saveAndParse(kmlFile);
-            operation.setKmlFilePath(kmlResult.filePath());
+            KmlProcessingResult kmlResult = kmlService.parseAndValidate(kmlFile);
+            operation.setKmlFileContent(kmlResult.fileContent());
+            operation.setKmlFileName(kmlResult.fileName());
             operation.setKmlPoints(kmlResult.points());
             operation.setRouteLengthKm(kmlResult.routeLengthKm());
         }
