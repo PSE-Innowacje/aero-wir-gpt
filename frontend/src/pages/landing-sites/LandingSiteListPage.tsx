@@ -1,6 +1,8 @@
 import 'leaflet/dist/leaflet.css';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import LandingSiteModal, { type LandingSiteData } from '../../components/modals/LandingSiteModal';
+import { getLandingSites, createLandingSite, updateLandingSite } from '../../api/landingSites.api';
+import type { LandingSiteResponse } from '../../api/types';
 import {
   Box,
   Typography,
@@ -143,45 +145,26 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-/* ── Mock data ─────────────────────────────────────────────────────────── */
-const LANDING_SITES = [
-  {
-    id: 1,
-    name: 'WARSAW-NORTH-H1',
-    lat: 52.2845,
-    lng: 20.9412,
+// TODO: UI CHANGES 2026-04-01 — Mock data replaced with API calls
+// const LANDING_SITES = [
+//   { id: 1, name: 'WARSAW-NORTH-H1', lat: 52.2845, lng: 20.9412, status: 'Gotowe' as SiteStatusKey, lastReport: '14:20 UTC', note: 'Active / Clear Skies' },
+//   { id: 2, name: 'KRAKOW-BALICE-Z2', lat: 50.0777, lng: 19.7848, status: 'Uwaga' as SiteStatusKey, lastReport: '12:05 UTC', note: 'Winds: 15kts SE' },
+//   { id: 3, name: 'GDANSK-PORT-X', lat: 54.3942, lng: 18.6654, status: 'Gotowe' as SiteStatusKey, lastReport: '09:15 UTC', note: 'Active / Clear Skies' },
+//   { id: 4, name: 'WROCLAW-FIELD-4', lat: 51.1079, lng: 17.0385, status: 'Wyłączone' as SiteStatusKey, lastReport: 'Wczoraj', note: 'Site offline' },
+// ];
+
+/** Adapter: map API response to the shape the UI expects */
+function toSiteRow(site: LandingSiteResponse) {
+  return {
+    id: site.id,
+    name: site.name,
+    lat: site.latitude,
+    lng: site.longitude,
     status: 'Gotowe' as SiteStatusKey,
-    lastReport: '14:20 UTC',
-    note: 'Active / Clear Skies',
-  },
-  {
-    id: 2,
-    name: 'KRAKOW-BALICE-Z2',
-    lat: 50.0777,
-    lng: 19.7848,
-    status: 'Uwaga' as SiteStatusKey,
-    lastReport: '12:05 UTC',
-    note: 'Winds: 15kts SE',
-  },
-  {
-    id: 3,
-    name: 'GDANSK-PORT-X',
-    lat: 54.3942,
-    lng: 18.6654,
-    status: 'Gotowe' as SiteStatusKey,
-    lastReport: '09:15 UTC',
-    note: 'Active / Clear Skies',
-  },
-  {
-    id: 4,
-    name: 'WROCLAW-FIELD-4',
-    lat: 51.1079,
-    lng: 17.0385,
-    status: 'Wyłączone' as SiteStatusKey,
-    lastReport: 'Wczoraj',
-    note: 'Site offline',
-  },
-];
+    lastReport: '—',
+    note: '',
+  };
+}
 
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function LandingSiteListPage() {
@@ -191,6 +174,20 @@ export default function LandingSiteListPage() {
   const [newLng, setNewLng] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<LandingSiteData | null>(null);
+  const [sites, setSites] = useState<LandingSiteResponse[]>([]);
+
+  const fetchSites = useCallback(async () => {
+    try {
+      const data = await getLandingSites();
+      setSites(data);
+    } catch (err) {
+      console.error('Failed to fetch landing sites:', err);
+    }
+  }, []);
+
+  useEffect(() => { fetchSites(); }, [fetchSites]);
+
+  const LANDING_SITES = sites.map(toSiteRow);
 
   const filtered = LANDING_SITES.filter((s) => {
     const q = search.toLowerCase();

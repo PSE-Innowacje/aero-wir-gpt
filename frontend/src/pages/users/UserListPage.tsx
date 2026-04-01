@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import UserModal, { type UserData } from '../../components/modals/UserModal';
+import { getUsers, createUser, updateUser } from '../../api/users.api';
+import type { UserResponse } from '../../api/types';
 import {
   Box,
   Typography,
@@ -373,99 +375,33 @@ function UserCard({ initials, name, uid, email, loginId, role, status, onEdit, o
   );
 }
 
-/* ── Mock data ─────────────────────────────────────────────────────────── */
-const INITIAL_USERS = [
-  {
-    id: 1,
-    initials: 'JS',
-    firstName: 'Jan',
-    lastName: 'Sokołowski',
-    email: 'j.sokolowski@aero.pl',
-    loginId: 'sokol_1',
-    uid: '99420-A',
-    role: 'PILOT' as RoleKey,
-    status: 'Aktywny' as StatusKey,
-  },
-  {
-    id: 2,
-    initials: 'MK',
-    firstName: 'Marek',
-    lastName: 'Kowalski',
-    email: 'm.kowalski@aero.pl',
-    loginId: 'kowal_alpha',
-    uid: '00100-S',
-    role: 'SUPERVISOR' as RoleKey,
-    status: 'Aktywny' as StatusKey,
-  },
-  {
-    id: 3,
-    initials: 'AM',
-    firstName: 'Anna',
-    lastName: 'Mazur',
-    email: 'a.mazur@aero.pl',
-    loginId: 'mazur_plan',
-    uid: '44211-P',
-    role: 'PLANNER' as RoleKey,
-    status: 'Aktywny' as StatusKey,
-  },
-  {
-    id: 4,
-    initials: 'TL',
-    firstName: 'Tomasz',
-    lastName: 'Lis',
-    email: 't.lis@aero.pl',
-    loginId: 'lis_supervisor',
-    uid: '33109-N',
-    role: 'SUPERVISOR' as RoleKey,
-    status: 'Oczekuje' as StatusKey,
-  },
-  {
-    id: 5,
-    initials: 'PW',
-    firstName: 'Piotr',
-    lastName: 'Wiśniewski',
-    email: 'p.wisniewski@aero.pl',
-    loginId: 'wisn_pilot',
-    uid: '55302-A',
-    role: 'PILOT' as RoleKey,
-    status: 'Aktywny' as StatusKey,
-  },
-  {
-    id: 6,
-    initials: 'EK',
-    firstName: 'Ewa',
-    lastName: 'Kaczmarek',
-    email: 'e.kaczmarek@aero.pl',
-    loginId: 'kacz_plan',
-    uid: '71088-P',
-    role: 'PLANNER' as RoleKey,
-    status: 'Aktywny' as StatusKey,
-  },
-  {
-    id: 7,
-    initials: 'RN',
-    firstName: 'Robert',
-    lastName: 'Nowicki',
-    email: 'r.nowicki@aero.pl',
-    loginId: 'nowi_adm',
-    uid: '10001-X',
-    role: 'ADMIN' as RoleKey,
-    status: 'Aktywny' as StatusKey,
-  },
-  {
-    id: 8,
-    initials: 'KZ',
-    firstName: 'Katarzyna',
-    lastName: 'Zielińska',
-    email: 'k.zielinska@aero.pl',
-    loginId: 'ziel_pilot',
-    uid: '62940-A',
-    role: 'PILOT' as RoleKey,
-    status: 'Zablokowany' as StatusKey,
-  },
-];
+// TODO: UI CHANGES 2026-04-01 — Mock data replaced with API calls
+// const INITIAL_USERS = [
+//   { id: 1, initials: 'JS', firstName: 'Jan', lastName: 'Sokołowski', email: 'j.sokolowski@aero.pl', loginId: 'sokol_1', uid: '99420-A', role: 'PILOT' as RoleKey, status: 'Aktywny' as StatusKey },
+//   { id: 2, initials: 'MK', firstName: 'Marek', lastName: 'Kowalski', email: 'm.kowalski@aero.pl', loginId: 'kowal_alpha', uid: '00100-S', role: 'SUPERVISOR' as RoleKey, status: 'Aktywny' as StatusKey },
+//   { id: 3, initials: 'AM', firstName: 'Anna', lastName: 'Mazur', email: 'a.mazur@aero.pl', loginId: 'mazur_plan', uid: '44211-P', role: 'PLANNER' as RoleKey, status: 'Aktywny' as StatusKey },
+//   { id: 4, initials: 'TL', firstName: 'Tomasz', lastName: 'Lis', email: 't.lis@aero.pl', loginId: 'lis_supervisor', uid: '33109-N', role: 'SUPERVISOR' as RoleKey, status: 'Oczekuje' as StatusKey },
+//   { id: 5, initials: 'PW', firstName: 'Piotr', lastName: 'Wiśniewski', email: 'p.wisniewski@aero.pl', loginId: 'wisn_pilot', uid: '55302-A', role: 'PILOT' as RoleKey, status: 'Aktywny' as StatusKey },
+//   { id: 6, initials: 'EK', firstName: 'Ewa', lastName: 'Kaczmarek', email: 'e.kaczmarek@aero.pl', loginId: 'kacz_plan', uid: '71088-P', role: 'PLANNER' as RoleKey, status: 'Aktywny' as StatusKey },
+//   { id: 7, initials: 'RN', firstName: 'Robert', lastName: 'Nowicki', email: 'r.nowicki@aero.pl', loginId: 'nowi_adm', uid: '10001-X', role: 'ADMIN' as RoleKey, status: 'Aktywny' as StatusKey },
+//   { id: 8, initials: 'KZ', firstName: 'Katarzyna', lastName: 'Zielińska', email: 'k.zielinska@aero.pl', loginId: 'ziel_pilot', uid: '62940-A', role: 'PILOT' as RoleKey, status: 'Zablokowany' as StatusKey },
+// ];
 
-const CARD_USERS_INIT = INITIAL_USERS.slice(0, 4);
+/** Adapter: map API UserResponse to the shape the UI expects */
+function toUserRow(u: UserResponse) {
+  return {
+    id: u.id,
+    initials: `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase(),
+    firstName: u.firstName,
+    lastName: u.lastName,
+    email: u.email,
+    loginId: u.email.split('@')[0],
+    uid: u.id.substring(0, 8),
+    role: u.role as RoleKey,
+    status: 'Aktywny' as StatusKey,
+  };
+}
+
 
 const ROLE_FILTERS: Array<{ key: string; label: string }> = [
   { key: 'all', label: 'Wszystkie role' },
@@ -484,7 +420,19 @@ const STATUS_FILTERS: Array<{ key: string; label: string }> = [
 
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function UserListPage() {
-  const [users, setUsers] = useState(INITIAL_USERS);
+  const [apiUsers, setApiUsers] = useState<UserResponse[]>([]);
+  const users = apiUsers.map(toUserRow);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      const data = await getUsers();
+      setApiUsers(data);
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+    }
+  }, []);
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -640,7 +588,7 @@ export default function UserListPage() {
 
       {/* ── Featured user cards ── */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        {CARD_USERS_INIT.map((u) => {
+        {users.slice(0, 4).map((u) => {
           const openEdit = () => {
             setEditingUser({ id: String(u.id), firstName: u.firstName, lastName: u.lastName, email: u.email, role: u.role });
             setModalOpen(true);

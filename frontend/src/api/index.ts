@@ -13,6 +13,20 @@ export type {
   LandingSiteResponse,
   LandingSiteRequest,
   DictionaryEntry,
+  OperationStatus,
+  ActivityType,
+  OperationComment,
+  OperationChangeHistory,
+  OperationResponse,
+  OperationListResponse,
+  OperationRequest,
+  CommentRequest,
+  StatusChangeRequest,
+  KmlProcessingResult,
+  OrderStatus,
+  OrderResponse,
+  OrderListResponse,
+  OrderRequest,
 } from './types';
 
 // Auth
@@ -52,3 +66,24 @@ export {
   getOperationStatuses,
   getOrderStatuses,
 } from './dictionaries.api';
+
+// Operations
+export {
+  getOperations,
+  getOperationById,
+  createOperation,
+  updateOperation,
+  changeOperationStatus,
+  addOperationComment,
+  uploadKml,
+  downloadKml,
+} from './operations.api';
+
+// Orders
+export {
+  getOrders,
+  getOrderById,
+  createOrder,
+  updateOrder,
+  changeOrderStatus,
+} from './orders.api';

@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import OperationModal, { type OperationData, type OperationStatus } from '../../components/modals/OperationModal';
+import { getOperations } from '../../api/operations.api';
+import type { OperationListResponse } from '../../api/types';
 import {
   Box,
   Typography,
@@ -344,143 +346,47 @@ interface Operation {
   weather: string;
 }
 
-const OPERATIONS: Operation[] = [
-  {
-    id: 1,
-    opNumber: 'OPS-2401-A',
-    orderNumber: 'ORD/99/2024',
-    activity: 'Transport Medyczny',
-    dateFrom: '14.10.2024',
-    dateTo: '15.10.2024',
-    plannedDateFrom: '14.10.2024',
-    plannedDateTo: '15.10.2024',
-    status: 'Zaplanowane',
-    helicopter: 'EC135 (SP-HXP)',
-    priority: 'Wysoki',
-    routeFrom: 'EPSB',
-    routeTo: 'EPWA',
-    distanceNm: 342,
-    flightTime: '01:45',
-    weather: 'CAVOK',
-  },
-  {
-    id: 2,
-    opNumber: 'OPS-2401-B',
-    orderNumber: 'ORD/102/2024',
-    activity: 'Inspekcja Sieci',
-    dateFrom: '16.10.2024',
-    dateTo: '17.10.2024',
-    plannedDateFrom: '18.10.2024',
-    plannedDateTo: '19.10.2024',
-    status: 'Potwierdzone',
-    helicopter: 'AS350 (SP-SKY)',
-    priority: 'Średni',
-    routeFrom: 'EPKK',
-    routeTo: 'EPWR',
-    distanceNm: 198,
-    flightTime: '01:02',
-    weather: 'SCT 3000',
-  },
-  {
-    id: 3,
-    opNumber: 'OPS-2402-C',
-    orderNumber: 'ORD/115/2024',
-    activity: 'Akcja SAR',
-    dateFrom: '18.10.2024',
-    dateTo: null,
-    plannedDateFrom: null,
-    plannedDateTo: null,
-    status: 'Wprowadzone',
+// TODO: UI CHANGES 2026-04-01 — Mock data replaced with API calls
+// const OPERATIONS: Operation[] = [ ... 7 mock operations removed ... ];
+
+/** Format ISO date (YYYY-MM-DD) to DD.MM.YYYY for display */
+function fmtDate(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const [y, m, d] = iso.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+/** Adapter: map API OperationListResponse to the UI Operation shape */
+function toOperation(op: OperationListResponse, idx: number): Operation {
+  return {
+    id: idx + 1,
+    opNumber: op.id.substring(0, 12),
+    orderNumber: op.orderNumber,
+    activity: op.activityTypes.map(t => t.replace(/_/g, ' ')).join(', ') || '—',
+    dateFrom: fmtDate(op.proposedDateEarliest) ?? '—',
+    dateTo: fmtDate(op.proposedDateLatest) ?? null,
+    plannedDateFrom: fmtDate(op.plannedDateEarliest) ?? null,
+    plannedDateTo: fmtDate(op.plannedDateLatest) ?? null,
+    status: (op.statusLabel ?? 'Wprowadzone') as StatusKey,
     helicopter: '—',
-    priority: 'Wysoki',
-    routeFrom: 'EPGD',
-    routeTo: 'EPSC',
-    distanceNm: 87,
-    flightTime: '00:28',
-    weather: 'BKN 1500',
-  },
-  {
-    id: 4,
-    opNumber: 'OPS-2403-X',
-    orderNumber: 'ORD/128/2024',
-    activity: 'Dostawa Cargo',
-    dateFrom: '20.10.2024',
-    dateTo: '22.10.2024',
-    plannedDateFrom: null,
-    plannedDateTo: null,
-    status: 'Wprowadzone',
-    helicopter: '—',
-    priority: 'Niski',
-    routeFrom: 'EPPO',
-    routeTo: 'EPLL',
-    distanceNm: 145,
-    flightTime: '00:46',
-    weather: 'CAVOK',
-  },
-  {
-    id: 5,
-    opNumber: 'OPS-2398-M',
-    orderNumber: 'ORD/88/2024',
-    activity: 'Patrol Granicy',
-    dateFrom: '10.10.2024',
-    dateTo: '10.10.2024',
-    plannedDateFrom: '10.10.2024',
-    plannedDateTo: '10.10.2024',
-    status: 'Zrealizowane',
-    helicopter: 'AW139 (SP-NXB)',
-    priority: 'Średni',
-    routeFrom: 'EPBY',
-    routeTo: 'EPBY',
-    distanceNm: 412,
-    flightTime: '02:10',
-    weather: 'CAVOK',
-  },
-  {
-    id: 6,
-    opNumber: 'OPS-2400-K',
-    orderNumber: 'ORD/94/2024',
-    activity: 'Kalibracja Nawigacyjna',
-    dateFrom: '12.10.2024',
-    dateTo: '13.10.2024',
-    plannedDateFrom: '13.10.2024',
-    plannedDateTo: '14.10.2024',
-    status: 'Częściowo zrealizowane',
-    helicopter: 'Bell 407 (SP-HBL)',
-    priority: 'Niski',
-    routeFrom: 'EPWW',
-    routeTo: 'EPWW',
-    distanceNm: 220,
-    flightTime: '01:08',
-    weather: 'VFR',
-  },
-  {
-    id: 7,
-    opNumber: 'OPS-2399-R',
-    orderNumber: 'ORD/91/2024',
-    activity: 'Transport Medyczny',
-    dateFrom: '11.10.2024',
-    dateTo: '11.10.2024',
-    plannedDateFrom: null,
-    plannedDateTo: null,
-    status: 'Rezygnacja',
-    helicopter: '—',
-    priority: 'Wysoki',
-    routeFrom: 'EPKK',
-    routeTo: 'EPWA',
-    distanceNm: 252,
-    flightTime: '01:18',
-    weather: 'IFR',
-  },
-];
+    priority: '—',
+    routeFrom: '—',
+    routeTo: '—',
+    distanceNm: 0,
+    flightTime: '—',
+    weather: '—',
+  };
+}
 
 type TabKey = 'all' | 'Wprowadzone' | 'Potwierdzone' | 'Zaplanowane' | 'Zrealizowane';
 
-const FEATURED_OPS = [
-  { op: OPERATIONS[0], actionLabel: undefined },
-  { op: OPERATIONS[1], actionLabel: 'Planuj' },
-  { op: OPERATIONS[2], actionLabel: 'Potwierdź' },
-  { op: OPERATIONS[3], actionLabel: 'Potwierdź' },
-];
+// TODO: UI CHANGES 2026-04-01 — FEATURED_OPS now derived from live data (see component)
+// const FEATURED_OPS = [
+//   { op: OPERATIONS[0], actionLabel: undefined },
+//   { op: OPERATIONS[1], actionLabel: 'Planuj' },
+//   { op: OPERATIONS[2], actionLabel: 'Potwierdź' },
+//   { op: OPERATIONS[3], actionLabel: 'Potwierdź' },
+// ];
 
 /* ── Edit helpers ──────────────────────────────────────────────────────── */
 const STATUS_MAP: Record<StatusKey, OperationStatus> = {
@@ -503,9 +409,29 @@ function toDashDate(d: string): string {
 export default function OperationListPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [search, setSearch] = useState('');
-  const [selectedOp, setSelectedOp] = useState<Operation>(OPERATIONS[0]);
+  const [apiOps, setApiOps] = useState<OperationListResponse[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingOperation, setEditingOperation] = useState<OperationData | null>(null);
+
+  const fetchOperations = useCallback(async () => {
+    try {
+      const data = await getOperations();
+      setApiOps(data);
+    } catch (err) {
+      console.error('Failed to fetch operations:', err);
+    }
+  }, []);
+
+  useEffect(() => { fetchOperations(); }, [fetchOperations]);
+
+  const OPERATIONS = apiOps.map(toOperation);
+  const [selectedOp, setSelectedOp] = useState<Operation | null>(null);
+  const currentSelected = selectedOp ?? OPERATIONS[0] ?? null;
+
+  const FEATURED_OPS = OPERATIONS.slice(0, 4).map((op, i) => ({
+    op,
+    actionLabel: i === 0 ? undefined : i <= 2 ? 'Potwierdź' : 'Planuj',
+  }));
 
   const filtered = OPERATIONS.filter((op) => {
     const matchesTab =
@@ -739,7 +665,7 @@ export default function OperationListPage() {
                       onClick={() => setSelectedOp(op)}
                       sx={{
                         bgcolor:
-                          selectedOp.id === op.id
+                          currentSelected?.id === op.id
                             ? `${aeroColors.primary}0d`
                             : idx % 2 === 0
                             ? aeroColors.surfaceContainerLowest
@@ -749,7 +675,7 @@ export default function OperationListPage() {
                         '&:hover': {
                           bgcolor: `${aeroColors.primary}0a`,
                         },
-                        ...(selectedOp.id === op.id && {
+                        ...(currentSelected?.id === op.id && {
                           borderLeft: `2px solid ${aeroColors.tertiary}`,
                         }),
                       }}
@@ -909,7 +835,7 @@ export default function OperationListPage() {
               />
 
               <Typography sx={{ ...SECTION_LABEL_SX, mb: 2 }}>
-                Podgląd operacji: {selectedOp.opNumber}
+                Podgląd operacji: {currentSelected?.opNumber}
               </Typography>
 
               {/* Route display */}
@@ -936,7 +862,7 @@ export default function OperationListPage() {
                       letterSpacing: '0.06em',
                     }}
                   >
-                    {selectedOp.routeFrom}
+                    {currentSelected?.routeFrom}
                   </Typography>
                 </Box>
 
@@ -971,7 +897,7 @@ export default function OperationListPage() {
                       letterSpacing: '0.06em',
                     }}
                   >
-                    {selectedOp.routeTo}
+                    {currentSelected?.routeTo}
                   </Typography>
                 </Box>
               </Box>
@@ -979,8 +905,8 @@ export default function OperationListPage() {
               {/* Route metrics */}
               <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
                 {[
-                  { label: 'Dystans', value: `${selectedOp.distanceNm} NM`, color: aeroColors.tertiary },
-                  { label: 'Czas lotu', value: `${selectedOp.flightTime} H`, color: aeroColors.primary },
+                  { label: 'Dystans', value: `${currentSelected?.distanceNm} NM`, color: aeroColors.tertiary },
+                  { label: 'Czas lotu', value: `${currentSelected?.flightTime} H`, color: aeroColors.primary },
                 ].map((m) => (
                   <Grid key={m.label} size={6}>
                     <Box sx={{ bgcolor: aeroColors.surfaceContainerLowest, borderRadius: 1.5, p: 1.5, textAlign: 'center' }}>
@@ -1007,20 +933,20 @@ export default function OperationListPage() {
                   {
                     icon: <AirplanemodeActiveOutlinedIcon sx={{ fontSize: 14 }} />,
                     label: 'Wymagana maszyna',
-                    value: selectedOp.helicopter,
+                    value: currentSelected?.helicopter,
                     color: aeroColors.primary,
                   },
                   {
                     icon: <WbSunnyOutlinedIcon sx={{ fontSize: 14 }} />,
                     label: 'Prognozowana pogoda',
-                    value: selectedOp.weather,
+                    value: currentSelected?.weather,
                     color: aeroColors.tertiary,
                   },
                   {
                     icon: <PriorityHighOutlinedIcon sx={{ fontSize: 14 }} />,
                     label: 'Priorytet',
-                    value: selectedOp.priority,
-                    color: priorityColor(selectedOp.priority),
+                    value: currentSelected?.priority,
+                    color: priorityColor(currentSelected?.priority),
                   },
                 ].map((row) => (
                   <Box
