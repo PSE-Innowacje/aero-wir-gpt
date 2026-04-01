@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <title>AERO — Prezentacja systemu</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/theme/black.min.css">
+  <style>
+    :root {
+      --aero-bg: #111316;
+      --aero-surface: #1a1c1f;
+      --aero-primary: #abc9ef;
+      --aero-secondary: #ffb693;
+      --aero-tertiary: #00daf3;
+      --aero-text: #e2e2e6;
+      --aero-muted: #8e9196;
+      --aero-green: #4caf50;
+      --aero-red: #ef5350;
+    }
+    .reveal { background: var(--aero-bg); }
+    .reveal h1, .reveal h2, .reveal h3 {
+      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      color: var(--aero-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .reveal h1 { font-size: 3em; }
+    .reveal h2 { font-size: 1.5em; color: var(--aero-tertiary); }
+    .reveal h3 { font-size: 1.1em; color: var(--aero-secondary); }
+    .reveal p, .reveal li, .reveal td {
+      font-family: 'Inter', sans-serif;
+      color: var(--aero-text);
+      font-size: 0.65em;
+      line-height: 1.6;
+    }
+    .reveal ul { list-style: none; padding-left: 0; }
+    .reveal li::before { content: "→ "; color: var(--aero-tertiary); font-weight: 700; }
+    .reveal .muted { color: var(--aero-muted); font-size: 0.55em; }
+    .reveal img {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      max-height: 480px;
+    }
+    .reveal table { margin: 0 auto; border-collapse: collapse; }
+    .reveal th {
+      color: var(--aero-tertiary);
+      font-size: 0.6em;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 16px;
+    }
+    .reveal td {
+      padding: 6px 16px;
+      font-size: 0.6em;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 0.55em;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+    .badge-admin { background: #9c27b0; color: #fff; }
+    .badge-planner { background: var(--aero-primary); color: #111; }
+    .badge-supervisor { background: var(--aero-secondary); color: #111; }
+    .badge-pilot { background: var(--aero-tertiary); color: #111; }
+    .badge-done { background: var(--aero-green); color: #111; }
+    .badge-partial { background: var(--aero-secondary); color: #111; }
+    .two-col { display: flex; gap: 40px; align-items: flex-start; }
+    .two-col > * { flex: 1; }
+    .tech-tag {
+      display: inline-block;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 4px;
+      padding: 4px 12px;
+      margin: 4px;
+      font-size: 0.55em;
+      color: var(--aero-text);
+    }
+    .stat-box {
+      display: inline-block;
+      text-align: center;
+      padding: 16px 28px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      background: rgba(30,32,35,0.65);
+      margin: 8px;
+    }
+    .stat-box .number {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2em;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .stat-box .label {
+      font-size: 0.5em;
+      color: var(--aero-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-top: 4px;
+    }
+    .pro { color: var(--aero-green); }
+    .con { color: var(--aero-red); }
+    .neutral { color: var(--aero-secondary); }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+  <!-- TITLE -->
+  <section>
+    <h1>AERO</h1>
+    <p style="color: var(--aero-tertiary); letter-spacing: 0.3em; font-size: 0.5em; text-transform: uppercase;">
+      Tactical Aviation Intelligence
+    </p>
+    <br>
+    <p>System zarządzania operacjami lotniczymi helikopterów</p>
+    <p class="muted">PSE Innowacje · 2026</p>
+  </section>
+
+  <!-- 1. REALIZACJA WYMAGAŃ -->
+  <section>
+    <section>
+      <h2>1. Realizacja wymagań</h2>
+      <br>
+      <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+        <div class="stat-box">
+          <div class="number" style="color: var(--aero-green);">9/9</div>
+          <div class="label">User stories</div>
+        </div>
+        <div class="stat-box">
+          <div class="number" style="color: var(--aero-green);">6/6</div>
+          <div class="label">Encje (CRUD)</div>
+        </div>
+        <div class="stat-box">
+          <div class="number" style="color: var(--aero-tertiary);">57/68</div>
+          <div class="label">Taski impl.</div>
+        </div>
+        <div class="stat-box">
+          <div class="number" style="color: var(--aero-green);">112</div>
+          <div class="label">Testy E2E</div>
+        </div>
+      </div>
+      <br>
+      <p class="muted">MVP osiągnięte — pełny cykl: planowanie → zatwierdzanie → realizacja</p>
+    </section>
+
+    <section>
+      <h2>User stories — status</h2>
+      <table>
+        <thead><tr><th>Story</th><th>Opis</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>a)</td><td>Planista wprowadza operację lotniczą</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>b)</td><td>Planista śledzi status operacji</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>c)</td><td>Planista rezygnuje z operacji</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>d)</td><td>Nadzorujący zatwierdza/odrzuca operacje</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>e)</td><td>Pilot tworzy zlecenie z mapą i trasą</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>f)</td><td>Pilot wybiera helikopter + załogę z walidacją</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>g)</td><td>Nadzorujący zatwierdza/odrzuca zlecenia</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>h)</td><td>Pilot raportuje realizację</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>i)</td><td>Admin zarządza flotą, załogą, lądowiskami</td><td><span class="badge badge-done">DONE</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Wymagania funkcjonalne</h2>
+      <table>
+        <thead><tr><th>Moduł</th><th>Wymaganie</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Helikoptery</td><td>CRUD + walidacja inspekcji</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>Załoga</td><td>CRUD + walidacja licencji pilota</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>Lądowiska</td><td>CRUD + mapa</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>Użytkownicy</td><td>CRUD + 4 role + BCrypt</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>Operacje</td><td>7 statusów, KML, mapa, historia zmian, komentarze</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>Zlecenia</td><td>7 statusów, 5 walidacji, kaskadowanie, auto-calc</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>Uprawnienia</td><td>Menu + edycja wg roli (PRD 7.2)</td><td><span class="badge badge-done">DONE</span></td></tr>
+          <tr><td>Bezpieczeństwo</td><td>Sesja JSESSIONID + Spring Security</td><td><span class="badge badge-done">DONE</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </section>
+
+  <!-- 2. EXTRA FUNKCJONALNOŚCI -->
+  <section>
+    <h2>2. Extra funkcjonalności</h2>
+    <p class="muted" style="margin-bottom: 20px;">Poza zakresem PRD — dodane przez zespół</p>
+    <div class="two-col">
+      <div>
+        <ul>
+          <li>Pogoda na żywo (Open-Meteo API) z wyborem miasta</li>
+          <li>Dashboard z telemetrią i logami misji</li>
+          <li>Dark aerospace theme (glass-morphism, GSAP animacje)</li>
+          <li>Responsywny sidebar (collapse na mobile)</li>
+          <li>Swagger UI — interaktywna dokumentacja API</li>
+        </ul>
+      </div>
+      <div>
+        <ul>
+          <li>112 testów E2E (Playwright) — auth, CRUD, performance</li>
+          <li>Postman collection — 32 endpointy</li>
+          <li>Kolekcja KML z trasami w PL (Haversine)</li>
+          <li>KML storage w MongoDB (binary) zamiast filesystem</li>
+          <li>Easter eggi (triple-click crash, Ctrl+H muzyka)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. AI SETUP -->
+  <section>
+    <section>
+      <h2>3. Setup AI</h2>
+      <br>
+      <div class="two-col">
+        <div>
+          <h3>Narzędzie</h3>
+          <p style="font-size: 0.75em; color: var(--aero-tertiary); font-weight: 700;">Claude Code (CLI)</p>
+          <p>Model: Claude Opus 4</p>
+          <p>Kontekst: 1M tokenów</p>
+        </div>
+        <div>
+          <h3>Konfiguracja</h3>
+          <ul>
+            <li><strong>CLAUDE.md</strong> — 400+ linii kontekstu projektu (custom)</li>
+            <li>Architektura, stack, konwencje, workflow statusów</li>
+            <li>Integration Policy, E2E Testing Policy</li>
+            <li>Conventional Commits, branch naming</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Proces pracy z AI</h2>
+      <br>
+      <table>
+        <thead><tr><th>Etap</th><th>Co robił AI</th><th>Co robił człowiek</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>1. Planowanie</td>
+            <td>Analiza PRD, architektura, 68 tasków</td>
+            <td>Decyzje (Q&A), wybór stacku</td>
+          </tr>
+          <tr>
+            <td>2. Backend</td>
+            <td>Cały kod Java — domain, service, controller, security</td>
+            <td>Code review, testy manualne</td>
+          </tr>
+          <tr>
+            <td>3. Frontend</td>
+            <td>Cały kod React — pages, modals, API, theme</td>
+            <td>UX feedback, poprawki stylu</td>
+          </tr>
+          <tr>
+            <td>4. Integracja</td>
+            <td>Auth flow, role-based UI, E2E testy</td>
+            <td>Weryfikacja, testowanie na żywo</td>
+          </tr>
+          <tr>
+            <td>5. Zmiany</td>
+            <td>Migracja Couchbase → MongoDB, KML → binary</td>
+            <td>Decyzja o zmianie, merge PR-ów</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>CLAUDE.md — serce konfiguracji</h2>
+      <br>
+      <div class="two-col">
+        <div>
+          <h3>Co zawiera</h3>
+          <ul>
+            <li>Opis projektu i role użytkowników</li>
+            <li>Tech stack + layout repozytorium</li>
+            <li>Architektura backend (warstwy, auth, KML)</li>
+            <li>Status workflows (operacje + zlecenia)</li>
+            <li>5 reguł walidacji lotniczej</li>
+            <li>Resolved architecture decisions</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Co wymusza</h3>
+          <ul>
+            <li>OpenAPI adnotacje na każdym endpoincie</li>
+            <li>E2E testy przy zmianach API/UI</li>
+            <li>Frontend musi używać real API (nie mock)</li>
+            <li>Conventional Commits</li>
+            <li>Postman collection zawsze aktualna</li>
+            <li>Plik .md per task → finished/ po zakończeniu</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <!-- 4. STOS TECHNOLOGICZNY -->
+  <section>
+    <section>
+      <h2>4. Stos technologiczny</h2>
+      <br>
+      <div class="two-col">
+        <div>
+          <h3>Frontend</h3>
+          <span class="tech-tag">React 18</span>
+          <span class="tech-tag">TypeScript</span>
+          <span class="tech-tag">Vite</span>
+          <span class="tech-tag">Material UI 7</span>
+          <span class="tech-tag">Leaflet + OpenStreetMap</span>
+          <span class="tech-tag">GSAP</span>
+          <span class="tech-tag">Axios</span>
+          <span class="tech-tag">Zod</span>
+          <span class="tech-tag">react-hook-form</span>
+        </div>
+        <div>
+          <h3>Backend</h3>
+          <span class="tech-tag">Java 21</span>
+          <span class="tech-tag">Spring Boot 3.4</span>
+          <span class="tech-tag">Spring Security</span>
+          <span class="tech-tag">Spring Data MongoDB</span>
+          <span class="tech-tag">MongoDB 7</span>
+          <span class="tech-tag">SpringDoc OpenAPI</span>
+          <span class="tech-tag">Lombok</span>
+          <span class="tech-tag">BCrypt</span>
+        </div>
+      </div>
+      <br>
+      <div>
+        <h3>Testy &amp; Tooling</h3>
+        <span class="tech-tag">Playwright (112 E2E)</span>
+        <span class="tech-tag">Spock Framework</span>
+        <span class="tech-tag">Testcontainers</span>
+        <span class="tech-tag">Postman (32 endpointy)</span>
+        <span class="tech-tag">Gradle Kotlin DSL</span>
+        <span class="tech-tag">Docker</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Architektura</h2>
+      <br>
+      <p style="font-family: monospace; font-size: 0.7em; color: var(--aero-tertiary);">
+        Browser (SPA) &nbsp;←HTTPS→&nbsp; Spring Boot :8080 &nbsp;←driver→&nbsp; MongoDB :27017
+      </p>
+      <br>
+      <p style="font-family: monospace; font-size: 0.6em; color: var(--aero-muted);">
+        Controller → Service → Repository → Database<br>
+        &nbsp;&nbsp;(DTO)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Document)&nbsp;&nbsp;(MongoDB)
+      </p>
+      <br>
+      <p>6 kolekcji dokumentów · KML binary w MongoDB · Sesje JSESSIONID · Monorepo</p>
+    </section>
+  </section>
+
+  <!-- SCREENSHOTS -->
+  <section>
+    <section>
+      <h2>Demo — ekrany aplikacji</h2>
+      <img src="e2e/screenshots/admin_00_login.png" alt="Login">
+      <p class="muted">Ekran logowania · sesja JSESSIONID · BCrypt · Spring Security</p>
+    </section>
+    <section>
+      <h2>Dashboard</h2>
+      <img src="e2e/screenshots/admin_01_dashboard.png" alt="Dashboard">
+      <p class="muted">Pogoda na żywo (Open-Meteo) · Wybór miasta · Statystyki · Telemetria</p>
+    </section>
+    <section>
+      <h2>Helikoptery</h2>
+      <img src="e2e/screenshots/admin_02_helicopters.png" alt="Helicopters">
+      <p class="muted">CRUD floty · Status ACTIVE/INACTIVE · Inspekcja, zasięg, udźwig</p>
+    </section>
+    <section>
+      <h2>Załoga</h2>
+      <img src="e2e/screenshots/admin_03_crew.png" alt="Crew">
+      <p class="muted">Piloci i obserwatorzy · Licencje · Szkolenia · Waga</p>
+    </section>
+    <section>
+      <h2>Lądowiska</h2>
+      <img src="e2e/screenshots/admin_04_landing-sites.png" alt="Landing sites">
+      <p class="muted">GPS · Podgląd na mapie · 8 prawdziwych lotnisk PL</p>
+    </section>
+    <section>
+      <h2>Operacje lotnicze</h2>
+      <img src="e2e/screenshots/admin_05_operations.png" alt="Operations">
+      <p class="muted">7 statusów · Upload KML · Trasa na mapie · Historia zmian</p>
+    </section>
+    <section>
+      <h2>Zlecenia lotnicze</h2>
+      <img src="e2e/screenshots/admin_06_orders.png" alt="Orders">
+      <p class="muted">5 reguł walidacji · Kaskadowanie statusów · Planowany/rzeczywisty czas</p>
+    </section>
+    <section>
+      <h2>Użytkownicy</h2>
+      <img src="e2e/screenshots/admin_07_users.png" alt="Users">
+      <p class="muted">4 role · BCrypt hasła · Powiązanie User ↔ CrewMember</p>
+    </section>
+    <section>
+      <h2>Planista — ograniczony widok</h2>
+      <img src="e2e/screenshots/planner_01_dashboard.png" alt="Planner">
+      <p class="muted">Widzi tylko: Dashboard + Operacje lotnicze (zgodnie z PRD 7.2)</p>
+    </section>
+  </section>
+
+  <!-- 5. WNIOSKI -->
+  <section>
+    <section>
+      <h2>5. Wrażenia i wnioski</h2>
+      <br>
+      <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
+        <div class="stat-box">
+          <div class="number" style="color: var(--aero-green);">~3 dni</div>
+          <div class="label">Do działającego MVP</div>
+        </div>
+        <div class="stat-box">
+          <div class="number" style="color: var(--aero-tertiary);">68</div>
+          <div class="label">Tasków wygenerowanych</div>
+        </div>
+        <div class="stat-box">
+          <div class="number" style="color: var(--aero-green);">32</div>
+          <div class="label">Endpointów REST</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Co AI robi dobrze</h2>
+      <br>
+      <ul>
+        <li><span class="pro">Prędkość</span> — pełny backend + frontend w kilka dni, nie tygodni</li>
+        <li><span class="pro">Skupienie na MVP</span> — AI rozumie priorytet biznesowy, nie grzęźnie w detalach</li>
+        <li><span class="pro">Zmiana stacku</span> — migracja Couchbase → MongoDB przeszła gładko, AI przepisał wszystko</li>
+        <li><span class="pro">Scaffolding</span> — architektura, security config, warstwy — gotowe od razu</li>
+        <li><span class="pro">Boilerplate</span> — DTOs, CRUD, mapowania, walidacje — generowane bezbłędnie</li>
+        <li><span class="pro">Dokumentacja</span> — CLAUDE.md, README, Swagger, Postman — na bieżąco</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Na co uważać</h2>
+      <br>
+      <ul>
+        <li><span class="con">Code review obowiązkowy</span> — kod nie przeszedłby produkcyjnego review bez poprawek</li>
+        <li><span class="con">Reużywalność</span> — komponenty bywają za duże (modals ~1100 linii), mało DRY</li>
+        <li><span class="con">Mock data</span> — AI lubi wrzucać hardcoded dane zamiast integrować z API</li>
+        <li><span class="con">Konwersja typów</span> — status "Aktywny" vs "ACTIVE" — trzeba pilnować spójności</li>
+        <li><span class="neutral">Trzeba pilnować</span> — konwencje, nazewnictwo, struktura plików wymagają stałego nadzoru</li>
+        <li><span class="neutral">Kontekst</span> — im lepszy CLAUDE.md, tym lepsze wyniki. Inwestycja w prompt się zwraca</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Podsumowanie</h2>
+      <br>
+      <p style="font-size: 0.75em; color: var(--aero-text); max-width: 800px; margin: 0 auto; text-align: left; line-height: 1.8;">
+        AI drastycznie przyspiesza development — szczególnie scaffolding, CRUD, integrację
+        i powtarzalny boilerplate. Zmiana bazy danych z Couchbase na MongoDB przeszła
+        praktycznie bezproblemowo. Natomiast kod wymaga ludzkiego code review —
+        AI generuje rozwiązania które działają, ale nie zawsze są optymalne pod kątem
+        reużywalności i czystości. Kluczem jest dobra konfiguracja (CLAUDE.md)
+        i traktowanie AI jako junior developera który jest bardzo szybki,
+        ale wymaga nadzoru.
+      </p>
+    </section>
+  </section>
+
+  <!-- THANK YOU -->
+  <section>
+    <h1>Dziękujemy</h1>
+    <br>
+    <p style="color: var(--aero-tertiary); letter-spacing: 0.2em; font-size: 0.6em; text-transform: uppercase;">
+      AERO — Tactical Aviation Intelligence
+    </p>
+    <br>
+    <p class="muted">Pytania?</p>
+  </section>
+
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    transition: 'fade',
+    transitionSpeed: 'fast',
+    backgroundTransition: 'fade',
+  });
+</script>
+</body>
+</html>

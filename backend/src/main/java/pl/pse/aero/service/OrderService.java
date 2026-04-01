@@ -94,16 +94,19 @@ public class OrderService {
         existing.setActualDeparture(updates.getActualDeparture());
         existing.setActualArrival(updates.getActualArrival());
 
-        validateOperations(existing.getOperationIds());
+        List<String> newOpIds = existing.getOperationIds() != null ? existing.getOperationIds() : List.of();
+        List<String> removed = oldOpIds.stream().filter(id2 -> !newOpIds.contains(id2)).toList();
+        List<String> added = newOpIds.stream().filter(id2 -> !oldOpIds.contains(id2)).toList();
+
+        // Only validate newly added operations (existing ones are already SCHEDULED)
+        validateOperations(added);
+
         existing.setCrewWeightKg(calculateCrewWeight(existing.getPilotId(), existing.getCrewMemberIds()));
         existing.setEstimatedRouteLengthKm(calculateRouteLength(existing.getOperationIds()));
 
         validateFlightRules(existing);
 
         // Cascade: unschedule removed ops, schedule new ops
-        List<String> newOpIds = existing.getOperationIds() != null ? existing.getOperationIds() : List.of();
-        List<String> removed = oldOpIds.stream().filter(id2 -> !newOpIds.contains(id2)).toList();
-        List<String> added = newOpIds.stream().filter(id2 -> !oldOpIds.contains(id2)).toList();
         unscheduleOperations(removed);
         scheduleOperations(added);
 
