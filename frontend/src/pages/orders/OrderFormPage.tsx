@@ -22,7 +22,6 @@ import { aeroColors } from '../../theme';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
-import MapView from '../../components/MapView';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import {
   getOrderById,
@@ -332,8 +331,6 @@ export default function OrderFormPage() {
   const watchedHelicopterId = useWatch({ control, name: 'helicopterId' });
   const watchedCrewMemberIds = useWatch({ control, name: 'crewMemberIds' });
   const watchedOperationIds = useWatch({ control, name: 'operationIds' });
-  const watchedDepartureSiteId = useWatch({ control, name: 'departureSiteId' });
-  const watchedArrivalSiteId = useWatch({ control, name: 'arrivalSiteId' });
   const watchedPlannedDeparture = useWatch({
     control,
     name: 'plannedDeparture',
@@ -412,47 +409,6 @@ export default function OrderFormPage() {
       if (op) total += op.routeLengthKm;
     }
     return total;
-  }, [watchedOperationIds, loadedOps]);
-
-  /* -- Map data -------------------------------------------------------- */
-  const mapMarkers = useMemo(() => {
-    const markers: Array<{
-      position: [number, number];
-      label?: string;
-      color?: 'blue' | 'red' | 'green';
-    }> = [];
-
-    const depSite = landingSites.find((s) => s.id === watchedDepartureSiteId);
-    if (depSite) {
-      markers.push({
-        position: [depSite.latitude, depSite.longitude],
-        label: `Odlot: ${depSite.name}`,
-        color: 'green',
-      });
-    }
-
-    const arrSite = landingSites.find((s) => s.id === watchedArrivalSiteId);
-    if (arrSite) {
-      markers.push({
-        position: [arrSite.latitude, arrSite.longitude],
-        label: `Przylot: ${arrSite.name}`,
-        color: 'red',
-      });
-    }
-
-    return markers;
-  }, [landingSites, watchedDepartureSiteId, watchedArrivalSiteId]);
-
-  const mapPolylines = useMemo(() => {
-    const lines: number[][][] = [];
-    const ids = watchedOperationIds ?? [];
-    for (const opId of ids) {
-      const op = loadedOps.get(opId);
-      if (op?.kmlPoints && op.kmlPoints.length > 0) {
-        lines.push(op.kmlPoints);
-      }
-    }
-    return lines;
   }, [watchedOperationIds, loadedOps]);
 
   /* -- Validation warnings (Task 63) ----------------------------------- */
@@ -1412,19 +1368,7 @@ export default function OrderFormPage() {
           )}
         </Box>
 
-        {/* --- Map (Task 62) ------------------------------------------- */}
-        {(mapMarkers.length > 0 || mapPolylines.length > 0) && (
-          <Box sx={{ ...GLASS_CARD, p: 3, mb: 3 }}>
-            <SectionDivider label="Mapa" />
-            <Box sx={{ mt: 2 }}>
-              <MapView
-                polylines={mapPolylines}
-                markers={mapMarkers}
-                height={420}
-              />
-            </Box>
-          </Box>
-        )}
+
 
         {/* --- Save button --------------------------------------------- */}
         {!isAdminReadOnly && !isTerminal && (
