@@ -310,7 +310,7 @@ export default function OperationFormPage() {
   const [kmlFileError, setKmlFileError] = useState('');
   const [kmlUploading, setKmlUploading] = useState(false);
   const [kmlPoints, setKmlPoints] = useState<number[][] | null>(null);
-  const [kmlFilePath, setKmlFilePath] = useState<string | null>(null);
+  const [kmlFileName, setKmlFilePath] = useState<string | null>(null);
   const [routeLengthKm, setRouteLengthKm] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -397,7 +397,7 @@ export default function OperationFormPage() {
         setOperation(op);
         setComments(op.comments ?? []);
         setKmlPoints(op.kmlPoints ?? null);
-        setKmlFilePath(op.kmlFilePath ?? null);
+        setKmlFilePath(op.kmlFileName ?? null);
         setRouteLengthKm(op.routeLengthKm ?? null);
         reset({
           orderNumber: op.orderNumber,
@@ -458,7 +458,7 @@ export default function OperationFormPage() {
           plannedDateLatest: values.plannedDateLatest || undefined,
           contacts: values.contacts ?? [],
           postCompletionNotes: values.postCompletionNotes || undefined,
-          kmlFilePath: kmlFilePath ?? undefined,
+          kmlFileName: kmlFileName ?? undefined,
           kmlPoints: kmlPoints ?? undefined,
           routeLengthKm: routeLengthKm ?? undefined,
         };
@@ -480,7 +480,7 @@ export default function OperationFormPage() {
     [
       isEdit,
       id,
-      kmlFilePath,
+      kmlFileName,
       kmlPoints,
       routeLengthKm,
       navigate,
@@ -1065,7 +1065,7 @@ export default function OperationFormPage() {
                         aby zmienic
                       </Typography>
                     </>
-                  ) : kmlFilePath ? (
+                  ) : kmlFileName ? (
                     <>
                       <Typography
                         sx={{

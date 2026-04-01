@@ -83,7 +83,7 @@ const mockOperation: OperationResponse = {
   id: 'op-1',
   orderNumber: 'ZL-001',
   shortDescription: 'Inspekcja linii 110kV',
-  kmlFilePath: '/uploads/test.kml',
+  kmlFileName: '/uploads/test.kml',
   kmlPoints: [[52.0, 19.5], [52.1, 19.6]],
   proposedDateEarliest: '2026-05-01',
   proposedDateLatest: '2026-05-15',
