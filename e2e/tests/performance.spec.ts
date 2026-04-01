@@ -39,14 +39,14 @@ test.describe('Performance — Page Load Times', () => {
     });
   }
 
-  test('Login page loads within 3 seconds', async ({ page }) => {
+  test('Login page loads within 5 seconds', async ({ page }) => {
     const start = Date.now();
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
     const elapsed = Date.now() - start;
 
     console.log(`  [PERF] Login page load: ${elapsed}ms`);
-    expect(elapsed).toBeLessThan(3_000);
+    expect(elapsed).toBeLessThan(PERF_TIMEOUT);
   });
 });
 

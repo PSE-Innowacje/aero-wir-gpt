@@ -60,12 +60,10 @@ docker exec -it aero-mongodb mongosh aero   # shell
 **Mongo Express** (web-based, runs in Docker):
 
 ```bash
-docker run -d --name aero-mongo-express \
-  --link aero-mongodb:mongo \
-  -p 8081:8081 \
-  -e ME_CONFIG_MONGODB_SERVER=mongo \
-  mongo-express
+docker run -d --name aero-mongo-express  --link aero-mongodb:mongo -p 8081:8081    -e ME_CONFIG_MONGODB_SERVER=mongo mongo-express
 ```
+
+Default creds to GUI are: admin / pass
 
 Then open http://localhost:8081 to browse collections, edit documents, and run queries.
 

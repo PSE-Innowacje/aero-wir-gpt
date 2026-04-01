@@ -409,6 +409,29 @@ Swagger UI is available at `http://localhost:8080/swagger-ui.html` when the back
 
 ---
 
+## Integration Policy
+
+All layers of the application must stay in sync. When making changes:
+
+1. **E2E tests must match the current API and UI** — if a controller endpoint
+   changes (path, request/response body, roles), update the corresponding E2E
+   test. If a UI component changes (field names, placeholders, selectors), update
+   the UI tests. Do not leave tests referencing mock data that no longer exists.
+
+2. **Frontend must use the real API** — pages must fetch data from the backend,
+   not hardcoded mock arrays. If mock data is temporarily needed, comment it out
+   with `// TODO: UI CHANGES <date>` so it is clear and removable.
+
+3. **Postman collection must match the current API** — every time a controller
+   method is added, removed, or its contract changes, update
+   `backend/src/test/resources/AERO-API.postman_collection.json`.
+
+4. **UI elements must respect backend role permissions** — if the backend returns
+   403 for a given role on an endpoint, the corresponding UI button/action must
+   be hidden or disabled for that role.
+
+---
+
 ## E2E Testing Policy
 
 E2E tests live in `e2e/` and use Playwright. They cover UI flows and API integration.
@@ -434,6 +457,7 @@ cd e2e && npm run test:ui   # Playwright UI mode
 - API tests use `ApiHelper` class for authenticated requests
 - UI tests use `loginViaUI()` for browser-based authentication
 - Performance tests measure page load and API response times
+- UI tests must use selectors that match the actual rendered DOM (not stale mock data)
 
 ---
 

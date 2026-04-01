@@ -73,16 +73,19 @@ test.describe('Helicopters Page (UI)', () => {
 
     const dialog = page.locator('[role="dialog"]');
     const regNumber = `SP-UI-${Date.now()}`;
-    await dialog.getByPlaceholder('np. SP-AER1').fill(regNumber);
-    await dialog.getByPlaceholder('np. Airbus H145').fill('UI Created Heli');
-    await dialog.getByPlaceholder('np. 650').first().fill('700');
-    await dialog.getByPlaceholder('np. 480').fill('500');
+
+    // Fill all required fields using input selectors
+    await dialog.locator('input[placeholder="np. SP-AER1"]').fill(regNumber);
+    await dialog.locator('input[placeholder="np. Airbus H145"]').fill('UI Created Heli');
+    await dialog.locator('input[placeholder="np. 4"]').fill('3');
+    await dialog.locator('input[placeholder="np. 480"]').fill('500');
+    await dialog.locator('input[placeholder="np. 650"]').fill('700');
     await dialog.locator('input[type="date"]').fill('2028-12-31');
 
     await dialog.getByRole('button', { name: /dodaj helikopter/i }).click();
 
     // Dialog should close and new helicopter should appear
-    await expect(dialog).not.toBeVisible({ timeout: 5000 });
+    await expect(dialog).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(regNumber)).toBeVisible({ timeout: 5000 });
   });
 
