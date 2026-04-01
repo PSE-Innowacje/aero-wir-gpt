@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import UserModal, { type UserData } from '../../components/modals/UserModal';
 import {
   Box,
   Typography,
@@ -369,7 +370,7 @@ function UserCard({ initials, name, uid, email, loginId, role, status }: UserCar
 }
 
 /* ── Mock data ─────────────────────────────────────────────────────────── */
-const USERS = [
+const INITIAL_USERS = [
   {
     id: 1,
     initials: 'JS',
@@ -460,7 +461,7 @@ const USERS = [
   },
 ];
 
-const CARD_USERS = USERS.slice(0, 4);
+const CARD_USERS_INIT = INITIAL_USERS.slice(0, 4);
 
 const ROLE_FILTERS: Array<{ key: string; label: string }> = [
   { key: 'all', label: 'Wszystkie role' },
@@ -479,11 +480,41 @@ const STATUS_FILTERS: Array<{ key: string; label: string }> = [
 
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function UserListPage() {
+  const [users, setUsers] = useState(INITIAL_USERS);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserData | null>(null);
 
-  const filtered = USERS.filter((u) => {
+  const handleSave = (data: UserData) => {
+    if (data.id) {
+      setUsers((prev) =>
+        prev.map((u) =>
+          String(u.id) === data.id
+            ? { ...u, firstName: data.firstName, lastName: data.lastName, email: data.email, role: data.role as RoleKey, initials: `${data.firstName[0]}${data.lastName[0]}`.toUpperCase() }
+            : u,
+        ),
+      );
+    } else {
+      setUsers((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          initials: `${data.firstName[0]}${data.lastName[0]}`.toUpperCase(),
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          loginId: `${data.firstName[0].toLowerCase()}.${data.lastName.toLowerCase()}`,
+          uid: `${String(Math.floor(Math.random() * 99999)).padStart(5, '0')}-A`,
+          role: data.role as RoleKey,
+          status: 'Aktywny' as StatusKey,
+        },
+      ]);
+    }
+  };
+
+  const filtered = users.filter((u) => {
     const q = search.toLowerCase();
     const matchesSearch =
       `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
@@ -495,13 +526,19 @@ export default function UserListPage() {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const pilotsCount = USERS.filter((u) => u.role === 'PILOT').length;
-  const plannersCount = USERS.filter((u) => u.role === 'PLANNER').length;
-  const supervisorsCount = USERS.filter((u) => u.role === 'SUPERVISOR').length;
-  const adminsCount = USERS.filter((u) => u.role === 'ADMIN').length;
+  const pilotsCount = users.filter((u) => u.role === 'PILOT').length;
+  const plannersCount = users.filter((u) => u.role === 'PLANNER').length;
+  const supervisorsCount = users.filter((u) => u.role === 'SUPERVISOR').length;
+  const adminsCount = users.filter((u) => u.role === 'ADMIN').length;
 
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
+      <UserModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSave}
+        user={editingUser}
+      />
 
       {/* ── Page header ── */}
       <Box
@@ -534,6 +571,7 @@ export default function UserListPage() {
         <Button
           variant="contained"
           startIcon={<PersonAddOutlinedIcon />}
+          onClick={() => { setEditingUser(null); setModalOpen(true); }}
           sx={{
             background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
             color: aeroColors.onPrimaryFixed,
@@ -598,7 +636,7 @@ export default function UserListPage() {
 
       {/* ── Featured user cards ── */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        {CARD_USERS.map((user) => (
+        {CARD_USERS_INIT.map((user) => (
           <Grid key={user.id} size={{ xs: 12, sm: 6, md: 3 }}>
             <UserCard
               initials={user.initials}
@@ -642,7 +680,7 @@ export default function UserListPage() {
               Rejestr użytkowników
             </Typography>
             <Typography sx={{ fontSize: '0.75rem', color: aeroColors.outline, mt: 0.25 }}>
-              Wyświetlono {filtered.length} z {USERS.length} rekordów bazy personelu
+              Wyświetlono {filtered.length} z {users.length} rekordów bazy personelu
             </Typography>
           </Box>
 
@@ -918,7 +956,7 @@ export default function UserListPage() {
           }}
         >
           <Typography sx={{ fontSize: '0.6875rem', color: aeroColors.outline, letterSpacing: '0.08em' }}>
-            Łącznie: {USERS.length} użytkowników w rejestrze
+            Łącznie: {users.length} użytkowników w rejestrze
           </Typography>
           <Typography
             sx={{
