@@ -29,6 +29,11 @@ export interface UserData {
 }
 
 export const ROLE_CONFIG: Record<UserRole, { label: string; color: string; bg: string }> = {
+  SUPERUSER: {
+    label: 'Superużytkownik',
+    color: '#ef5350',
+    bg: 'rgba(239,83,80,0.12)',
+  },
   ADMIN: {
     label: 'Administrator',
     color: '#c084fc',
