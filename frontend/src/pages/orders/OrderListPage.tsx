@@ -580,8 +580,11 @@ function NotificationsPanel() {
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function OrderListPage() {
   const { user } = useAuth();
-  const canCreate = user?.role === 'PILOT' || user?.role === 'SUPERUSER';
-  const canEdit = user?.role === 'PILOT' || user?.role === 'SUPERVISOR' || user?.role === 'SUPERUSER';
+  const isSuperuser = user?.role === 'SUPERUSER';
+  const isPilot = user?.role === 'PILOT' || isSuperuser;
+  const isSupervisor = user?.role === 'SUPERVISOR' || isSuperuser;
+  const canCreate = isPilot;
+  const canEdit = isPilot || isSupervisor;
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -987,8 +990,8 @@ export default function OrderListPage() {
                     {/* Actions */}
                     <TableCell sx={{ ...TD_SX, textAlign: 'right' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.25 }}>
-                        {/* Wprowadzone: Edytuj + Wyślij do akceptacji */}
-                        {canEdit && order.status === 'Wprowadzone' && (
+                        {/* Wprowadzone: Edytuj (pilot) + Wyślij do akceptacji (pilot) */}
+                        {isPilot && order.status === 'Wprowadzone' && (
                           <>
                             <RowAction
                               icon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
@@ -1004,8 +1007,8 @@ export default function OrderListPage() {
                             />
                           </>
                         )}
-                        {/* Przekazane do akceptacji: Zaakceptuj + Odrzuć */}
-                        {canEdit && order.status === 'Przekazane do akceptacji' && (
+                        {/* Przekazane do akceptacji: Zaakceptuj + Odrzuć (supervisor only) */}
+                        {isSupervisor && order.status === 'Przekazane do akceptacji' && (
                           <>
                             <RowAction
                               icon={<CheckOutlinedIcon sx={{ fontSize: 14 }} />}
@@ -1021,15 +1024,17 @@ export default function OrderListPage() {
                             />
                           </>
                         )}
-                        {/* Zaakceptowane: 3 rozliczanie buttons per PRD 6.6.f */}
+                        {/* Zaakceptowane: Edytuj (pilot/supervisor) + rozliczanie (pilot only, PRD 6.6.f) */}
                         {canEdit && order.status === 'Zaakceptowane' && (
+                          <RowAction
+                            icon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
+                            label="Edytuj"
+                            color={aeroColors.tertiary}
+                            onClick={async () => { try { const full = await getOrderById(order.apiId); setEditingOrder(apiOrderToFlightOrderData(full)); setModalOpen(true); } catch { setSnackbar({ open: true, message: 'Nie udało się pobrać zlecenia.', severity: 'error' }); } }}
+                          />
+                        )}
+                        {isPilot && order.status === 'Zaakceptowane' && (
                           <>
-                            <RowAction
-                              icon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
-                              label="Edytuj"
-                              color={aeroColors.tertiary}
-                              onClick={async () => { try { const full = await getOrderById(order.apiId); setEditingOrder(apiOrderToFlightOrderData(full)); setModalOpen(true); } catch { setSnackbar({ open: true, message: 'Nie udało się pobrać zlecenia.', severity: 'error' }); } }}
-                            />
                             <RowAction
                               icon={<CheckOutlinedIcon sx={{ fontSize: 14 }} />}
                               label="Zrealizowane w całości"
