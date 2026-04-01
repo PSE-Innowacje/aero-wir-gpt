@@ -25,6 +25,7 @@ export interface UserData {
   lastName: string;
   email: string;
   role: UserRole;
+  password?: string;
 }
 
 export const ROLE_CONFIG: Record<UserRole, { label: string; color: string; bg: string }> = {
@@ -67,6 +68,11 @@ const userSchema = z.object({
     .min(1, 'Pole wymagane')
     .max(100, 'Maks. 100 znaków')
     .email('Nieprawidłowy adres email'),
+  password: z
+    .string()
+    .max(100, 'Maks. 100 znaków')
+    .optional()
+    .or(z.literal('')),
   role: z.enum(['SUPERUSER', 'ADMIN', 'PLANNER', 'SUPERVISOR', 'PILOT'] as const),
 });
 
@@ -179,6 +185,7 @@ export default function UserModal({ open, onClose, onSave, user }: UserModalProp
       firstName: values.firstName,
       lastName: values.lastName,
       email: values.email,
+      password: values.password || undefined,
       role: values.role,
     });
     onClose();
@@ -337,6 +344,23 @@ export default function UserModal({ open, onClose, onSave, user }: UserModalProp
             helperText={errors.email?.message}
             sx={INPUT_SX}
             {...register('email')}
+          />
+        </Box>
+
+        {/* Hasło */}
+        <Box>
+          <Typography sx={FIELD_LABEL_SX}>
+            {user ? 'Nowe hasło (opcjonalne)' : 'Hasło'}
+          </Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="password"
+            placeholder={user ? 'Pozostaw puste aby nie zmieniać' : 'Wymagane przy tworzeniu'}
+            error={!!errors.password}
+            helperText={errors.password?.message}
+            sx={INPUT_SX}
+            {...register('password')}
           />
         </Box>
 

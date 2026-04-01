@@ -75,6 +75,8 @@ const TD_SX = {
 /* ── Role config ────────────────────────────────────────────────────────── */
 type RoleKey = 'PILOT' | 'PLANNER' | 'SUPERVISOR' | 'ADMIN';
 
+const FALLBACK_ROLE_CFG = { label: 'Nieznana', color: aeroColors.outline, bg: `${aeroColors.outline}18` };
+
 const ROLE_CONFIG: Record<RoleKey, { label: string; color: string; bg: string }> = {
   PILOT: {
     label: 'Pilot',
@@ -178,7 +180,7 @@ function StatCard({ label, value, sublabel, icon, accent = aeroColors.primary }:
 }
 
 function RoleBadge({ role }: { role: RoleKey }) {
-  const cfg = ROLE_CONFIG[role];
+  const cfg = ROLE_CONFIG[role] ?? FALLBACK_ROLE_CFG;
   return (
     <Box
       component="span"
@@ -257,7 +259,7 @@ interface UserCardProps {
 }
 
 function UserCard({ initials, name, uid, email, loginId, role, status, onEdit, onPermissions }: UserCardProps) {
-  const roleCfg = ROLE_CONFIG[role];
+  const roleCfg = ROLE_CONFIG[role] ?? FALLBACK_ROLE_CFG;
   return (
     <Box
       sx={{
@@ -446,30 +448,28 @@ export default function UserListPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
 
-  const handleSave = (data: UserData) => {
-    if (data.id) {
-      setUsers((prev) =>
-        prev.map((u) =>
-          String(u.id) === data.id
-            ? { ...u, firstName: data.firstName, lastName: data.lastName, email: data.email, role: data.role as RoleKey, initials: `${data.firstName[0]}${data.lastName[0]}`.toUpperCase() }
-            : u,
-        ),
-      );
-    } else {
-      setUsers((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          initials: `${data.firstName[0]}${data.lastName[0]}`.toUpperCase(),
+  const handleSave = async (data: UserData) => {
+    try {
+      if (data.id) {
+        await updateUser(data.id, {
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
-          loginId: `${data.firstName[0].toLowerCase()}.${data.lastName.toLowerCase()}`,
-          uid: `${String(Math.floor(Math.random() * 99999)).padStart(5, '0')}-A`,
-          role: data.role as RoleKey,
-          status: 'Aktywny' as StatusKey,
-        },
-      ]);
+          password: data.password || undefined,
+          role: data.role as UserResponse['role'],
+        });
+      } else {
+        await createUser({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          password: data.password || 'default123',
+          role: data.role as UserResponse['role'],
+        });
+      }
+      await fetchUsers();
+    } catch (err) {
+      console.error('Failed to save user:', err);
     }
   };
 
@@ -767,7 +767,7 @@ export default function UserListPage() {
             </TableHead>
             <TableBody>
               {filtered.map((user, idx) => {
-                const roleCfg = ROLE_CONFIG[user.role];
+                const roleCfg = ROLE_CONFIG[user.role] ?? FALLBACK_ROLE_CFG;
                 return (
                   <TableRow
                     key={user.id}
