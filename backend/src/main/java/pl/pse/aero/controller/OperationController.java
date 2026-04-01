@@ -42,8 +42,7 @@ public class OperationController {
     @GetMapping
     public ResponseEntity<List<OperationListResponse>> list(
             @RequestParam(required = false) OperationStatus status) {
-        OperationStatus filter = status != null ? status : OperationStatus.CONFIRMED;
-        List<OperationListResponse> ops = operationService.findAll(filter).stream()
+        List<OperationListResponse> ops = operationService.findAll(status).stream()
                 .map(OperationListResponse::from)
                 .toList();
         return ResponseEntity.ok(ops);
