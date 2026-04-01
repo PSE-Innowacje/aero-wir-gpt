@@ -426,7 +426,7 @@ const STATUS_FILTERS: Array<{ key: string; label: string }> = [
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function UserListPage() {
   const { user: currentUser } = useAuth();
-  const canEdit = currentUser?.role === 'ADMIN';
+  const canEdit = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPERUSER';
   const [apiUsers, setApiUsers] = useState<UserResponse[]>([]);
   const users = apiUsers.map(toUserRow);
 

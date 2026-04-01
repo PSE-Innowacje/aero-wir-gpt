@@ -409,7 +409,7 @@ function toDashDate(d: string): string {
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function OperationListPage() {
   const { user } = useAuth();
-  const canEdit = user?.role === 'PLANNER' || user?.role === 'SUPERVISOR';
+  const canEdit = user?.role === 'PLANNER' || user?.role === 'SUPERVISOR' || user?.role === 'SUPERUSER';
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [search, setSearch] = useState('');
   const [apiOps, setApiOps] = useState<OperationListResponse[]>([]);

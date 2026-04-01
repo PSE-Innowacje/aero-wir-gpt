@@ -45,17 +45,17 @@ const PULSE_KEYFRAMES = {
   },
 };
 
-type Role = 'ADMIN' | 'PLANNER' | 'SUPERVISOR' | 'PILOT';
-const ALL_ROLES: Role[] = ['ADMIN', 'PLANNER', 'SUPERVISOR', 'PILOT'];
+type Role = 'SUPERUSER' | 'ADMIN' | 'PLANNER' | 'SUPERVISOR' | 'PILOT';
+const ALL_ROLES: Role[] = ['SUPERUSER', 'ADMIN', 'PLANNER', 'SUPERVISOR', 'PILOT'];
 
 const NAV_ITEMS: Array<{ label: string; path: string; icon: React.ReactNode; roles: Role[] }> = [
   { label: 'Dashboard', path: '/dashboard', icon: <DashboardOutlinedIcon />, roles: ALL_ROLES },
-  { label: 'Helikoptery', path: '/helicopters', icon: <AirplanemodeActiveIcon />, roles: ['ADMIN', 'SUPERVISOR', 'PILOT'] },
-  { label: 'Załoga', path: '/crew', icon: <PeopleOutlinedIcon />, roles: ['ADMIN', 'SUPERVISOR', 'PILOT'] },
-  { label: 'Lądowiska', path: '/landing-sites', icon: <LocationOnOutlinedIcon />, roles: ['ADMIN', 'SUPERVISOR', 'PILOT'] },
+  { label: 'Helikoptery', path: '/helicopters', icon: <AirplanemodeActiveIcon />, roles: ['SUPERUSER', 'ADMIN', 'SUPERVISOR', 'PILOT'] },
+  { label: 'Załoga', path: '/crew', icon: <PeopleOutlinedIcon />, roles: ['SUPERUSER', 'ADMIN', 'SUPERVISOR', 'PILOT'] },
+  { label: 'Lądowiska', path: '/landing-sites', icon: <LocationOnOutlinedIcon />, roles: ['SUPERUSER', 'ADMIN', 'SUPERVISOR', 'PILOT'] },
   { label: 'Operacje lotnicze', path: '/operations', icon: <AltRouteOutlinedIcon />, roles: ALL_ROLES },
-  { label: 'Zlecenia lotnicze', path: '/orders', icon: <AssignmentOutlinedIcon />, roles: ['ADMIN', 'SUPERVISOR', 'PILOT'] },
-  { label: 'Użytkownicy', path: '/users', icon: <ManageAccountsOutlinedIcon />, roles: ['ADMIN', 'SUPERVISOR', 'PILOT'] },
+  { label: 'Zlecenia lotnicze', path: '/orders', icon: <AssignmentOutlinedIcon />, roles: ['SUPERUSER', 'ADMIN', 'SUPERVISOR', 'PILOT'] },
+  { label: 'Użytkownicy', path: '/users', icon: <ManageAccountsOutlinedIcon />, roles: ['SUPERUSER', 'ADMIN', 'SUPERVISOR', 'PILOT'] },
 ];
 
 const PAGE_TITLES: Record<string, string> = {

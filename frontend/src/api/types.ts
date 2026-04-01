@@ -5,7 +5,7 @@
 
 // ── Enums ─────────────────────────────────────────────────────────────────
 
-export type UserRole = 'ADMIN' | 'PLANNER' | 'SUPERVISOR' | 'PILOT';
+export type UserRole = 'SUPERUSER' | 'ADMIN' | 'PLANNER' | 'SUPERVISOR' | 'PILOT';
 
 export type CrewRole = 'PILOT' | 'OBSERVER';
 
