@@ -249,9 +249,11 @@ interface UserCardProps {
   loginId: string;
   role: RoleKey;
   status: StatusKey;
+  onEdit?: () => void;
+  onPermissions?: () => void;
 }
 
-function UserCard({ initials, name, uid, email, loginId, role, status }: UserCardProps) {
+function UserCard({ initials, name, uid, email, loginId, role, status, onEdit, onPermissions }: UserCardProps) {
   const roleCfg = ROLE_CONFIG[role];
   return (
     <Box
@@ -338,6 +340,7 @@ function UserCard({ initials, name, uid, email, loginId, role, status }: UserCar
           <Tooltip title="Edytuj" placement="top">
             <IconButton
               size="small"
+              onClick={onEdit}
               sx={{
                 width: 28,
                 height: 28,
@@ -352,6 +355,7 @@ function UserCard({ initials, name, uid, email, loginId, role, status }: UserCar
           <Tooltip title="Uprawnienia" placement="top">
             <IconButton
               size="small"
+              onClick={onPermissions}
               sx={{
                 width: 28,
                 height: 28,
@@ -636,19 +640,27 @@ export default function UserListPage() {
 
       {/* ── Featured user cards ── */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        {CARD_USERS_INIT.map((user) => (
-          <Grid key={user.id} size={{ xs: 12, sm: 6, md: 3 }}>
-            <UserCard
-              initials={user.initials}
-              name={`${user.firstName} ${user.lastName}`}
-              uid={user.uid}
-              email={user.email}
-              loginId={user.loginId}
-              role={user.role}
-              status={user.status}
-            />
-          </Grid>
-        ))}
+        {CARD_USERS_INIT.map((u) => {
+          const openEdit = () => {
+            setEditingUser({ id: String(u.id), firstName: u.firstName, lastName: u.lastName, email: u.email, role: u.role });
+            setModalOpen(true);
+          };
+          return (
+            <Grid key={u.id} size={{ xs: 12, sm: 6, md: 3 }}>
+              <UserCard
+                initials={u.initials}
+                name={`${u.firstName} ${u.lastName}`}
+                uid={u.uid}
+                email={u.email}
+                loginId={u.loginId}
+                role={u.role}
+                status={u.status}
+                onEdit={openEdit}
+                onPermissions={openEdit}
+              />
+            </Grid>
+          );
+        })}
       </Grid>
 
       {/* ── Table panel ── */}
@@ -891,6 +903,10 @@ export default function UserListPage() {
                         <Tooltip title="Edytuj" placement="left">
                           <IconButton
                             size="small"
+                            onClick={() => {
+                              setEditingUser({ id: String(user.id), firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role });
+                              setModalOpen(true);
+                            }}
                             sx={{
                               color: aeroColors.outline,
                               borderRadius: 1,
@@ -906,6 +922,10 @@ export default function UserListPage() {
                         <Tooltip title="Uprawnienia" placement="left">
                           <IconButton
                             size="small"
+                            onClick={() => {
+                              setEditingUser({ id: String(user.id), firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role });
+                              setModalOpen(true);
+                            }}
                             sx={{
                               color: aeroColors.outline,
                               borderRadius: 1,
