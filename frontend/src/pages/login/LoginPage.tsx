@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -14,7 +14,7 @@ import LockOpenIcon from '@mui/icons-material/LockOpen';
 import SecurityIcon from '@mui/icons-material/Security';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { aeroColors } from '../../theme';
-import { login } from '../../api/auth.api';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -22,6 +22,10 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, login } = useAuth();
+
+  // Already logged in — go straight to dashboard
+  if (user) return <Navigate to="/dashboard" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

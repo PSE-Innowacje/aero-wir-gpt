@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { gsap } from 'gsap';
 import {
@@ -28,6 +28,7 @@ import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlin
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { aeroColors } from '../../theme';
 import { useCrashEasterEgg, CRASH_ANIMATION_SX } from '../../hooks/useCrashEasterEgg';
+import { useAuth } from '../../contexts/AuthContext';
 
 const DRAWER_WIDTH           = 240;
 const DRAWER_COLLAPSED_WIDTH = 64;
@@ -64,24 +65,33 @@ const PAGE_TITLES: Record<string, string> = {
   '/users': 'Użytkownicy',
 };
 
-interface LayoutProps {
-  userName?: string;
-  userRole?: string;
-  userInitials?: string;
-}
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: 'Administrator',
+  PLANNER: 'Planista',
+  SUPERVISOR: 'Nadzorujący',
+  PILOT: 'Pilot',
+};
 
-export default function Layout({
-  userName = 'Jan Kowalski',
-  userRole = 'Administrator',
-  userInitials = 'JK',
-}: LayoutProps) {
+export default function Layout() {
   const theme      = useTheme();
   const isCollapsed = useMediaQuery(theme.breakpoints.down('md'));
   const drawerWidth = isCollapsed ? DRAWER_COLLAPSED_WIDTH : DRAWER_WIDTH;
 
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const { registerClick, isCrashing } = useCrashEasterEgg();
+
+  const userName = user ? `${user.firstName} ${user.lastName}` : '';
+  const userRole = user ? (ROLE_LABELS[user.role] ?? user.role) : '';
+  const userInitials = user
+    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+    : '';
+
+  const handleLogout = useCallback(async () => {
+    await logout();
+    navigate('/login');
+  }, [logout, navigate]);
 
   const contentRef    = useRef<HTMLDivElement>(null);
   const exitTweenRef  = useRef<gsap.core.Tween | null>(null);
@@ -360,6 +370,7 @@ export default function Layout({
           {/* Logout */}
           <Tooltip title="Wyloguj się" placement="right">
             <ListItemButton
+              onClick={handleLogout}
               sx={{
                 px: isCollapsed ? 0 : 2,
                 py: 1,
