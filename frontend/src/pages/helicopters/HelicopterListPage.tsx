@@ -25,6 +25,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { aeroColors } from '../../theme';
 import { getHelicopters, createHelicopter, updateHelicopter } from '../../api/helicopters.api';
 import type { HelicopterResponse, HelicopterStatus } from '../../api/types';
+import { useAuth } from '../../contexts/AuthContext';
 import HelicopterModal, { type Helicopter as ModalHelicopter } from '../../components/modals/HelicopterModal';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
@@ -220,6 +221,8 @@ function toModalHelicopter(h: HelicopterResponse): ModalHelicopter {
 
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function HelicopterListPage() {
+  const { user } = useAuth();
+  const canEdit = user?.role === 'ADMIN';
   const [search, setSearch] = useState('');
   const [helicopters, setHelicopters] = useState<HelicopterResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -360,6 +363,7 @@ export default function HelicopterListPage() {
             Helikoptery
           </Typography>
         </Box>
+        {canEdit && (
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -384,6 +388,7 @@ export default function HelicopterListPage() {
         >
           Dodaj helikopter
         </Button>
+        )}
       </Box>
 
       {/* ── Stat cards ── */}
@@ -566,6 +571,7 @@ export default function HelicopterListPage() {
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ ...TD_SX, textAlign: 'right' }}>
+                    {canEdit && (
                     <Tooltip title="Edytuj" placement="left">
                       <IconButton
                         size="small"
@@ -582,6 +588,7 @@ export default function HelicopterListPage() {
                         <EditOutlinedIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     </Tooltip>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

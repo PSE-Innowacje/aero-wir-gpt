@@ -27,6 +27,7 @@ import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import MyLocationOutlinedIcon from '@mui/icons-material/MyLocationOutlined';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import { aeroColors } from '../../theme';
+import { useAuth } from '../../contexts/AuthContext';
 
 /* ── Design tokens ─────────────────────────────────────────────────────── */
 const GLASS_CARD = {
@@ -168,6 +169,8 @@ function toSiteRow(site: LandingSiteResponse) {
 
 /* ── Page ──────────────────────────────────────────────────────────────── */
 export default function LandingSiteListPage() {
+  const { user } = useAuth();
+  const canEdit = user?.role === 'ADMIN';
   const [search, setSearch] = useState('');
   const [newName, setNewName] = useState('');
   const [newLat, setNewLat] = useState('');
@@ -255,30 +258,32 @@ export default function LandingSiteListPage() {
             </Typography>
           </Box>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddLocationAltOutlinedIcon />}
-          onClick={() => { setEditingSite(null); setModalOpen(true); }}
-          sx={{
-            background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
-            color: aeroColors.onPrimaryFixed,
-            fontFamily: '"Space Grotesk", sans-serif',
-            fontWeight: 700,
-            fontSize: '0.6875rem',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            px: 2.5,
-            py: 1,
-            borderRadius: 1,
-            boxShadow: `0 4px 20px ${aeroColors.primaryContainer}60`,
-            '&:hover': {
+        {canEdit && (
+          <Button
+            variant="contained"
+            startIcon={<AddLocationAltOutlinedIcon />}
+            onClick={() => { setEditingSite(null); setModalOpen(true); }}
+            sx={{
               background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
-              opacity: 0.9,
-            },
-          }}
-        >
-          Dodaj lądowisko
-        </Button>
+              color: aeroColors.onPrimaryFixed,
+              fontFamily: '"Space Grotesk", sans-serif',
+              fontWeight: 700,
+              fontSize: '0.6875rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              px: 2.5,
+              py: 1,
+              borderRadius: 1,
+              boxShadow: `0 4px 20px ${aeroColors.primaryContainer}60`,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
+                opacity: 0.9,
+              },
+            }}
+          >
+            Dodaj lądowisko
+          </Button>
+        )}
       </Box>
 
       {/* ── Table panel ── */}
@@ -415,40 +420,44 @@ export default function LandingSiteListPage() {
                   </TableCell>
                   <TableCell sx={{ ...TD_SX, textAlign: 'right' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.25 }}>
-                      <Tooltip title="Edytuj" placement="left">
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            setEditingSite({ id: String(site.id), name: site.name, latitude: site.lat, longitude: site.lng });
-                            setModalOpen(true);
-                          }}
-                          sx={{
-                            color: aeroColors.outline,
-                            borderRadius: 1,
-                            '&:hover': {
-                              color: aeroColors.tertiary,
-                              bgcolor: `${aeroColors.tertiary}12`,
-                            },
-                          }}
-                        >
-                          <EditOutlinedIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Usuń" placement="left">
-                        <IconButton
-                          size="small"
-                          sx={{
-                            color: aeroColors.outline,
-                            borderRadius: 1,
-                            '&:hover': {
-                              color: aeroColors.error,
-                              bgcolor: `${aeroColors.errorContainer}20`,
-                            },
-                          }}
-                        >
-                          <DeleteOutlineOutlinedIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
+                      {canEdit && (
+                        <Tooltip title="Edytuj" placement="left">
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setEditingSite({ id: String(site.id), name: site.name, latitude: site.lat, longitude: site.lng });
+                              setModalOpen(true);
+                            }}
+                            sx={{
+                              color: aeroColors.outline,
+                              borderRadius: 1,
+                              '&:hover': {
+                                color: aeroColors.tertiary,
+                                bgcolor: `${aeroColors.tertiary}12`,
+                              },
+                            }}
+                          >
+                            <EditOutlinedIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {canEdit && (
+                        <Tooltip title="Usuń" placement="left">
+                          <IconButton
+                            size="small"
+                            sx={{
+                              color: aeroColors.outline,
+                              borderRadius: 1,
+                              '&:hover': {
+                                color: aeroColors.error,
+                                bgcolor: `${aeroColors.errorContainer}20`,
+                              },
+                            }}
+                          >
+                            <DeleteOutlineOutlinedIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </Box>
                   </TableCell>
                 </TableRow>

@@ -45,14 +45,17 @@ const PULSE_KEYFRAMES = {
   },
 };
 
-const NAV_ITEMS = [
-  { label: 'Dashboard', path: '/dashboard', icon: <DashboardOutlinedIcon /> },
-  { label: 'Helikoptery', path: '/helicopters', icon: <AirplanemodeActiveIcon /> },
-  { label: 'Załoga', path: '/crew', icon: <PeopleOutlinedIcon /> },
-  { label: 'Lądowiska', path: '/landing-sites', icon: <LocationOnOutlinedIcon /> },
-  { label: 'Operacje lotnicze', path: '/operations', icon: <AltRouteOutlinedIcon /> },
-  { label: 'Zlecenia lotnicze', path: '/orders', icon: <AssignmentOutlinedIcon /> },
-  { label: 'Użytkownicy', path: '/users', icon: <ManageAccountsOutlinedIcon /> },
+type Role = 'ADMIN' | 'PLANNER' | 'SUPERVISOR' | 'PILOT';
+const ALL_ROLES: Role[] = ['ADMIN', 'PLANNER', 'SUPERVISOR', 'PILOT'];
+
+const NAV_ITEMS: Array<{ label: string; path: string; icon: React.ReactNode; roles: Role[] }> = [
+  { label: 'Dashboard', path: '/dashboard', icon: <DashboardOutlinedIcon />, roles: ALL_ROLES },
+  { label: 'Helikoptery', path: '/helicopters', icon: <AirplanemodeActiveIcon />, roles: ['ADMIN', 'SUPERVISOR', 'PILOT'] },
+  { label: 'Załoga', path: '/crew', icon: <PeopleOutlinedIcon />, roles: ['ADMIN', 'SUPERVISOR', 'PILOT'] },
+  { label: 'Lądowiska', path: '/landing-sites', icon: <LocationOnOutlinedIcon />, roles: ['ADMIN', 'SUPERVISOR', 'PILOT'] },
+  { label: 'Operacje lotnicze', path: '/operations', icon: <AltRouteOutlinedIcon />, roles: ALL_ROLES },
+  { label: 'Zlecenia lotnicze', path: '/orders', icon: <AssignmentOutlinedIcon />, roles: ['ADMIN', 'SUPERVISOR', 'PILOT'] },
+  { label: 'Użytkownicy', path: '/users', icon: <ManageAccountsOutlinedIcon />, roles: ['ADMIN', 'SUPERVISOR', 'PILOT'] },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
@@ -229,7 +232,7 @@ export default function Layout() {
 
         {/* Navigation items */}
         <List sx={{ px: 1, flex: 1, pt: 0 }} disablePadding>
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !user?.role || item.roles.includes(user.role as Role)).map((item) => {
             const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             const crashing = isCrashing(item.path);
             return (
