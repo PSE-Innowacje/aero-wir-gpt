@@ -14,7 +14,9 @@ import {
   Tooltip,
   Divider,
   AppBar,
+  useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import FlightIcon from '@mui/icons-material/Flight';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import AirplanemodeActiveIcon from '@mui/icons-material/AirplanemodeActive';
@@ -27,7 +29,8 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { aeroColors } from '../../theme';
 import { useCrashEasterEgg, CRASH_ANIMATION_SX } from '../../hooks/useCrashEasterEgg';
 
-const DRAWER_WIDTH = 240;
+const DRAWER_WIDTH           = 240;
+const DRAWER_COLLAPSED_WIDTH = 64;
 
 const TACTICAL_GRID = [
   'linear-gradient(0deg, transparent 24%, rgba(142,145,150,.05) 25%, rgba(142,145,150,.05) 26%, transparent 27%, transparent 74%, rgba(142,145,150,.05) 75%, rgba(142,145,150,.05) 76%, transparent 77%, transparent)',
@@ -72,6 +75,10 @@ export default function Layout({
   userRole = 'Administrator',
   userInitials = 'JK',
 }: LayoutProps) {
+  const theme      = useTheme();
+  const isCollapsed = useMediaQuery(theme.breakpoints.down('md'));
+  const drawerWidth = isCollapsed ? DRAWER_COLLAPSED_WIDTH : DRAWER_WIDTH;
+
   const location = useLocation();
   const navigate = useNavigate();
   const { registerClick, isCrashing } = useCrashEasterEgg();
@@ -120,72 +127,95 @@ export default function Layout({
       <Drawer
         variant="permanent"
         sx={{
-          width: DRAWER_WIDTH,
+          width: drawerWidth,
           flexShrink: 0,
+          transition: theme.transitions.create('width', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
           '& .MuiDrawer-paper': {
-            width: DRAWER_WIDTH,
+            width: drawerWidth,
             boxSizing: 'border-box',
             bgcolor: aeroColors.surfaceContainerLow,
             borderRight: 'none',
             display: 'flex',
             flexDirection: 'column',
             overflowX: 'hidden',
+            transition: theme.transitions.create('width', {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
           },
         }}
       >
         {/* Logo block */}
-        <Box sx={{ px: 3, pt: 3, pb: 3.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            px: isCollapsed ? 0 : 3,
+            pt: 3,
+            pb: 3.5,
+            display: 'flex',
+            flexDirection: isCollapsed ? 'column' : 'column',
+            alignItems: isCollapsed ? 'center' : 'flex-start',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: isCollapsed ? 0 : 1 }}>
             <FlightIcon
               sx={{
                 color: aeroColors.tertiary,
-                fontSize: 18,
+                fontSize: isCollapsed ? 22 : 18,
                 transform: 'rotate(-45deg)',
                 opacity: 0.85,
               }}
             />
+            {!isCollapsed && (
+              <Typography
+                sx={{
+                  fontFamily: '"Space Grotesk", sans-serif',
+                  fontSize: '1.375rem',
+                  fontWeight: 700,
+                  letterSpacing: '-0.03em',
+                  color: aeroColors.primary,
+                  lineHeight: 1,
+                }}
+              >
+                AERO
+              </Typography>
+            )}
+          </Box>
+          {!isCollapsed && (
             <Typography
               sx={{
-                fontFamily: '"Space Grotesk", sans-serif',
-                fontSize: '1.375rem',
-                fontWeight: 700,
-                letterSpacing: '-0.03em',
-                color: aeroColors.primary,
-                lineHeight: 1,
+                fontSize: '0.5625rem',
+                letterSpacing: '0.18em',
+                color: aeroColors.outline,
+                textTransform: 'uppercase',
+                fontWeight: 600,
+                mt: 0.5,
+                pl: 0.25,
               }}
             >
-              AERO
+              Flight Operations
             </Typography>
-          </Box>
-          <Typography
-            sx={{
-              fontSize: '0.5625rem',
-              letterSpacing: '0.18em',
-              color: aeroColors.outline,
-              textTransform: 'uppercase',
-              fontWeight: 600,
-              mt: 0.5,
-              pl: 0.25,
-            }}
-          >
-            Flight Operations
-          </Typography>
+          )}
         </Box>
 
         {/* Label separator */}
-        <Box sx={{ px: 3, mb: 1 }}>
-          <Typography
-            sx={{
-              fontSize: '0.5625rem',
-              letterSpacing: '0.16em',
-              color: `${aeroColors.outline}70`,
-              textTransform: 'uppercase',
-              fontWeight: 700,
-            }}
-          >
-            Navigation
-          </Typography>
-        </Box>
+        {!isCollapsed && (
+          <Box sx={{ px: 3, mb: 1 }}>
+            <Typography
+              sx={{
+                fontSize: '0.5625rem',
+                letterSpacing: '0.16em',
+                color: `${aeroColors.outline}70`,
+                textTransform: 'uppercase',
+                fontWeight: 700,
+              }}
+            >
+              Navigation
+            </Typography>
+          </Box>
+        )}
 
         {/* Navigation items */}
         <List sx={{ px: 1, flex: 1, pt: 0 }} disablePadding>
@@ -193,67 +223,76 @@ export default function Layout({
             const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             const crashing = isCrashing(item.path);
             return (
-              <ListItemButton
+              <Tooltip
                 key={item.path}
-                onClick={() => handleNavClick(item.path)}
-                disableRipple={false}
-                sx={{
-                  px: 2,
-                  py: 1.125,
-                  mb: 0.25,
-                  borderRadius: 0,
-                  borderLeft: isActive
-                    ? `2px solid ${aeroColors.tertiary}`
-                    : '2px solid transparent',
-                  bgcolor: isActive ? aeroColors.surfaceContainer : 'transparent',
-                  color: isActive ? aeroColors.tertiary : aeroColors.outline,
-                  gap: 1.5,
-                  transition: 'all 0.15s ease',
-                  overflow: 'visible',
-                  '&:hover': {
-                    bgcolor: isActive
-                      ? aeroColors.surfaceContainer
-                      : `${aeroColors.surfaceVariant}80`,
-                    color: isActive ? aeroColors.tertiary : aeroColors.onSurface,
-                    borderLeftColor: isActive ? aeroColors.tertiary : `${aeroColors.outline}50`,
-                  },
-                  '& .MuiTouchRipple-root .MuiTouchRipple-rippleVisible': {
-                    color: `${aeroColors.primary}20`,
-                  },
-                }}
+                title={isCollapsed ? item.label : ''}
+                placement="right"
+                arrow
               >
-                <ListItemIcon
+                <ListItemButton
+                  onClick={() => handleNavClick(item.path)}
+                  disableRipple={false}
                   sx={{
-                    minWidth: 0,
-                    color: 'inherit',
-                    '& .MuiSvgIcon-root': {
-                      fontSize: 17,
-                      ...(crashing ? CRASH_ANIMATION_SX : {}),
+                    px: isCollapsed ? 0 : 2,
+                    py: 1.125,
+                    mb: 0.25,
+                    borderRadius: 0,
+                    justifyContent: isCollapsed ? 'center' : 'flex-start',
+                    borderLeft: isActive
+                      ? `2px solid ${aeroColors.tertiary}`
+                      : '2px solid transparent',
+                    bgcolor: isActive ? aeroColors.surfaceContainer : 'transparent',
+                    color: isActive ? aeroColors.tertiary : aeroColors.outline,
+                    gap: isCollapsed ? 0 : 1.5,
+                    transition: 'all 0.15s ease',
+                    overflow: 'visible',
+                    '&:hover': {
+                      bgcolor: isActive
+                        ? aeroColors.surfaceContainer
+                        : `${aeroColors.surfaceVariant}80`,
+                      color: isActive ? aeroColors.tertiary : aeroColors.onSurface,
+                      borderLeftColor: isActive ? aeroColors.tertiary : `${aeroColors.outline}50`,
+                    },
+                    '& .MuiTouchRipple-root .MuiTouchRipple-rippleVisible': {
+                      color: `${aeroColors.primary}20`,
                     },
                   }}
                 >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    sx: {
-                      fontSize: '0.6875rem',
-                      fontWeight: 600,
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      fontFamily: '"Inter", sans-serif',
-                      lineHeight: 1,
-                    },
-                  }}
-                />
-              </ListItemButton>
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 0,
+                      color: 'inherit',
+                      '& .MuiSvgIcon-root': {
+                        fontSize: 17,
+                        ...(crashing ? CRASH_ANIMATION_SX : {}),
+                      },
+                    }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  {!isCollapsed && (
+                    <ListItemText
+                      primary={item.label}
+                      primaryTypographyProps={{
+                        sx: {
+                          fontSize: '0.6875rem',
+                          fontWeight: 600,
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          fontFamily: '"Inter", sans-serif',
+                          lineHeight: 1,
+                        },
+                      }}
+                    />
+                  )}
+                </ListItemButton>
+              </Tooltip>
             );
           })}
         </List>
 
         {/* Bottom section */}
-        <Box sx={{ px: 2, pb: 2.5 }}>
+        <Box sx={{ px: isCollapsed ? 0 : 2, pb: 2.5 }}>
           <Divider sx={{ borderColor: `${aeroColors.outlineVariant}30`, mb: 2 }} />
 
           {/* User card */}
@@ -261,67 +300,74 @@ export default function Layout({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1.5,
-              px: 1,
+              justifyContent: isCollapsed ? 'center' : 'flex-start',
+              gap: isCollapsed ? 0 : 1.5,
+              px: isCollapsed ? 0 : 1,
               py: 0.75,
               mb: 1,
               borderRadius: 1,
             }}
           >
-            <Avatar
-              sx={{
-                width: 28,
-                height: 28,
-                bgcolor: aeroColors.primaryContainer,
-                color: aeroColors.primary,
-                fontSize: '0.5625rem',
-                fontWeight: 700,
-                border: `1px solid ${aeroColors.primary}25`,
-                flexShrink: 0,
-              }}
-            >
-              {userInitials}
-            </Avatar>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
+            <Tooltip title={isCollapsed ? `${userName} · ${userRole}` : ''} placement="right" arrow>
+              <Avatar
                 sx={{
-                  fontSize: '0.6875rem',
-                  fontWeight: 700,
-                  color: aeroColors.onSurface,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  lineHeight: 1.3,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {userName}
-              </Typography>
-              <Typography
-                sx={{
+                  width: 28,
+                  height: 28,
+                  bgcolor: aeroColors.primaryContainer,
+                  color: aeroColors.primary,
                   fontSize: '0.5625rem',
-                  color: aeroColors.outline,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  lineHeight: 1.2,
+                  fontWeight: 700,
+                  border: `1px solid ${aeroColors.primary}25`,
+                  flexShrink: 0,
+                  cursor: isCollapsed ? 'default' : 'inherit',
                 }}
               >
-                {userRole}
-              </Typography>
-            </Box>
+                {userInitials}
+              </Avatar>
+            </Tooltip>
+            {!isCollapsed && (
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                  sx={{
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    color: aeroColors.onSurface,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    lineHeight: 1.3,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {userName}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: '0.5625rem',
+                    color: aeroColors.outline,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {userRole}
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           {/* Logout */}
           <Tooltip title="Wyloguj się" placement="right">
             <ListItemButton
               sx={{
-                px: 2,
+                px: isCollapsed ? 0 : 2,
                 py: 1,
                 borderRadius: 0,
+                justifyContent: isCollapsed ? 'center' : 'flex-start',
                 borderLeft: '2px solid transparent',
                 color: aeroColors.outline,
-                gap: 1.5,
+                gap: isCollapsed ? 0 : 1.5,
                 transition: 'all 0.15s ease',
                 '&:hover': {
                   bgcolor: `${aeroColors.error}12`,
@@ -339,19 +385,21 @@ export default function Layout({
               >
                 <LogoutOutlinedIcon />
               </ListItemIcon>
-              <ListItemText
-                primary="Wyloguj"
-                primaryTypographyProps={{
-                  sx: {
-                    fontSize: '0.6875rem',
-                    fontWeight: 600,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    fontFamily: '"Inter", sans-serif',
-                    lineHeight: 1,
-                  },
-                }}
-              />
+              {!isCollapsed && (
+                <ListItemText
+                  primary="Wyloguj"
+                  primaryTypographyProps={{
+                    sx: {
+                      fontSize: '0.6875rem',
+                      fontWeight: 600,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      fontFamily: '"Inter", sans-serif',
+                      lineHeight: 1,
+                    },
+                  }}
+                />
+              )}
             </ListItemButton>
           </Tooltip>
         </Box>
