@@ -2,6 +2,7 @@ package pl.pse.aero.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -67,6 +68,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ErrorResponse.builder()
                 .status(400)
                 .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateKey(DuplicateKeyException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.builder()
+                .status(409)
+                .message("Duplicate value: a record with this unique field already exists")
                 .build());
     }
 

@@ -54,8 +54,8 @@ Wsparcie procesu zbierania planowanych operacji oraz bezpośredniego przygotowan
 ### 6.1. Architektura
 
 ```
-Przegladarka (SPA)             Spring Boot              Couchbase
-React + TypeScript + MUI  <--HTTPS-->  REST API :8080  <--SDK-->  :8091-8096
+Przegladarka (SPA)             Spring Boot              MongoDB
+React + TypeScript + MUI  <--HTTPS-->  REST API :8080  <--driver-->  :27017
 ```
 
 Aplikacja to **samodzielny system** — brak integracji z zewnetrznymi API, kolejkami komunikatow ani usługami trzecich stron. Jeden backend Spring Boot serwuje REST API, a frontend to SPA (Single Page Application) serwowana z osobnego serwera deweloperskiego (Vite).
@@ -67,9 +67,9 @@ Aplikacja to **samodzielny system** — brak integracji z zewnetrznymi API, kole
 | **Java** | 21 (LTS) | Najnowsza wersja LTS z virtual threads i pattern matching; wymagana przez Spring Boot 3.x |
 | **Spring Boot** | 3.x | Standard przemysłowy dla aplikacji Java — automatyczna konfiguracja, wbudowany serwer, bogaty ekosystem |
 | **Spring Security** | (w Spring Boot) | Uwierzytelnianie sesyjne (JSESSIONID cookie), kontrola dostepu na poziomie URL i pol |
-| **Spring Data Couchbase** | (w Spring Boot) | Mapowanie dokumentow Couchbase na obiekty Java, repozytoria z automatycznymi zapytaniami |
-| **Couchbase Server** | 7.6 | Dokumentowa baza NoSQL — elastyczny schemat pozwala na osadzanie komentarzy, historii zmian i punktow KML bezposrednio w dokumencie operacji. Brak potrzeby migracji schematu |
-| **Testcontainers** | (via Gradle) | Automatyczne uruchamianie kontenera Couchbase na potrzeby testow integracyjnych — zero konfiguracji recznej |
+| **Spring Data MongoDB** | (w Spring Boot) | Mapowanie dokumentow MongoDB na obiekty Java, repozytoria z automatycznymi zapytaniami, unikalne indeksy (`@Indexed(unique=true)`) |
+| **MongoDB** | 7 | Dokumentowa baza NoSQL — elastyczny schemat pozwala na osadzanie komentarzy, historii zmian i punktow KML bezposrednio w dokumencie operacji. Unikalne indeksy na email, numer rejestracyjny. Brak potrzeby migracji schematu |
+| **Testcontainers** | (via Gradle) | Automatyczne uruchamianie kontenera MongoDB na potrzeby testow integracyjnych — zero konfiguracji recznej |
 | **Spock Framework** | (via Gradle) | Framework testowy (Groovy) — czytelna składnia BDD (`given`/`when`/`then`), wbudowane mockowanie |
 | **SpringDoc OpenAPI** | (via Gradle) | Automatyczna generacja dokumentacji API (Swagger UI) na podstawie adnotacji kontrolerow |
 | **Gradle** | Kotlin DSL | System budowania — szybszy niz Maven, deklaratywna konfiguracja w Kotlin |
@@ -104,8 +104,8 @@ aero-wir-gpt/
 │       ├── config/                   # SecurityConfig, CORS, DataInitializer
 │       ├── controller/               # Kontrolery REST (cienkie)
 │       ├── dto/                      # Obiekty Request / Response
-│       ├── domain/                   # Dokumenty Couchbase (@Document) + enumy
-│       ├── repository/               # Interfejsy Spring Data Couchbase
+│       ├── domain/                   # Dokumenty MongoDB (@Document) + enumy
+│       ├── repository/               # Interfejsy Spring Data MongoDB
 │       └── service/                  # Logika biznesowa, maszyny stanow, parsowanie KML
 ├── frontend/                         # Vite + React 18 + TypeScript
 │   ├── package.json
@@ -459,29 +459,28 @@ Pokazanie działajacej aplikacji www z:
 - **Docker Desktop** (uruchomiony)
 - **Node.js 18+** (dla frontendu)
 
-### 12.1. Uruchomienie Couchbase (jednorazowo)
+### 12.1. Uruchomienie MongoDB (jednorazowo)
 
-Skrypt tworzy skonfigurowany kontener Couchbase:
+Skrypt tworzy skonfigurowany kontener MongoDB:
 
 ```bash
-bash backend/setup-couchbase.sh
+bash backend/setup-mongodb.sh
 ```
 
-Tworzy kontener `aero-couchbase` z:
-- **Couchbase Server 7.6.1** na `localhost:8091`
-- Administrator klastra: `admin` / `admin1`
-- Uzytkownik aplikacji: `aero` / `aeropass`
-- Bucket: `aero`
+Tworzy kontener `aero-mongodb` z:
+- **MongoDB 7** na `localhost:27017`
+- Baza danych: `aero`
+- Brak uwierzytelniania (tryb deweloperski)
 
 Zarzadzanie kontenerem:
 
 ```bash
-docker start aero-couchbase   # uruchomienie
-docker stop aero-couchbase    # zatrzymanie
-docker rm aero-couchbase      # usuniecie (uruchom skrypt ponownie)
+docker start aero-mongodb   # uruchomienie
+docker stop aero-mongodb    # zatrzymanie
+docker rm aero-mongodb      # usuniecie (uruchom skrypt ponownie)
 ```
 
-Konsola webowa Couchbase: http://localhost:8091
+Shell MongoDB: `docker exec -it aero-mongodb mongosh aero`
 
 ### 12.2. Uruchomienie backendu
 
@@ -510,7 +509,7 @@ Frontend działa na http://localhost:5173 i przekierowuje `/api/**` do backendu.
 
 ### 12.5. Testy backendowe
 
-Testy integracyjne uzywaja **Testcontainers** (automatycznie uruchamiaja tymczasowy kontener Couchbase):
+Testy integracyjne uzywaja **Testcontainers** (automatycznie uruchamiaja tymczasowy kontener MongoDB):
 
 ```bash
 ./gradlew :backend:test
@@ -526,7 +525,7 @@ Testy end-to-end znajduja sie w katalogu `e2e/` i wykorzystuja [Playwright](http
 
 ### 13.1. Wymagania wstepne
 
-1. **Backend uruchomiony** na `http://localhost:8080` (z Couchbase)
+1. **Backend uruchomiony** na `http://localhost:8080` (z MongoDB)
 2. **Frontend uruchomiony** na `http://localhost:5173`
 
 ```bash

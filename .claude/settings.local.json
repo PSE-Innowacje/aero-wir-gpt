@@ -29,7 +29,8 @@
       "Bash(./gradlew :backend:compileJava)",
       "Bash(./gradlew :backend:test)",
       "Bash(npm init:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(*)"
     ]
   }
 }

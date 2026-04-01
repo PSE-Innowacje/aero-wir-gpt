@@ -17,7 +17,7 @@ import pl.pse.aero.domain.FlightOperation;
 import pl.pse.aero.domain.OperationStatus;
 import pl.pse.aero.domain.UserRole;
 import pl.pse.aero.dto.*;
-import pl.pse.aero.repository.UserRepository;
+import pl.pse.aero.service.AuthenticationHelper;
 import pl.pse.aero.service.KmlService;
 import pl.pse.aero.service.OperationService;
 
@@ -32,13 +32,13 @@ public class OperationController {
 
     private final OperationService operationService;
     private final KmlService kmlService;
-    private final UserRepository userRepository;
+    private final AuthenticationHelper authHelper;
 
     public OperationController(OperationService operationService, KmlService kmlService,
-                               UserRepository userRepository) {
+                               AuthenticationHelper authHelper) {
         this.operationService = operationService;
         this.kmlService = kmlService;
-        this.userRepository = userRepository;
+        this.authHelper = authHelper;
     }
 
     @Operation(summary = "List operations", description = "Returns operations filtered by status (default: CONFIRMED), sorted by plannedDateEarliest ASC")
@@ -154,9 +154,6 @@ public class OperationController {
     }
 
     private UserRole resolveRole(Authentication authentication) {
-        if (authentication == null) return null;
-        return userRepository.findByEmail(authentication.getName())
-                .map(u -> u.getRole())
-                .orElse(null);
+        return authHelper.resolveRole(authentication);
     }
 }

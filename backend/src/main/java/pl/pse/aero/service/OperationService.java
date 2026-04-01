@@ -7,7 +7,6 @@ import pl.pse.aero.dto.KmlProcessingResult;
 import pl.pse.aero.repository.FlightOperationRepository;
 
 import java.util.*;
-import java.util.function.Function;
 
 @Service
 public class OperationService {

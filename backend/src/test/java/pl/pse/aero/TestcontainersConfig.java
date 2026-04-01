@@ -5,8 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
-import org.testcontainers.couchbase.BucketDefinition;
-import org.testcontainers.couchbase.CouchbaseContainer;
+import org.testcontainers.containers.MongoDBContainer;
 
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfig {
@@ -15,13 +14,11 @@ public class TestcontainersConfig {
 
     @Bean
     @ServiceConnection
-    public CouchbaseContainer couchbaseContainer() {
-        CouchbaseContainer container = new CouchbaseContainer("couchbase/server:7.6.1")
-                .withCredentials("admin", "admin1")
-                .withBucket(new BucketDefinition("aero"));
+    public MongoDBContainer mongoDBContainer() {
+        MongoDBContainer container = new MongoDBContainer("mongo:7");
         container.start();
-        log.info(">>> Couchbase Web Console: http://localhost:{} (admin / admin1)",
-                container.getMappedPort(8091));
+        log.info(">>> MongoDB test container: {}",
+                container.getReplicaSetUrl());
         return container;
     }
 }

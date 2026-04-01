@@ -10,10 +10,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.core.mapping.Document;
-import org.springframework.data.couchbase.core.mapping.Field;
-import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
-import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
 
@@ -21,47 +19,39 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document
+@Document(collection = "helicopter")
 public class Helicopter {
 
     @Id
-    @GeneratedValue(strategy = GenerationStrategy.UNIQUE)
     private String id;
 
-    @Field
+    @Indexed(unique = true)
     @NotBlank
     @Size(max = 30)
     private String registrationNumber;
 
-    @Field
     @NotBlank
     @Size(max = 100)
     private String type;
 
-    @Field
     @Size(max = 100)
     private String description;
 
-    @Field
     @NotNull
     @Min(1)
     @Max(10)
     private Integer maxCrewCount;
 
-    @Field
     @NotNull
     @Min(1)
     @Max(1000)
     private Integer maxCrewWeightKg;
 
-    @Field
     @NotNull
     private HelicopterStatus status;
 
-    @Field
     private LocalDate inspectionExpiryDate;
 
-    @Field
     @NotNull
     @Min(1)
     @Max(1000)
