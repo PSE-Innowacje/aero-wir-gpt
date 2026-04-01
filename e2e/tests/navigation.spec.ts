@@ -48,7 +48,8 @@ test.describe('Navigation & Layout', () => {
   });
 
   test('should display user information in sidebar', async ({ page }) => {
-    await expect(page.locator('.MuiDrawer-root').getByText('Jan Kowalski')).toBeVisible();
+    // Admin user from seed data is "Admin Admin"
+    await expect(page.locator('.MuiDrawer-root').getByText('Admin Admin')).toBeVisible();
   });
 });
 
