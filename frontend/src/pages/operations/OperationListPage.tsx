@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import OperationModal, { type OperationData } from '../../components/modals/OperationModal';
 import {
   Box,
   Typography,
@@ -470,6 +471,8 @@ export default function OperationListPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [search, setSearch] = useState('');
   const [selectedOp, setSelectedOp] = useState<Operation>(OPERATIONS[0]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingOperation, setEditingOperation] = useState<OperationData | null>(null);
 
   const filtered = OPERATIONS.filter((op) => {
     const matchesTab =
@@ -538,6 +541,7 @@ export default function OperationListPage() {
         <Button
           variant="contained"
           startIcon={<AddOutlinedIcon />}
+          onClick={() => { setEditingOperation(null); setModalOpen(true); }}
           sx={{
             background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
             color: aeroColors.onPrimaryFixed,
@@ -1110,6 +1114,17 @@ export default function OperationListPage() {
           </Box>
         </Grid>
       </Grid>
+
+      <OperationModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={(data) => {
+          console.log('Zapisano operację:', data);
+          setModalOpen(false);
+        }}
+        operation={editingOperation}
+      />
+
     </Box>
   );
 }
