@@ -70,7 +70,7 @@ interface MockHelicopter { id: string; registrationNumber: string; type: string 
 interface MockLandingSite { id: string; name: string }
 interface MockOperation   { id: string; name: string; plannedDate: string }
 
-const MOCK_CREW_MEMBERS: MockCrewMember[] = [
+export const MOCK_CREW_MEMBERS: MockCrewMember[] = [
   { id: 'p1', firstName: 'Jan',       lastName: 'Nowak',       weightKg: 82, role: 'PILOT' },
   { id: 'p2', firstName: 'Anna',      lastName: 'Kowalczyk',   weightKg: 65, role: 'PILOT' },
   { id: 'p3', firstName: 'Marek',     lastName: 'Zieliński',   weightKg: 78, role: 'PILOT' },
@@ -79,15 +79,15 @@ const MOCK_CREW_MEMBERS: MockCrewMember[] = [
   { id: 'c3', firstName: 'Piotr',     lastName: 'Wróbel',      weightKg: 70, role: 'OBSERVER' },
 ];
 
-const MOCK_PILOTS = MOCK_CREW_MEMBERS.filter((m) => m.role === 'PILOT');
+export const MOCK_PILOTS = MOCK_CREW_MEMBERS.filter((m) => m.role === 'PILOT');
 
-const MOCK_HELICOPTERS: MockHelicopter[] = [
+export const MOCK_HELICOPTERS: MockHelicopter[] = [
   { id: 'h1', registrationNumber: 'SP-AER', type: 'Airbus H160' },
   { id: 'h2', registrationNumber: 'SP-HLP', type: 'Bell 429' },
   { id: 'h3', registrationNumber: 'SP-LPR', type: 'Eurocopter EC135' },
 ];
 
-const MOCK_LANDING_SITES: MockLandingSite[] = [
+export const MOCK_LANDING_SITES: MockLandingSite[] = [
   { id: 'ls1', name: 'Warszawa Babice' },
   { id: 'ls2', name: 'Kraków Balice' },
   { id: 'ls3', name: 'Gdańsk Rębiechowo' },

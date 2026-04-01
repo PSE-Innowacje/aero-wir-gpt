@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import FlightOrderModal, { type FlightOrderData } from '../../components/modals/FlightOrderModal';
+import FlightOrderModal, {
+  type FlightOrderData,
+  ORDER_STATUS_OPTIONS,
+  MOCK_HELICOPTERS,
+  MOCK_PILOTS,
+} from '../../components/modals/FlightOrderModal';
 import {
   Box,
   Typography,
@@ -430,6 +435,33 @@ const HELI_ACCENT: Record<string, string> = {
 };
 
 const PAGE_SIZE = 6;
+
+/* ── Status label → enum value map ─────────────────────────────────────── */
+const STATUS_PL_TO_EN = Object.fromEntries(
+  ORDER_STATUS_OPTIONS.map((o) => [o.label, o.value]),
+) as Record<string, FlightOrderData['status']>;
+
+/* ── Convert a list-row FlightOrder to a FlightOrderData for the modal ── */
+function orderToFlightOrderData(order: FlightOrder): FlightOrderData {
+  const heli = MOCK_HELICOPTERS.find((h) => h.registrationNumber === order.helicopterReg);
+  const pilot = MOCK_PILOTS.find(
+    (p) => p.firstName === order.pilotFirst && p.lastName === order.pilotLast,
+  );
+
+  return {
+    id:                     String(order.id),
+    plannedDeparture:       `${order.departureDate}T${order.departureTime}`,
+    plannedArrival:         `${order.departureDate}T${order.departureTime}`,
+    pilotId:                pilot?.id ?? '',
+    status:                 STATUS_PL_TO_EN[order.status] ?? 'SUBMITTED',
+    helicopterId:           heli?.id ?? '',
+    crewMemberIds:          [],
+    departureLandingSiteId: '',
+    arrivalLandingSiteId:   '',
+    operationIds:           [],
+    estimatedRouteLengthKm: order.estimatedKm,
+  };
+}
 
 /* ── Airspace status panel ─────────────────────────────────────────────── */
 function AirspacePanel() {
@@ -958,7 +990,12 @@ export default function OrderListPage() {
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.25 }}>
                         {order.status === 'Wprowadzone' && (
                           <>
-                            <RowAction icon={<EditOutlinedIcon sx={{ fontSize: 14 }} />} label="Edytuj" color={aeroColors.tertiary} />
+                            <RowAction
+                              icon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
+                              label="Edytuj"
+                              color={aeroColors.tertiary}
+                              onClick={() => { setEditingOrder(orderToFlightOrderData(order)); setModalOpen(true); }}
+                            />
                             <RowAction icon={<SendOutlinedIcon sx={{ fontSize: 14 }} />} label="Wyślij do akceptacji" color={aeroColors.secondary} />
                           </>
                         )}
@@ -972,7 +1009,12 @@ export default function OrderListPage() {
                           <RowAction icon={<PlayArrowOutlinedIcon sx={{ fontSize: 14 }} />} label="Realizacja" color={aeroColors.tertiary} />
                         )}
                         {!['Wprowadzone', 'Przekazane do akceptacji', 'Zaakceptowane'].includes(order.status) && (
-                          <RowAction icon={<EditOutlinedIcon sx={{ fontSize: 14 }} />} label="Podgląd" color={aeroColors.outline} />
+                          <RowAction
+                            icon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
+                            label="Podgląd"
+                            color={aeroColors.outline}
+                            onClick={() => { setEditingOrder(orderToFlightOrderData(order)); setModalOpen(true); }}
+                          />
                         )}
                       </Box>
                     </TableCell>
