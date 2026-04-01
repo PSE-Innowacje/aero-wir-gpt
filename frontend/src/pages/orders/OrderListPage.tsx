@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import FlightOrderModal, { type FlightOrderData } from '../../components/modals/FlightOrderModal';
 import {
   Box,
   Typography,
@@ -622,6 +623,8 @@ export default function OrderListPage() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<FlightOrderData | null>(null);
 
   const filtered = ORDERS.filter((o) => {
     const matchesFilter = activeFilter === 'all' || o.status === activeFilter;
@@ -683,6 +686,7 @@ export default function OrderListPage() {
         <Button
           variant="contained"
           startIcon={<AddTaskOutlinedIcon />}
+          onClick={() => { setEditingOrder(null); setModalOpen(true); }}
           sx={{
             background: `linear-gradient(135deg, ${aeroColors.primary} 0%, ${aeroColors.onPrimaryContainer} 100%)`,
             color: aeroColors.onPrimaryFixed,
@@ -1074,6 +1078,16 @@ export default function OrderListPage() {
           <NotificationsPanel />
         </Grid>
       </Grid>
+
+      <FlightOrderModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={(data) => {
+          console.log('Zapisano zlecenie:', data);
+          setModalOpen(false);
+        }}
+        order={editingOrder}
+      />
 
     </Box>
   );
