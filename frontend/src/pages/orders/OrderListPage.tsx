@@ -341,14 +341,25 @@ type FilterKey =
   | 'Wprowadzone'
   | 'Przekazane do akceptacji'
   | 'Zaakceptowane'
-  | 'Zrealizowane w całości';
+  | 'Zrealizowane'
+  | 'Odrzucone';
+
+const FILTER_STATUSES: Record<FilterKey, OrderStatusKey[]> = {
+  'all': [],
+  'Wprowadzone': ['Wprowadzone'],
+  'Przekazane do akceptacji': ['Przekazane do akceptacji'],
+  'Zaakceptowane': ['Zaakceptowane'],
+  'Zrealizowane': ['Zrealizowane w całości', 'Zrealizowane w części', 'Nie zrealizowane'],
+  'Odrzucone': ['Odrzucone'],
+};
 
 const FILTER_TABS: Array<{ key: FilterKey; label: string; accent: string }> = [
   { key: 'all',                        label: 'Wszystkie',             accent: aeroColors.primary },
   { key: 'Wprowadzone',                label: 'Wprowadzone',           accent: aeroColors.primary },
   { key: 'Przekazane do akceptacji',   label: 'Przekazane',            accent: aeroColors.secondary },
   { key: 'Zaakceptowane',              label: 'Zaakceptowane',         accent: aeroColors.tertiary },
-  { key: 'Zrealizowane w całości',     label: 'Zrealizowane',          accent: '#4caf50' },
+  { key: 'Zrealizowane',              label: 'Zrealizowane',          accent: '#4caf50' },
+  { key: 'Odrzucone',                 label: 'Odrzucone',             accent: aeroColors.error },
 ];
 
 const ROW_INITIALS = (o: FlightOrder) =>
@@ -659,7 +670,8 @@ export default function OrderListPage() {
   const ORDERS = apiOrders.map((o, i) => toFlightOrder(o, i, helicopterMap, crewMap));
 
   const filtered = ORDERS.filter((o) => {
-    const matchesFilter = activeFilter === 'all' || o.status === activeFilter;
+    const filterStatuses = FILTER_STATUSES[activeFilter];
+    const matchesFilter = activeFilter === 'all' || filterStatuses.includes(o.status);
     const q = search.toLowerCase();
     const matchesSearch =
       !q ||
@@ -675,7 +687,7 @@ export default function OrderListPage() {
   const pageItems = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   const countFor = (k: FilterKey) =>
-    k === 'all' ? ORDERS.length : ORDERS.filter((o) => o.status === k).length;
+    k === 'all' ? ORDERS.length : ORDERS.filter((o) => FILTER_STATUSES[k].includes(o.status)).length;
 
   const activeCount   = ORDERS.filter((o) => ['Zaakceptowane', 'Przekazane do akceptacji'].includes(o.status)).length;
   const pendingCount  = ORDERS.filter((o) => o.status === 'Wprowadzone').length;
