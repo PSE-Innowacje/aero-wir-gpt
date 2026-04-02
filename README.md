@@ -12,47 +12,48 @@ A web application for planning and managing helicopter flight operations over po
 - **Docker Desktop** (running)
 - **Node.js 18+**
 
-### Option A: macOS / Linux (simplest)
-
-If Docker is running, a single Gradle task starts a temporary MongoDB via Testcontainers and boots the backend against it — no manual setup needed:
+### Option A: Docker Compose (recommended — persistent data, fast startup)
 
 ```bash
-./gradlew :backend:bootTestRun
-```
+# Terminal 1 — Start MongoDB
+docker compose up -d
 
-Then start the frontend:
+# Terminal 2 — Start backend (~1 second startup)
+./gradlew :backend:bootRun
 
-```bash
+# Terminal 3 — Start frontend
 cd frontend && npm install && npm run dev
 ```
 
-### Option B: Windows (manual MongoDB container)
-
-On Windows, `docker-java` (used by Testcontainers) has a known incompatibility with Docker Desktop 4.67+ — it throws `Could not find a valid Docker environment` because the library cannot locate the Docker pipe at `//./pipe/docker_engine`. To work around this, start MongoDB manually:
+Data persists in a Docker volume (`mongo-data`) — survives restarts. To reset:
 
 ```bash
-bash backend/setup-mongodb.sh
+docker compose down -v          # removes volume + data
+docker compose up -d            # fresh start, DataInitializer re-seeds
 ```
 
-This creates a Docker container `aero-mongodb` with **MongoDB 7** on `localhost:27017` (database: `aero`, no authentication).
+### Option B: Testcontainers (zero setup, ephemeral)
 
-Then start backend and frontend:
+A single Gradle task starts a temporary MongoDB via Testcontainers — no Docker Compose needed:
 
 ```bash
-# Terminal 1 — Backend
-./gradlew :backend:bootRun
+# Terminal 1 — Backend (MongoDB starts automatically, ~30s first time)
+./gradlew :backend:bootTestRun
 
 # Terminal 2 — Frontend
 cd frontend && npm install && npm run dev
 ```
 
-Manage the MongoDB container:
+Data is lost when the backend stops. Good for quick testing.
+
+### Option C: Windows workaround
+
+On Windows, Testcontainers may fail with `Could not find a valid Docker environment` (Docker Desktop pipe issue). Use Option A (Docker Compose) or start MongoDB manually:
 
 ```bash
-docker start aero-mongodb      # start
-docker stop aero-mongodb       # stop
-docker rm aero-mongodb         # remove (re-run setup script to recreate)
-docker exec -it aero-mongodb mongosh aero   # shell
+bash backend/setup-mongodb.sh   # creates aero-mongodb container
+./gradlew :backend:bootRun
+cd frontend && npm install && npm run dev
 ```
 
 ### MongoDB GUI (optional)

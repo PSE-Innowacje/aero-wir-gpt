@@ -2,6 +2,10 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/aero
+  docker:
+    compose:
+      file: ../docker-compose.yml
+      lifecycle-management: start-only
   servlet:
     multipart:
       max-file-size: 10MB
