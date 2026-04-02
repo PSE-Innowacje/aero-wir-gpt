@@ -23,6 +23,7 @@ import HeightIcon from '@mui/icons-material/Height';
 import LocalGasStationOutlinedIcon from '@mui/icons-material/LocalGasStationOutlined';
 import { aeroColors } from '../../theme';
 import WeatherBanner from '../../components/WeatherBanner';
+import { useAuth } from '../../contexts/AuthContext';
 import { getOperations } from '../../api/operations.api';
 import { getOrders } from '../../api/orders.api';
 import { getHelicopters } from '../../api/helicopters.api';
@@ -171,19 +172,23 @@ function StatusIcon({ status }: { status: string }) {
 
 /* Page ------------------------------------------------------------------- */
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const role = user?.role;
+  const canSeeFleet = role !== 'PLANNER';
+  const canSeeOrders = role !== 'PLANNER';
+
   const [operations, setOperations] = useState<OperationListResponse[]>([]);
   const [orders, setOrders] = useState<OrderListResponse[]>([]);
   const [helicopters, setHelicopters] = useState<HelicopterResponse[]>([]);
 
   useEffect(() => {
-    Promise.all([getOperations(), getOrders(), getHelicopters()])
-      .then(([ops, ords, helis]) => {
-        setOperations(ops);
-        setOrders(ords);
-        setHelicopters(helis);
-      })
-      .catch(console.error);
-  }, []);
+    const fetches: Promise<void>[] = [
+      getOperations().then(setOperations).catch(() => {}),
+    ];
+    if (canSeeOrders) fetches.push(getOrders().then(setOrders).catch(() => {}));
+    if (canSeeFleet) fetches.push(getHelicopters().then(setHelicopters).catch(() => {}));
+    Promise.all(fetches);
+  }, [canSeeFleet, canSeeOrders]);
 
   // Stats
   const activeOpsCount = operations.filter(o =>
@@ -238,7 +243,7 @@ export default function DashboardPage() {
             sublabel="Do zatwierdzenia"
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+        {canSeeFleet && <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <StatCard
             label="Dostępność floty"
             value={`${fleetPct}%`}
@@ -246,10 +251,11 @@ export default function DashboardPage() {
             accent={aeroColors.primary}
             sublabel={`${inactiveHelis} w serwisie · ${activeHelis} aktywnych`}
           />
-        </Grid>
+        </Grid>}
       </Grid>
 
-      {/* Fleet + Active helicopter row */}
+      {/* Fleet + Active helicopter row (hidden for PLANNER) */}
+      {canSeeFleet && <>
       <Grid container spacing={2} sx={{ mb: 3 }}>
 
         {/* Fleet status */}
@@ -411,8 +417,10 @@ export default function DashboardPage() {
           </Box>
         </Grid>
       </Grid>
+      </>}
 
-      {/* Mission log */}
+      {/* Mission log (hidden for PLANNER — uses order data) */}
+      {canSeeOrders &&
       <Box sx={{ ...GLASS_CARD, overflow: 'hidden' }}>
         <Box
           sx={{
@@ -534,7 +542,7 @@ export default function DashboardPage() {
             </TableBody>
           </Table>
         </TableContainer>
-      </Box>
+      </Box>}
     </Box>
   );
 }

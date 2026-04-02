@@ -83,12 +83,13 @@ Then open http://localhost:8081 to browse collections, edit documents, and run q
 
 | Email | Password | Role |
 |-------|----------|------|
+| `super@aero.pl` | `super` | Superuser (full access to everything) |
 | `admin@aero.pl` | `admin` | Administrator |
 | `planista@aero.pl` | `planista` | Planner |
 | `nadzor@aero.pl` | `nadzor` | Supervisor |
 | `pilot@aero.pl` | `pilot` | Pilot |
 
-On first boot the backend seeds these 4 users, 3 helicopters, 4 crew members, 3 landing sites, and 4 sample flight operations.
+On first boot the backend seeds these 5 users, 8 helicopters, 21 crew members, 8 landing sites, and 20 sample flight operations.
 
 ---
 

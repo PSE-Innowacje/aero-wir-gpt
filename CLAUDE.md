@@ -265,29 +265,67 @@ display, and supervisors can approve/reject them.
 
 ## Running the Project
 
-**Prerequisites**: MongoDB 7+ running locally on port 27017 (database: `aero`).
+**Prerequisites**: Docker running (for Testcontainers), Java 21, Node.js 18+.
+
+### Recommended: Testcontainers (no manual DB setup)
 
 ```bash
-# 0. Start MongoDB (one-time setup)
-bash backend/setup-mongodb.sh
-
-# 1. Start backend (from repo root)
-./gradlew :backend:bootRun
+# 1. Start backend — MongoDB starts automatically via Testcontainers
+./gradlew :backend:bootTestRun
 
 # 2. Start frontend (in a separate terminal)
 cd frontend && npm run dev
 ```
 
-- Backend: http://localhost:8080
-- Frontend: http://localhost:5173 (proxies `/api/**` to backend)
-- MongoDB: localhost:27017, database: `aero`
+This uses `TestAeroApplication` which spins up a MongoDB container automatically
+and seeds demo data via `DataInitializer`. No manual MongoDB installation needed.
 
-**Testing**: Integration tests use Testcontainers — a `MongoDBContainer` is
-started automatically, no manual database setup needed.
+### Without auth (for quick testing)
+
+```bash
+./gradlew :backend:bootTestRun --args='--spring.profiles.active=noauth'
+```
+
+All endpoints accessible without login. Useful for API testing with Swagger/Postman.
+
+### Alternative: Manual MongoDB
+
+If you prefer a persistent database instead of Testcontainers:
+
+```bash
+# Start MongoDB (Docker or local install)
+docker run -d -p 27017:27017 --name aero-mongo mongo:7
+
+# Start backend with regular bootRun
+./gradlew :backend:bootRun
+
+# Start frontend
+cd frontend && npm run dev
+```
+
+### URLs
+
+- Frontend: http://localhost:5173 (proxies `/api/**` to backend)
+- Backend API: http://localhost:8080
+- Swagger UI: http://localhost:8080/swagger-ui.html
+
+### Default users (seeded on first startup)
+
+| Email | Password | Role |
+|-------|----------|------|
+| `super@aero.pl` | `super` | SUPERUSER (full access) |
+| `admin@aero.pl` | `admin` | ADMIN |
+| `planista@aero.pl` | `planista` | PLANNER |
+| `nadzor@aero.pl` | `nadzor` | SUPERVISOR |
+| `pilot@aero.pl` | `pilot` | PILOT |
+
+### Running tests
 
 ```bash
 ./gradlew :backend:test
 ```
+
+Tests use Testcontainers — a MongoDB container is started automatically.
 
 ---
 
