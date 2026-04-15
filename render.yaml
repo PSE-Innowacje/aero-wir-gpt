@@ -1,0 +1,29 @@
+# Render Blueprint — one-click deploy for the AERO monorepo.
+# See: https://render.com/docs/blueprint-spec
+#
+# What this defines:
+#   - A single free Web Service built from the root Dockerfile.
+#     The Dockerfile builds the React SPA and bundles it into the
+#     Spring Boot JAR, so one container serves both the API and the UI.
+#
+# You still have to set MONGODB_URI manually in the Render UI
+# (sync: false) — we don't want to commit the connection string.
+
+services:
+  - type: web
+    name: aero
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /api/dictionaries/activity-types  # public endpoint, always 200
+    envVars:
+      - key: MONGODB_URI
+        sync: false  # set manually in the Render dashboard
+      - key: SERVER_SERVLET_SESSION_COOKIE_SECURE
+        value: "true"
+      - key: SERVER_SERVLET_SESSION_COOKIE_SAME_SITE
+        value: "lax"
+      - key: JAVA_OPTS
+        value: "-XX:MaxRAMPercentage=70.0 -XX:+UseSerialGC"

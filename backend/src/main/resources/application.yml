@@ -1,7 +1,7 @@
 spring:
   data:
     mongodb:
-      uri: mongodb://localhost:27017/aero
+      uri: ${MONGODB_URI:mongodb://localhost:27017/aero}
   docker:
     compose:
       file: ../docker-compose.yml
@@ -12,4 +12,8 @@ spring:
       max-request-size: 10MB
 
 server:
-  port: 8080
+  port: ${PORT:8080}
+  # Render terminates TLS at its edge and forwards HTTP to the container.
+  # Reading X-Forwarded-* headers lets Spring know the original request was HTTPS,
+  # which is required for Secure session cookies to be issued correctly.
+  forward-headers-strategy: framework
