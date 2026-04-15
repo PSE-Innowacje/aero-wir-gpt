@@ -43,6 +43,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/dictionaries/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // SPA static assets and routes served from classpath:/static (bundled into jar).
+                        // Authentication is still enforced for /api/** endpoints by the rules below;
+                        // the frontend calls /api/auth/me on load and redirects to /login when it gets 401.
+                        .requestMatchers("/", "/index.html", "/favicon.ico", "/assets/**",
+                                "/login", "/dashboard",
+                                "/helicopters/**", "/crew/**", "/landing-sites/**",
+                                "/users/**", "/operations/**", "/orders/**",
+                                "/*.js", "/*.css", "/*.svg", "/*.png", "/*.ico", "/*.json",
+                                "/*.woff", "/*.woff2", "/*.ttf").permitAll()
                         // Admin CRUD: SUPERUSER/ADMIN full access, SUPERVISOR/PILOT read-only, PLANNER denied
                         .requestMatchers(HttpMethod.GET, "/api/helicopters/**", "/api/crew-members/**",
                                 "/api/landing-sites/**", "/api/users/**")
